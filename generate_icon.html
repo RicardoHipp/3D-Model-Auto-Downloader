@@ -43,7 +43,16 @@
           <div class="preview-box dark" ><canvas id="c128d" width="128" height="128"></canvas></div>
         </div>
         <button onclick="dl('c128','icon128.png')">Download icon128.png</button>
-        <p>Chrome Web Store</p>
+        <p>Chrome Web Store (grün)</p>
+      </div>
+      <div class="card">
+        <strong>icon_startup.png</strong> (128 × 128)
+        <div class="previews">
+          <div class="preview-box light"><canvas id="cstart"  width="128" height="128"></canvas></div>
+          <div class="preview-box dark" ><canvas id="cstartd" width="128" height="128"></canvas></div>
+        </div>
+        <button onclick="dl('cstart','icon_startup.png')">Download icon_startup.png</button>
+        <p>Statisches Fallback – rot wenn SW nicht läuft</p>
       </div>
     </div>
   </div>
@@ -95,9 +104,14 @@
     }
 
     const green = '#22c55e';
+    const red   = '#ef4444';
     ['c128','c128d'].forEach(id => {
       const cv = document.getElementById(id);
       drawIcon(cv.getContext('2d'), cv.width, green);
+    });
+    ['cstart','cstartd'].forEach(id => {
+      const cv = document.getElementById(id);
+      drawIcon(cv.getContext('2d'), cv.width, red);
     });
 
     /* ── Promo ── */

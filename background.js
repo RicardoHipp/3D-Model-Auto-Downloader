@@ -11,7 +11,7 @@ function updateIconForTab(tabId) {
   if (isPaused) return;
   chrome.tabs.get(tabId, (tab) => {
     if (chrome.runtime.lastError) return;
-    setActionIcon(isSupportedUrl(tab.url) ? '#22c55e' : '#86efac');
+    setActionIcon(isSupportedUrl(tab.url) ? '#22c55e' : '#3b82f6');
   });
 }
 
@@ -19,7 +19,7 @@ chrome.storage.local.get('debugMode', (r) => { DEBUG = !!r.debugMode; });
 chrome.storage.session.get('isPaused', (r) => {
   isPaused = !!r.isPaused;
   if (isPaused) {
-    setActionIcon('#ef4444');
+    setActionIcon('#eab308');
   } else {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0]) updateIconForTab(tabs[0].id);
@@ -33,7 +33,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'session' && 'isPaused' in changes) {
     isPaused = !!changes.isPaused.newValue;
     if (isPaused) {
-      setActionIcon('#ef4444');
+      setActionIcon('#eab308');
     } else {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) updateIconForTab(tabs[0].id);
