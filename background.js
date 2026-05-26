@@ -50,6 +50,9 @@ function setupKeepaliveAlarm() {
   });
 }
 
+// Bei jedem SW-Start ausführen – nicht nur bei onInstalled/onStartup
+setupKeepaliveAlarm();
+
 chrome.runtime.onStartup.addListener(() => {
   chrome.downloads.search({ state: 'interrupted', limit: 0 }, (downloads) => {
     const eigene = downloads.filter(dl => dl.byExtensionId === chrome.runtime.id);
