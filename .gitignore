@@ -3,6 +3,7 @@
 
 # ... außer diesen Dateien:
 !.gitignore
+!LICENSE
 !manifest.json
 !background.js
 !content_isolated.js
