@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Asset Generator – 3D Model Auto-Downloader</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 24px; background: #f1f5f9; }
+    h2   { margin: 0 0 4px; }
+    .section { margin-top: 32px; }
+    h3 { margin: 0 0 12px; color: #374151; }
+    .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+    .card {
+      background: white; border-radius: 12px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.1); text-align: center;
+    }
+    .previews { display: flex; gap: 12px; justify-content: center; margin-bottom: 12px; }
+    .preview-box {
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 8px; padding: 6px;
+    }
+    .light { background: #ffffff; border: 1px solid #e2e8f0; }
+    .dark  { background: #1e1e2e; }
+    canvas { display: block; }
+    button {
+      margin-top: 4px; padding: 8px 20px; background: #22c55e; color: white;
+      border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600;
+    }
+    button:hover { background: #16a34a; }
+    p { font-size: 12px; color: #64748b; margin: 8px 0 0; }
+  </style>
+</head>
+<body>
+  <h2>Asset Generator – 3D Model Auto-Downloader</h2>
+
+  <!-- ═══ ICONS ═══ -->
+  <div class="section">
+    <h3>Icons</h3>
+    <div class="row">
+      <div class="card">
+        <strong>icon128.png</strong> (128 × 128)
+        <div class="previews">
+          <div class="preview-box light"><canvas id="c128"  width="128" height="128"></canvas></div>
+          <div class="preview-box dark" ><canvas id="c128d" width="128" height="128"></canvas></div>
+        </div>
+        <button onclick="dl('c128','icon128.png')">Download icon128.png</button>
+        <p>Chrome Web Store</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ WERBEBILDER ═══ -->
+  <div class="section">
+    <h3>Werbebilder</h3>
+    <div class="row">
+      <div class="card">
+        <strong>promo_small.png</strong> (440 × 280) – Pflicht
+        <div class="previews" style="margin-top:12px">
+          <canvas id="promo440" width="440" height="280" style="border-radius:6px"></canvas>
+        </div>
+        <button onclick="dl('promo440','promo_small.png')">Download promo_small.png</button>
+      </div>
+      <div class="card">
+        <strong>promo_marquee.png</strong> (1400 × 560) – Optional
+        <div class="previews" style="margin-top:12px">
+          <!-- Vorschau skaliert auf 50% -->
+          <canvas id="promo1400" width="1400" height="560" style="border-radius:6px;width:700px;height:280px"></canvas>
+        </div>
+        <button onclick="dl('promo1400','promo_marquee.png')">Download promo_marquee.png</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ── Icon ── */
+    function drawIcon(ctx, size, color) {
+      const r = parseInt(color.slice(1,3), 16);
+      const g = parseInt(color.slice(3,5), 16);
+      const b = parseInt(color.slice(5,7), 16);
+      const shade = f => `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;
+      const pad  = Math.round(size * 0.125);
+      const draw = size - pad * 2;
+      const fontSize = Math.round(draw * 0.70);
+      const depth    = Math.max(1, Math.round(draw * 0.08));
+      ctx.save();
+      ctx.translate(pad, pad);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+      for (let i = depth; i >= 1; i--) {
+        ctx.fillStyle = shade(0.4);
+        ctx.fillText('3D', draw/2 + i, draw/2 + i);
+      }
+      ctx.fillStyle = color;
+      ctx.fillText('3D', draw/2, draw/2);
+      ctx.restore();
+    }
+
+    const green = '#22c55e';
+    ['c128','c128d'].forEach(id => {
+      const cv = document.getElementById(id);
+      drawIcon(cv.getContext('2d'), cv.width, green);
+    });
+
+    /* ── Promo ── */
+    function drawPromo(canvas) {
+      const W = canvas.width, H = canvas.height;
+      const ctx = canvas.getContext('2d');
+      const scale = W / 440;
+
+      // Hintergrund-Gradient
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, '#0f172a');
+      bg.addColorStop(1, '#1a2a1a');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Dezente Raster-Linien
+      ctx.strokeStyle = 'rgba(34,197,94,0.08)';
+      ctx.lineWidth = 1;
+      const gridStep = 40 * scale;
+      for (let x = 0; x < W; x += gridStep) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (let y = 0; y < H; y += gridStep) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+      // Layout: linke 38% für "3D", rechte 62% für Text
+      const splitX = W * 0.38;
+
+      // "3D" zentriert in der linken Spalte – Shadow-API vermeidet Artefakte
+      const fontSize = Math.round(splitX * 0.62);
+      const depth    = Math.max(3, Math.round(splitX * 0.05));
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+      ctx.shadowColor   = 'rgba(10,80,30,0.9)';
+      ctx.shadowOffsetX = depth;
+      ctx.shadowOffsetY = depth;
+      ctx.shadowBlur    = 0;
+      ctx.fillStyle = '#22c55e';
+      ctx.fillText('3D', splitX / 2, H / 2);
+      ctx.shadowColor = 'transparent';
+      ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+
+      // Trennlinie
+      const lineX = splitX;
+      ctx.strokeStyle = 'rgba(34,197,94,0.3)';
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath(); ctx.moveTo(lineX, H*0.12); ctx.lineTo(lineX, H*0.88); ctx.stroke();
+
+      // Text rechts
+      const textX = lineX + 22 * scale;
+      const maxW  = W - textX - 12 * scale;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+
+      ctx.font = `700 ${20 * scale}px Arial, sans-serif`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('Model Auto-Downloader', textX, H * 0.34, maxW);
+
+      ctx.font = `400 ${12.5 * scale}px Arial, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillText('STL · 3MF · ZIP automatisch', textX, H * 0.50, maxW);
+      ctx.fillText('in sortierten Ordnern speichern', textX, H * 0.50 + 17 * scale, maxW);
+
+      // Ein gemeinsames Badge für alle drei Sites
+      const badgeLabel = 'MakerWorld  ·  Printables  ·  Thingiverse';
+      const badgeY   = H * 0.74;
+      const badgeH   = 26 * scale;
+      const badgePad = 14 * scale;
+      ctx.font = `500 ${12 * scale}px Arial, sans-serif`;
+      const labelW = ctx.measureText(badgeLabel).width;
+      const bw = labelW + badgePad * 2;
+      ctx.fillStyle   = 'rgba(34,197,94,0.12)';
+      ctx.strokeStyle = 'rgba(34,197,94,0.35)';
+      ctx.lineWidth   = 1.5 * scale;
+      ctx.beginPath();
+      ctx.roundRect(textX, badgeY - badgeH/2, bw, badgeH, 6 * scale);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#86efac';
+      ctx.fillText(badgeLabel, textX + badgePad, badgeY);
+    }
+
+    drawPromo(document.getElementById('promo440'));
+    drawPromo(document.getElementById('promo1400'));
+
+    /* ── Download ── */
+    function dl(id, filename) {
+      const a = document.createElement('a');
+      a.download = filename;
+      a.href = document.getElementById(id).toDataURL('image/png');
+      a.click();
+    }
+  </script>
+</body>
+</html>

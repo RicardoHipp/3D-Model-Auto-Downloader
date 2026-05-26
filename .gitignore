@@ -1,0 +1,17 @@
+# Alles ignorieren ...
+*
+
+# ... außer diesen Dateien:
+!.gitignore
+!manifest.json
+!background.js
+!content_isolated.js
+!content_main.js
+!offscreen.html
+!offscreen.js
+!popup.html
+!popup.js
+!jszip.min.js
+!icon128.png
+!pack_extension.bat
+!generate_icon.html
