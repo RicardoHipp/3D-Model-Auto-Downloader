@@ -67,7 +67,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'keepAlive') {
-    // SW aktiv halten – verhindert Chrome-Bug bei MV3 nach Neustart
+    setupKeepaliveAlarm(); // Alarm erneuern falls er verloren ging
   }
 });
 

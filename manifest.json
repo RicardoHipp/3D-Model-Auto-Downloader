@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "3D Model Auto-Downloader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Lädt STL, 3MF und ZIP-Dateien von MakerWorld, Printables und Thingiverse automatisch in sortierte Unterordner.",
   "permissions": [
     "alarms",
