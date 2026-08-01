@@ -1,3 +1,16 @@
+// ALLERERSTE Zeile: Erscheint sie nicht, startet der Worker gar nicht erst.
+// Erscheint sie, bricht der Code danach ab.
+console.log('=== SW GESTARTET ===');
+
+// Fängt alles ab, was im Top-Level-Durchlauf unbehandelt hochkommt. Ohne das
+// stirbt der Durchlauf still und es wird kein einziger Listener registriert.
+self.addEventListener('error', (e) => {
+  console.error('[SW] Unbehandelter Fehler:', e.message, e.filename, e.lineno);
+});
+self.addEventListener('unhandledrejection', (e) => {
+  console.error('[SW] Unbehandelte Rejection:', e.reason);
+});
+
 let DEBUG = false;
 let isPaused = false;
 
@@ -15,18 +28,28 @@ function updateIconForTab(tabId) {
   });
 }
 
-chrome.storage.local.get('debugMode', (r) => { DEBUG = !!r.debugMode; });
-chrome.storage.session.get('isPaused', (r) => {
-  isPaused = !!r.isPaused;
-  if (isPaused) {
-    setActionIcon('#eab308');
-  } else {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) updateIconForTab(tabs[0].id);
-      else setActionIcon('#86efac');
-    });
-  }
-});
+// Abgesichert: Wirft einer dieser Aufrufe, darf das den restlichen Durchlauf
+// nicht abbrechen – sonst werden die Listener darunter nie registriert.
+try {
+  chrome.storage.local.get('debugMode', (r) => {
+    if (chrome.runtime.lastError) { console.error('[Init] local.get:', chrome.runtime.lastError.message); return; }
+    DEBUG = !!r.debugMode;
+  });
+  chrome.storage.session.get('isPaused', (r) => {
+    if (chrome.runtime.lastError) { console.error('[Init] session.get:', chrome.runtime.lastError.message); return; }
+    isPaused = !!r.isPaused;
+    if (isPaused) {
+      setActionIcon('#eab308');
+    } else {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) updateIconForTab(tabs[0].id);
+        else setActionIcon('#86efac');
+      });
+    }
+  });
+} catch (err) {
+  console.error('[Init] Speicherzugriff fehlgeschlagen:', err);
+}
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && 'debugMode' in changes) DEBUG = !!changes.debugMode.newValue;
@@ -42,38 +65,19 @@ chrome.storage.onChanged.addListener((changes, area) => {
     }
   }
 });
-console.log('=== SW GESTARTET ===');
-
-function setupKeepaliveAlarm() {
-  chrome.alarms.get('keepAlive', (alarm) => {
-    if (!alarm) chrome.alarms.create('keepAlive', { periodInMinutes: 0.4 });
-  });
-}
-
-// Bei jedem SW-Start ausführen – nicht nur bei onInstalled/onStartup
-setupKeepaliveAlarm();
 
 chrome.runtime.onStartup.addListener(() => {
   chrome.downloads.search({ state: 'interrupted', limit: 0 }, (downloads) => {
     const eigene = downloads.filter(dl => dl.byExtensionId === chrome.runtime.id);
     for (const dl of eigene) chrome.downloads.erase({ id: dl.id });
   });
-  setupKeepaliveAlarm();
-});
-
-chrome.runtime.onInstalled.addListener(() => {
-  setupKeepaliveAlarm();
-});
-
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'keepAlive') {
-    setupKeepaliveAlarm(); // Alarm erneuern falls er verloren ging
-  }
 });
 
 chrome.tabs.onActivated.addListener((info) => updateIconForTab(info.tabId));
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (!changeInfo.url) return;
+  // Ohne "tabs"-Berechtigung liefert Chrome changeInfo.url nur für Hosts, die wir
+  // sehen dürfen. Beim Verlassen einer unterstützten Seite fehlt es – daher status.
+  if (!changeInfo.url && !changeInfo.status) return;
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs[0]?.id === tabId) updateIconForTab(tabId);
   });
@@ -91,8 +95,55 @@ let pendingNotifications = [];
 
 // URLs die gerade von uns neu gestartet werden – verhindert Endlosschleife
 const handledUrls = new Set();
-const downloadedImageFolders = new Set();
+let downloadedImageFolders = new Set();
 const pendingImageFolders = new Set();
+
+// --- Zustand über Service-Worker-Neustarts hinweg -------------------------
+// Ohne Keepalive beendet Chrome den Worker nach 30 s. downloadQueue, folderMap
+// und downloadedImageFolders müssen das überleben, sonst landen Dateien desselben
+// Modells in verschiedenen Ordnern.
+//
+// WICHTIG: Der Ladevorgang bekommt einen harten Timeout. Ein Storage-Aufruf, der
+// beim Worker-Start hängen bleibt, würde sonst jeden wartenden Aufrufer für immer
+// blockieren – und damit die komplette Erweiterung, bis Chrome den Worker abräumt.
+// Läuft der Timeout ab, wird mit Standardwerten weitergearbeitet.
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('storage timeout')), ms))
+  ]);
+}
+
+let statePromise = null;
+function loadState() {
+  if (!statePromise) {
+    statePromise = withTimeout(
+      chrome.storage.session.get(['folderMap', 'downloadQueue', 'downloadedImageFolders', 'isPaused']),
+      1500
+    ).then((s) => {
+      folderMap = s.folderMap || {};
+      downloadQueue = s.downloadQueue || [];
+      downloadedImageFolders = new Set(s.downloadedImageFolders || []);
+      isPaused = !!s.isPaused;
+    }).catch((err) => {
+      // Bewusst geschluckt: lieber mit leerem Zustand weiterlaufen als blockieren
+      console.error('[State] Laden fehlgeschlagen, nutze Standardwerte:', err.message);
+    });
+  }
+  return statePromise;
+}
+
+// Schreibvorgänge serialisieren, damit parallele Downloads sich nicht überschreiben
+let saveChain = Promise.resolve();
+function saveState() {
+  saveChain = saveChain
+    .then(() => chrome.storage.session.set({
+      folderMap,
+      downloadQueue,
+      downloadedImageFolders: [...downloadedImageFolders]
+    }))
+    .catch((err) => console.error('[State] Speichern fehlgeschlagen:', err));
+}
 
 const cyrillicMap = {
   'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i',
@@ -197,6 +248,7 @@ function setFolderMap(key, value) {
   const keys = Object.keys(folderMap);
   if (keys.length >= 100) delete folderMap[keys[0]];
   folderMap[key] = value;
+  saveState();
 }
 
 function buildFolderName(modelName, source) {
@@ -212,6 +264,7 @@ function downloadImage(imageUrl, folderName) {
   if (DEBUG) console.log('[IMG]', folderName.substring(0, 40), '| url:', !!imageUrl, '| bereitsGeladen:', downloadedImageFolders.has(folderName));
   if (!imageUrl || downloadedImageFolders.has(folderName)) return;
   downloadedImageFolders.add(folderName);
+  saveState();
   handledUrls.add(imageUrl);
   let ext = 'jpg';
   try {
@@ -255,6 +308,8 @@ async function setupOffscreenDocument() {
 }
 
 async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
+  await loadState();
+  if (isPaused) return;
   let modelName = 'Model';
 
   try {
@@ -286,6 +341,7 @@ async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
   if (urlPath.endsWith('.zip')) {
     if (downloadQueue.some(item => item.url === cdnUrl)) { if (DEBUG) console.log('[TV] SKIP zip duplikat'); return; }
     downloadQueue.push({ url: cdnUrl, folderName: finalFolderName, imageUrl, source: 'Thingiverse' });
+    saveState();
     await setupOffscreenDocument();
     if (offscreenReady && downloadQueue.length > 0) processQueue();
   } else {
@@ -326,6 +382,7 @@ async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
 function processQueue() {
   if (downloadQueue.length === 0) return;
   const item = downloadQueue.shift();
+  saveState();
   chrome.runtime.sendMessage({
     action: 'unzipAndDownload',
     url: item.url,
@@ -339,14 +396,13 @@ function processQueue() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'thingiverseIntercept') {
-    if (isPaused) return;
     if (DEBUG) console.log('[TV] intercept:', message.url.split('/').pop(), '| imageUrl:', !!message.imageUrl);
     handleThingiverseDownload(message.url, message.imageUrl || null, sender.tab);
   }
   if (message.action === 'offscreenReady') {
     offscreenReady = true;
     creatingOffscreen = null;
-    processQueue();
+    loadState().then(processQueue);
   }
   if (message.action === 'startDownload') {
     const safe = sanitizePath(message.filename);
@@ -376,15 +432,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     showNotification('Fehler', message.message);
   }
   if (message.action === 'downloadFinished') {
-    if (downloadQueue.length > 0) {
+    loadState().then(() => {
+      if (downloadQueue.length === 0) return;
       setupOffscreenDocument().then(() => {
         if (offscreenReady) processQueue();
       });
-    }
+    });
   }
 });
 
 chrome.downloads.onCreated.addListener(async (downloadItem) => {
+  await loadState();
   if (isPaused) return;
   const isBlobCE = downloadItem.url?.startsWith('blob:chrome-extension://');
   const isInHandled = handledUrls.has(downloadItem.url);
@@ -520,6 +578,7 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     chrome.downloads.erase({ id: downloadItem.id });
     if (downloadQueue.some(item => item.url === downloadItem.url)) return;
     downloadQueue.push({ url: downloadItem.url, folderName: finalFolderName, imageUrl, source });
+    saveState();
     await setupOffscreenDocument();
     if (offscreenReady && downloadQueue.length > 0) processQueue();
   } else {
