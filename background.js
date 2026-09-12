@@ -24,7 +24,7 @@ function updateIconForTab(tabId) {
   if (isPaused) return;
   chrome.tabs.get(tabId, (tab) => {
     if (chrome.runtime.lastError) return;
-    setActionIcon(isSupportedUrl(tab.url) ? '#22c55e' : '#3b82f6');
+    setActionIcon(isSupportedUrl(tab.url) ? 'green' : 'blue');
   });
 }
 
@@ -39,11 +39,11 @@ try {
     if (chrome.runtime.lastError) { console.error('[Init] session.get:', chrome.runtime.lastError.message); return; }
     isPaused = !!r.isPaused;
     if (isPaused) {
-      setActionIcon('#eab308');
+      setActionIcon('yellow');
     } else {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) updateIconForTab(tabs[0].id);
-        else setActionIcon('#86efac');
+        else setActionIcon('mint');
       });
     }
   });
@@ -56,21 +56,49 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'session' && 'isPaused' in changes) {
     isPaused = !!changes.isPaused.newValue;
     if (isPaused) {
-      setActionIcon('#eab308');
+      setActionIcon('yellow');
     } else {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) updateIconForTab(tabs[0].id);
-        else setActionIcon('#86efac');
+        else setActionIcon('mint');
       });
     }
   }
 });
 
+// --- Keepalive -----------------------------------------------------------
+// Liegt der Worker lange still, verliert Chrome die Service-Worker-Registrierung:
+// auf chrome://serviceworker-internals steht die Registration dann ohne
+// "Active worker" da, neue Versionen enden reihum als REDUNDANT und der Worker
+// startet nie wieder – nicht mal bis zur ersten Zeile dieser Datei. Aus der
+// Erweiterung heraus ist das nicht reparierbar, weil dann ja nichts von uns
+// läuft; nur ein Browser-Neustart hilft. Also Prävention statt Reparatur.
+// 0.5 = 30 s, das von Chrome erzwungene Minimum für installierte Erweiterungen.
+function setupKeepaliveAlarm() {
+  chrome.alarms.get('keepAlive', (alarm) => {
+    if (chrome.runtime.lastError) return;
+    if (!alarm) chrome.alarms.create('keepAlive', { periodInMinutes: 0.5 });
+  });
+}
+
+// Bei JEDEM Worker-Start ausführen – nicht nur bei onInstalled/onStartup,
+// sonst fehlt der Alarm nach jedem Neustart, der ohne diese Events passiert.
+setupKeepaliveAlarm();
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'keepAlive') setupKeepaliveAlarm(); // erneuern falls verloren
+});
+
 chrome.runtime.onStartup.addListener(() => {
+  setupKeepaliveAlarm();
   chrome.downloads.search({ state: 'interrupted', limit: 0 }, (downloads) => {
     const eigene = downloads.filter(dl => dl.byExtensionId === chrome.runtime.id);
     for (const dl of eigene) chrome.downloads.erase({ id: dl.id });
   });
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  setupKeepaliveAlarm();
 });
 
 chrome.tabs.onActivated.addListener((info) => updateIconForTab(info.tabId));
@@ -87,8 +115,6 @@ let downloadQueue = [];
 let offscreenReady = false;
 let creatingOffscreen = null;
 let folderMap = {};
-// 1x1 transparentes PNG als Sofort-Fallback, wird beim Start durch das echte Icon ersetzt
-let iconDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 let activeExtractions = 0;
 let notificationTimer = null;
 let pendingNotifications = [];
@@ -99,9 +125,10 @@ let downloadedImageFolders = new Set();
 const pendingImageFolders = new Set();
 
 // --- Zustand über Service-Worker-Neustarts hinweg -------------------------
-// Ohne Keepalive beendet Chrome den Worker nach 30 s. downloadQueue, folderMap
-// und downloadedImageFolders müssen das überleben, sonst landen Dateien desselben
-// Modells in verschiedenen Ordnern.
+// Chrome beendet den Worker nach 30 s Untätigkeit; der Keepalive-Alarm weckt ihn
+// zwar wieder, hält ihn aber nicht durchgehend am Leben. downloadQueue, folderMap
+// und downloadedImageFolders müssen einen Neustart also überleben, sonst landen
+// Dateien desselben Modells in verschiedenen Ordnern.
 //
 // WICHTIG: Der Ladevorgang bekommt einen harten Timeout. Ein Storage-Aufruf, der
 // beim Worker-Start hängen bleibt, würde sonst jeden wartenden Aufrufer für immer
@@ -162,58 +189,31 @@ function sanitizePath(path) {
   ).join('/');
 }
 
-function drawIcon(ctx, size, color) {
-  const r = parseInt(color.slice(1,3), 16);
-  const g = parseInt(color.slice(3,5), 16);
-  const b = parseInt(color.slice(5,7), 16);
-  const shade = (f) => `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`;
-  const fontSize = Math.round(size * 0.70);
-  const depth = Math.max(1, Math.round(size * 0.08));
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `900 ${fontSize}px Arial, sans-serif`;
-  for (let i = depth; i >= 1; i--) {
-    ctx.fillStyle = shade(0.4);
-    ctx.fillText('3D', size/2 + i, size/2 + i);
-  }
-  ctx.fillStyle = color;
-  ctx.fillText('3D', size/2, size/2);
-}
-
-function setActionIcon(color) {
-  try {
-    const imageData = {};
-    for (const s of [16, 32, 48]) {
-      const canvas = new OffscreenCanvas(s, s);
-      const ctx = canvas.getContext('2d');
-      drawIcon(ctx, s, color);
-      imageData[s] = ctx.getImageData(0, 0, s, s);
+// Icons liegen als fertige PNGs im Paket (icons/<name><groesse>.png).
+// Frueher wurden sie zur Laufzeit per OffscreenCanvas gezeichnet: einmal bei
+// JEDEM Worker-Start und dreimal bei JEDEM Icon-Wechsel. Das sind
+// Grafikressourcen im Service Worker, und der Worker startet sehr oft – bei
+// jedem Tab-Wechsel und jedem Seitenladen. Verdacht: genau diese Last hat
+// Chrome den Renderer-Prozess zerlegt, bis die Service-Worker-Registrierung
+// ohne "Active worker" dastand und der Worker gar nicht mehr startete.
+function setActionIcon(name) {
+  chrome.action.setIcon({
+    path: {
+      16: `icons/${name}16.png`,
+      32: `icons/${name}32.png`,
+      48: `icons/${name}48.png`
     }
-    chrome.action.setIcon({ imageData });
-  } catch {}
+  }, () => {
+    // lastError abholen, sonst unbehandelte Rejection wenn das Ziel weg ist
+    if (chrome.runtime.lastError) return;
+  });
 }
-
-(async () => {
-  try {
-    const canvas = new OffscreenCanvas(48, 48);
-    const ctx = canvas.getContext('2d');
-    drawIcon(ctx, 48, '#22c55e');
-    const blob = await canvas.convertToBlob({ type: 'image/png' });
-    const buf = await blob.arrayBuffer();
-    const bytes = new Uint8Array(buf);
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-    iconDataUrl = 'data:image/png;base64,' + btoa(binary);
-  } catch (err) {
-    console.error('Icon konnte nicht generiert werden:', err);
-  }
-})();
 
 function showNotification(title, message) {
   try {
     chrome.notifications.create({
       type: 'basic',
-      iconUrl: iconDataUrl,
+      iconUrl: 'icon128.png',
       title: title,
       message: message,
       priority: 2

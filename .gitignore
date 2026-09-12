@@ -4,6 +4,7 @@
 # ... außer diesen Dateien:
 !.gitignore
 !LICENSE
+!CHANGELOG.md
 !manifest.json
 !background.js
 !content_isolated.js
@@ -15,6 +16,8 @@
 !jszip.min.js
 !icon128.png
 !icon_startup.png
+!icons/
+!icons/*.png
 !google5c730e0506b25dd0.html
 !index.html
 !privacy.html
