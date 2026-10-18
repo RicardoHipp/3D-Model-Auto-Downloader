@@ -4,17 +4,26 @@ const pauseHint = document.getElementById('pauseHint');
 const debugToggle = document.getElementById('debugToggle');
 const debugHint   = document.getElementById('debugHint');
 
+const t = (key) => chrome.i18n.getMessage(key);
+
+// Statische Texte sofort uebersetzen - die im HTML stehenden deutschen Texte
+// sind nur Fallback, falls getMessage nichts liefert.
+for (const el of document.querySelectorAll('[data-i18n]')) {
+  const msg = t(el.dataset.i18n);
+  if (msg) el.textContent = msg;
+}
+
 function applyPauseState(paused) {
   if (paused) {
-    badge.textContent = 'Pausiert';
+    badge.textContent = t('statusPaused');
     badge.className = 'badge paused';
-    pauseBtn.textContent = 'Wieder aktivieren';
+    pauseBtn.textContent = t('resumeButton');
     pauseBtn.className = 'pause-btn do-resume';
     pauseHint.style.display = 'block';
   } else {
-    badge.textContent = 'Aktiv';
+    badge.textContent = t('statusActive');
     badge.className = 'badge active';
-    pauseBtn.textContent = 'Bis zum Neustart deaktivieren';
+    pauseBtn.textContent = t('pauseButton');
     pauseBtn.className = 'pause-btn do-pause';
     pauseHint.style.display = 'none';
   }

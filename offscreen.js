@@ -26,12 +26,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+// WICHTIG: Offscreen-Dokumente haben KEINEN Zugriff auf chrome.i18n – dort gibt
+// es praktisch nur chrome.runtime. Übersetzt wird deshalb im Service Worker;
+// von hier gehen nur der Textschlüssel und seine Platzhalter raus.
+function localisedError(key, params) {
+  const err = new Error(key);
+  err.i18nKey = key;
+  err.i18nParams = params || [];
+  return err;
+}
+
 async function handleUnzipAndDownload(url, folderName, source) {
   try {
     // Wichtig: credentials: 'include' sorgt dafür, dass Cookies (Login) mitgesendet werden
     const response = await fetch(url, { credentials: 'include' });
     if (!response.ok) {
-      throw new Error(`HTTP-Fehler beim Laden der Datei! Status: ${response.status}`);
+      throw localisedError('errorHttp', [String(response.status)]);
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -40,7 +50,7 @@ async function handleUnzipAndDownload(url, folderName, source) {
     const files = Object.entries(zip.files).filter(([_, entry]) => !entry.dir);
 
     if (files.length === 0) {
-      throw new Error('Die Zip-Datei enthält keine entpackbaren Dateien.');
+      throw localisedError('errorEmptyZip');
     }
 
     // Gehe durch alle Dateien im ZIP-Archiv
@@ -73,18 +83,22 @@ async function handleUnzipAndDownload(url, folderName, source) {
       }
     }
 
-    // Erfolg an Service Worker melden
+    // Erfolg an Service Worker melden – der übersetzt und zeigt die Meldung
     chrome.runtime.sendMessage({
       action: 'successNotification',
-      message: `${source}: "${folderName}" wurde erfolgreich entpackt.`
+      source,
+      folderName
     });
 
   } catch (error) {
     console.error('Fehler beim Entpacken:', error);
-    // Fehler an Service Worker melden
-    chrome.runtime.sendMessage({ 
-      action: 'errorNotification', 
-      message: error.message 
+    // Fehler an Service Worker melden. Nur unsere eigenen Fehler tragen einen
+    // Schlüssel; alles andere (Netzwerk, JSZip) geht als Rohtext durch.
+    chrome.runtime.sendMessage({
+      action: 'errorNotification',
+      i18nKey: error.i18nKey || null,
+      i18nParams: error.i18nParams || [],
+      message: error.message
     });
   } finally {
     // Dem Service-Worker mitteilen, dass dieser Download fertig ist

@@ -235,11 +235,11 @@ function flushNotifications() {
   if (pendingNotifications.length === 0) return;
   if (pendingNotifications.length === 1) {
     const { source, fileName } = pendingNotifications[0];
-    showNotification(source, `"${fileName}" wurde heruntergeladen.`);
+    showNotification(source, chrome.i18n.getMessage('notifyOneFile', [fileName]));
   } else {
     const sources = [...new Set(pendingNotifications.map(n => n.source))];
-    const title = sources.length === 1 ? sources[0] : '3D Downloads';
-    showNotification(title, `${pendingNotifications.length} Dateien wurden heruntergeladen.`);
+    const title = sources.length === 1 ? sources[0] : chrome.i18n.getMessage('notifyMultiSourceTitle');
+    showNotification(title, chrome.i18n.getMessage('notifyManyFiles', [String(pendingNotifications.length)]));
   }
   pendingNotifications = [];
 }
@@ -256,10 +256,20 @@ function buildFolderName(modelName, source) {
   const clean = transliterated.replace(/[<>:"/\\|?*]/g, '_').trim();
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
-  const timestamp = `${pad(now.getDate())}.${pad(now.getMonth()+1)}.${now.getFullYear()}`;
-  return `${clean}_von_${source}_${timestamp}`;
+  // ISO-Datum: in jeder Sprache gleich lesbar und sortiert im Dateiexplorer
+  // chronologisch, weil nach Namen sortieren dann auch nach Datum sortiert.
+  const timestamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  // Sprachneutral: kein Bindewort, damit der Ordnername in jeder
+  // Oberflaechensprache identisch ausfaellt.
+  return `${clean}_${source}_${timestamp}`;
 }
 
+// saveAs: false bei allen eigenen Downloads.
+// Hat der Nutzer "Speicherort immer erfragen" aktiviert, wuerde Chrome sonst
+// fuer JEDE Datei einen Dialog zeigen - bei einem entpackten ZIP also zwanzig
+// hintereinander. Die Erweiterung wird ja gerade installiert, damit nicht mehr
+// gefragt wird. Chromes Dialog fuer den urspruenglichen Download der Webseite
+// bleibt davon unberuehrt, den koennen wir nicht unterdruecken.
 function downloadImage(imageUrl, folderName) {
   if (DEBUG) console.log('[IMG]', folderName.substring(0, 40), '| url:', !!imageUrl, '| bereitsGeladen:', downloadedImageFolders.has(folderName));
   if (!imageUrl || downloadedImageFolders.has(folderName)) return;
@@ -275,7 +285,8 @@ function downloadImage(imageUrl, folderName) {
   chrome.downloads.download({
     url: imageUrl,
     filename: `STL_Downloads/${folderName}/preview.${ext}`,
-    conflictAction: 'uniquify'
+    conflictAction: 'uniquify',
+    saveAs: false
   }, () => {
     handledUrls.delete(imageUrl);
   });
@@ -353,7 +364,8 @@ async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
     chrome.downloads.download({
       url: cdnUrl,
       filename: `STL_Downloads/${finalFolderName}/${safeFileName}`,
-      conflictAction: 'uniquify'
+      conflictAction: 'uniquify',
+      saveAs: false
     }, () => {
       handledUrls.delete(cdnUrl);
       try { handledUrls.delete(new URL(cdnUrl).href); } catch {}
@@ -416,7 +428,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.downloads.download({
       url: message.url,
       filename: safe,
-      conflictAction: 'uniquify'
+      conflictAction: 'uniquify',
+      saveAs: false
     }, () => {
       activeExtractions = Math.max(0, activeExtractions - 1);
       handledUrls.delete(message.url);
@@ -425,11 +438,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true; // asynchrone sendResponse ankündigen
   }
+  // Übersetzt wird hier, nicht im Offscreen-Dokument: dort gibt es kein chrome.i18n.
   if (message.action === 'successNotification') {
-    showNotification('Erfolg', message.message);
+    showNotification(
+      chrome.i18n.getMessage('notifySuccessTitle'),
+      chrome.i18n.getMessage('notifyUnpacked', [message.source, message.folderName])
+    );
   }
   if (message.action === 'errorNotification') {
-    showNotification('Fehler', message.message);
+    const text = message.i18nKey
+      ? chrome.i18n.getMessage(message.i18nKey, message.i18nParams || [])
+      : message.message;
+    showNotification(chrome.i18n.getMessage('notifyErrorTitle'), text);
   }
   if (message.action === 'downloadFinished') {
     loadState().then(() => {
@@ -596,7 +616,8 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     chrome.downloads.download({
       url: downloadItem.url,
       filename: `STL_Downloads/${finalFolderName}/${cleanFileName}`,
-      conflictAction: 'uniquify'
+      conflictAction: 'uniquify',
+      saveAs: false
     }, () => handledUrls.delete(downloadItem.url));
     if (imageUrl) downloadImage(imageUrl, finalFolderName);
     queueNotification(source, cleanFileName);

@@ -4,6 +4,53 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.0.5] – 2026-10-18
+
+### Hinzugefügt
+
+- **Englische Oberfläche.** Die Erweiterung liegt jetzt auf Englisch und Deutsch
+  vor (`_locales/`); Chrome wählt automatisch die Sprache des Browsers.
+  Englisch ist die Standardsprache – wer weder Englisch noch Deutsch eingestellt
+  hat, bekommt sie zu sehen.
+
+  Hintergrund: 53 % der wöchentlichen Nutzer sind englischsprachig, dazu kommen
+  Russisch, Französisch und Portugiesisch. Deutsch lag zuletzt unter "Sonstige".
+  Mit einer rein deutschen Oberfläche wurde fast jede zweite Installation wieder
+  entfernt.
+
+### Bekannte Einschränkung
+
+- **Chrome-Einstellung "Vor dem Download jeweils nachfragen, wo gespeichert
+  werden soll".** Ist sie aktiv, erscheint beim Entpacken eines ZIP-Archivs ein
+  Speichern-Dialog pro enthaltener Datei. Die Dateien landen zwar im richtigen
+  Ordner, der Pfad ist im Dialog bereits vorausgefüllt – aber bei zwanzig
+  Dateien sind das zwanzig Bestätigungen.
+
+  Die Erweiterung setzt bei ihren eigenen Downloads inzwischen `saveAs: false`.
+  Das genügt nicht: Die Browser-Einstellung hat Vorrang, und eine Erweiterung
+  kann eine ausdrückliche Nutzerentscheidung nicht übergehen. Ein anderer
+  Lösungsweg wird geprüft.
+
+  Wer viele ZIP-Archive lädt, schaltet die Einstellung solange am besten ab.
+
+### Geändert
+
+- **Neues Ordnerschema:** `Benchy_Thingiverse_2026-10-18` statt
+  `Benchy_von_Thingiverse_18.10.2026`. Zwei Änderungen auf einmal, damit es bei
+  einem einzigen Bruch bleibt:
+
+  - Das Bindewort `_von_` entfällt, damit der Ordnername in jeder
+    Oberflächensprache identisch ist.
+  - Das Datum steht im ISO-Format (`JJJJ-MM-TT`). Das ist international
+    eindeutig und sortiert im Dateiexplorer chronologisch – nach Namen sortieren
+    heißt damit auch nach Datum sortieren.
+
+  Hinweis für Bestandsnutzer: Lädst du ein Modell erneut herunter, das du vor
+  diesem Update schon einmal geladen hattest, entsteht ein zweiter Ordner nach
+  dem neuen Schema neben dem alten. Bereits gespeicherte Dateien bleiben
+  unberührt.
+- Name und Kurzbeschreibung im Store sind damit ebenfalls übersetzbar.
+
 ## [1.0.4] – 2026-09-13
 
 ### Behoben
@@ -77,6 +124,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ZIP-Dateien von MakerWorld, Printables und Thingiverse in nach Modellname und
   Plattform benannte Unterordner. ZIP-Archive werden im Arbeitsspeicher entpackt.
 
+[1.0.5]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.5
 [1.0.4]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.4
 [1.0.3]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.3
 [1.0.2]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.2

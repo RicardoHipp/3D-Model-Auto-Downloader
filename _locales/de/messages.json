@@ -1,0 +1,114 @@
+{
+  "appName": {
+    "message": "3D Model Auto-Downloader",
+    "description": "Name der Erweiterung. Markenname, bleibt in jeder Sprache gleich."
+  },
+  "appDescription": {
+    "message": "Lädt STL, 3MF und ZIP-Dateien von MakerWorld, Printables und Thingiverse automatisch in sortierte Unterordner.",
+    "description": "Kurzbeschreibung im Chrome Web Store. Grenze: 132 Zeichen."
+  },
+  "statusLabel": {
+    "message": "Status",
+    "description": "Popup: Beschriftung der Statuszeile."
+  },
+  "statusActive": {
+    "message": "Aktiv",
+    "description": "Popup: Badge, solange die Erweiterung arbeitet."
+  },
+  "statusPaused": {
+    "message": "Pausiert",
+    "description": "Popup: Badge, solange die Erweiterung pausiert ist."
+  },
+  "pauseButton": {
+    "message": "Bis zum Neustart deaktivieren",
+    "description": "Popup: Schaltfläche, die die Erweiterung pausiert."
+  },
+  "resumeButton": {
+    "message": "Wieder aktivieren",
+    "description": "Popup: Schaltfläche, die die Erweiterung fortsetzt."
+  },
+  "pauseHint": {
+    "message": "Downloads werden ignoriert bis der Browser neu gestartet wird.",
+    "description": "Popup: Erklärung, solange pausiert ist."
+  },
+  "debugLabel": {
+    "message": "Debug-Modus",
+    "description": "Popup: Beschriftung des Debug-Schalters."
+  },
+  "debugHint": {
+    "message": "Zeigt detaillierte Logs in der Browser-Konsole (F12). Seite neu laden zum Aktivieren.",
+    "description": "Popup: Erklärung, solange der Debug-Modus an ist."
+  },
+  "howToTitle": {
+    "message": "So funktioniert's",
+    "description": "Popup: Überschrift der Kurzanleitung."
+  },
+  "howToText": {
+    "message": "Lade ein Modell wie gewohnt herunter. Die Dateien landen sortiert in:",
+    "description": "Popup: erste Zeile der Kurzanleitung, danach folgt der Zielpfad."
+  },
+  "howToIcon": {
+    "message": "Grünes Symbol = Seite wird unterstützt (Thingiverse, MakerWorld, Printables).",
+    "description": "Popup: erklärt, was das grüne Symbol in der Leiste bedeutet."
+  },
+  "notifySuccessTitle": {
+    "message": "Erfolg",
+    "description": "Titel der Benachrichtigung bei Erfolg."
+  },
+  "notifyErrorTitle": {
+    "message": "Fehler",
+    "description": "Titel der Benachrichtigung bei einem Fehler."
+  },
+  "notifyMultiSourceTitle": {
+    "message": "3D Downloads",
+    "description": "Titel, wenn Dateien von mehreren Plattformen kamen."
+  },
+  "notifyOneFile": {
+    "message": "\"$FILE$\" wurde heruntergeladen.",
+    "description": "Benachrichtigung für eine einzelne geladene Datei.",
+    "placeholders": {
+      "file": {
+        "content": "$1",
+        "example": "Benchy.stl"
+      }
+    }
+  },
+  "notifyManyFiles": {
+    "message": "$COUNT$ Dateien wurden heruntergeladen.",
+    "description": "Benachrichtigung für mehrere geladene Dateien.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "7"
+      }
+    }
+  },
+  "notifyUnpacked": {
+    "message": "$SOURCE$: \"$FOLDER$\" wurde erfolgreich entpackt.",
+    "description": "Benachrichtigung nach dem Entpacken eines ZIP-Archivs.",
+    "placeholders": {
+      "source": {
+        "content": "$1",
+        "example": "Thingiverse"
+      },
+      "folder": {
+        "content": "$2",
+        "example": "Benchy_Thingiverse_2026-10-18"
+      }
+    }
+  },
+  "errorHttp": {
+    "message": "Die Datei konnte nicht geladen werden. HTTP-Status: $STATUS$",
+    "description": "Fehler, wenn das ZIP-Archiv nicht geladen werden konnte.",
+    "placeholders": {
+      "status": {
+        "content": "$1",
+        "example": "403"
+      }
+    }
+  },
+  "errorEmptyZip": {
+    "message": "Die Zip-Datei enthält keine entpackbaren Dateien.",
+    "description": "Fehler, wenn ein Archiv leer war."
+  }
+}

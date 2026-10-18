@@ -1,0 +1,114 @@
+{
+  "appName": {
+    "message": "3D Model Auto-Downloader",
+    "description": "Extension name. Brand name, kept identical in every language."
+  },
+  "appDescription": {
+    "message": "Automatically saves STL, 3MF and ZIP files from MakerWorld, Printables and Thingiverse into sorted subfolders.",
+    "description": "Short description shown in the Chrome Web Store. Limit: 132 characters."
+  },
+  "statusLabel": {
+    "message": "Status",
+    "description": "Popup: label of the status row."
+  },
+  "statusActive": {
+    "message": "Active",
+    "description": "Popup: badge shown while the extension is working."
+  },
+  "statusPaused": {
+    "message": "Paused",
+    "description": "Popup: badge shown while the extension is paused."
+  },
+  "pauseButton": {
+    "message": "Disable until restart",
+    "description": "Popup: button that pauses the extension."
+  },
+  "resumeButton": {
+    "message": "Enable again",
+    "description": "Popup: button that resumes the extension."
+  },
+  "pauseHint": {
+    "message": "Downloads are ignored until the browser is restarted.",
+    "description": "Popup: explanation shown while paused."
+  },
+  "debugLabel": {
+    "message": "Debug mode",
+    "description": "Popup: label of the debug toggle."
+  },
+  "debugHint": {
+    "message": "Shows detailed logs in the browser console (F12). Reload the page to activate.",
+    "description": "Popup: explanation shown while debug mode is on."
+  },
+  "howToTitle": {
+    "message": "How it works",
+    "description": "Popup: heading of the short usage guide."
+  },
+  "howToText": {
+    "message": "Download a model the way you always do. The files land sorted in:",
+    "description": "Popup: first line of the usage guide, followed by the target path."
+  },
+  "howToIcon": {
+    "message": "Green icon = supported site (Thingiverse, MakerWorld, Printables).",
+    "description": "Popup: explains what the green toolbar icon means."
+  },
+  "notifySuccessTitle": {
+    "message": "Success",
+    "description": "Notification title for a successful operation."
+  },
+  "notifyErrorTitle": {
+    "message": "Error",
+    "description": "Notification title for a failed operation."
+  },
+  "notifyMultiSourceTitle": {
+    "message": "3D Downloads",
+    "description": "Notification title when files came from more than one platform."
+  },
+  "notifyOneFile": {
+    "message": "\"$FILE$\" has been downloaded.",
+    "description": "Notification body for a single downloaded file.",
+    "placeholders": {
+      "file": {
+        "content": "$1",
+        "example": "Benchy.stl"
+      }
+    }
+  },
+  "notifyManyFiles": {
+    "message": "$COUNT$ files have been downloaded.",
+    "description": "Notification body for several downloaded files.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "7"
+      }
+    }
+  },
+  "notifyUnpacked": {
+    "message": "$SOURCE$: \"$FOLDER$\" was extracted successfully.",
+    "description": "Notification body after a ZIP archive was unpacked.",
+    "placeholders": {
+      "source": {
+        "content": "$1",
+        "example": "Thingiverse"
+      },
+      "folder": {
+        "content": "$2",
+        "example": "Benchy_Thingiverse_2026-10-18"
+      }
+    }
+  },
+  "errorHttp": {
+    "message": "Could not load the file. HTTP status: $STATUS$",
+    "description": "Error when the ZIP archive could not be fetched.",
+    "placeholders": {
+      "status": {
+        "content": "$1",
+        "example": "403"
+      }
+    }
+  },
+  "errorEmptyZip": {
+    "message": "The ZIP file contains no extractable files.",
+    "description": "Error when an archive turned out to be empty."
+  }
+}
