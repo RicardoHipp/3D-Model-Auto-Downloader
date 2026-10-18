@@ -51,3 +51,19 @@ debugToggle.addEventListener('change', () => {
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'session' && 'isPaused' in changes) applyPauseState(!!changes.isPaused.newValue);
 });
+
+document.getElementById('openOptions').addEventListener('click', (e) => {
+  e.preventDefault();
+  chrome.runtime.openOptionsPage();
+});
+
+// Hat der Nutzer einen eigenen Zielordner gewaehlt, muss die Anleitung seinen
+// Ordner nennen - sonst sucht er die Dateien im falschen Verzeichnis.
+(async () => {
+  try {
+    const { state, name } = await targetDirStatus();
+    if (state === 'none') return;
+    document.getElementById('howtoPath').textContent = name + '/';
+    if (state === 'prompt') document.getElementById('targetWarn').hidden = false;
+  } catch { /* ohne Zielordner bleibt der Standardpfad stehen */ }
+})();

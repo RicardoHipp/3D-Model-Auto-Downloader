@@ -110,5 +110,83 @@
   "errorEmptyZip": {
     "message": "The ZIP file contains no extractable files.",
     "description": "Error when an archive turned out to be empty."
+  },
+  "popupTargetLink": {
+    "message": "Change target folder",
+    "description": "Popup: link to the options page."
+  },
+  "popupTargetWarn": {
+    "message": "Permission for your target folder has expired. Please renew it in the options.",
+    "description": "Popup: shown when the directory permission fell back to 'prompt'."
+  },
+  "optionsHeading": {
+    "message": "Target folder",
+    "description": "Options page: main heading."
+  },
+  "optionsIntro": {
+    "message": "By default the extension saves everything under „Downloads/STL_Downloads/“. You can pick your own folder instead – the extension then writes straight into it.",
+    "description": "Options page: explains what the setting does."
+  },
+  "optionsChoose": {
+    "message": "Choose folder",
+    "description": "Options page: button, no folder picked yet."
+  },
+  "optionsChangeFolder": {
+    "message": "Choose a different folder",
+    "description": "Options page: button, a folder is already set."
+  },
+  "optionsRenew": {
+    "message": "Renew permission",
+    "description": "Options page: button shown when permission fell back to 'prompt'."
+  },
+  "optionsReset": {
+    "message": "Back to default",
+    "description": "Options page: button that removes the chosen folder."
+  },
+  "optionsStateNone": {
+    "message": "No folder chosen – files go to Downloads/STL_Downloads/",
+    "description": "Options page: status, default is active."
+  },
+  "optionsStateGranted": {
+    "message": "Active: files are saved to „$FOLDER$“",
+    "description": "Options page: status, folder is writable.",
+    "placeholders": {
+      "folder": {
+        "content": "$1",
+        "example": "STL_Downloads"
+      }
+    }
+  },
+  "optionsStatePrompt": {
+    "message": "„$FOLDER$“ is set, but the permission needs renewing.",
+    "description": "Options page: status, permission must be re-granted.",
+    "placeholders": {
+      "folder": {
+        "content": "$1",
+        "example": "STL_Downloads"
+      }
+    }
+  },
+  "optionsPickFailed": {
+    "message": "Folder could not be used: $REASON$",
+    "description": "Options page: error when picking a folder failed.",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "it contains system files"
+      }
+    }
+  },
+  "optionsWhyHeading": {
+    "message": "What is this for?",
+    "description": "Options page: heading of the explanation card."
+  },
+  "optionsWhyText": {
+    "message": "If you told Chrome to ask where to save every download, extracting a ZIP archive otherwise brings up one dialog per file. With your own target folder those dialogs disappear entirely.",
+    "description": "Options page: explains the benefit."
+  },
+  "optionsNote": {
+    "message": "Note: Chrome blocks the Downloads folder itself for this feature. A subfolder inside it works – you can create one right in the picker.",
+    "description": "Options page: note about Chrome's blocked-folder list."
   }
 }

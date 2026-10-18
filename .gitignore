@@ -13,6 +13,9 @@
 !offscreen.js
 !popup.html
 !popup.js
+!options.html
+!options.js
+!target_dir.js
 !jszip.min.js
 !icon128.png
 !icon_startup.png

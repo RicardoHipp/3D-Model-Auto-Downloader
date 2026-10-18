@@ -12,7 +12,7 @@ if not exist "%SEVENZIP%" (
 
 if exist extension.zip del extension.zip
 
-"%SEVENZIP%" a -tzip extension.zip manifest.json background.js content_isolated.js content_main.js icon128.png icon_startup.png icons _locales jszip.min.js offscreen.html offscreen.js popup.html popup.js
+"%SEVENZIP%" a -tzip extension.zip manifest.json background.js content_isolated.js content_main.js icon128.png icon_startup.png icons _locales jszip.min.js offscreen.html offscreen.js popup.html popup.js options.html options.js target_dir.js
 
 if %ERRORLEVEL% equ 0 (
     echo.

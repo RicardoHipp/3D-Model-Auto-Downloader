@@ -66,8 +66,21 @@ async function handleUnzipAndDownload(url, folderName, source) {
         if (pathLower.endsWith('.stl')) mimeType = 'model/stl';
         else if (pathLower.endsWith('.3mf')) mimeType = 'application/vnd.ms-package.3dmanufacturing-3dmodel+xml';
 
-        // Datei als ArrayBuffer laden und Blob mit passendem MIME-Type erstellen
         const fileData = await fileEntry.async('arraybuffer');
+
+        // Eigener Zielordner: direkt schreiben. Spart den Umweg ueber Blob-URL
+        // und chrome.downloads - und damit die Speicherort-Dialoge, die sonst
+        // bei JEDER Datei des Archivs erscheinen. Das "STL_Downloads/"-Praefix
+        // entfaellt dabei, der Nutzer hat seinen Ordner ja schon gewaehlt.
+        let written = false;
+        try {
+          written = await writeToTargetDir(`${folderName}/${cleanPath}`, fileData);
+        } catch (targetError) {
+          console.error('Zielordner-Schreiben fehlgeschlagen, nutze Downloads:', targetError);
+        }
+        if (written) continue;
+
+        // Normaler Weg: MIME-Type erzwingen, damit Chrome nicht in .txt umbenennt
         const blob = new Blob([fileData], { type: mimeType });
         const blobUrl = URL.createObjectURL(blob);
 

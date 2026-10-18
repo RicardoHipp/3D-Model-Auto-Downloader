@@ -2,6 +2,8 @@
 // Erscheint sie, bricht der Code danach ab.
 console.log('=== SW GESTARTET ===');
 
+importScripts('target_dir.js');
+
 // Fängt alles ab, was im Top-Level-Durchlauf unbehandelt hochkommt. Ohne das
 // stirbt der Durchlauf still und es wird kein einziger Listener registriert.
 self.addEventListener('error', (e) => {
@@ -264,13 +266,31 @@ function buildFolderName(modelName, source) {
   return `${clean}_${source}_${timestamp}`;
 }
 
+// Versucht, eine Datei direkt in den vom Nutzer gewaehlten Zielordner zu
+// schreiben. Gibt false zurueck, wenn kein Ordner gesetzt ist, die Berechtigung
+// fehlt oder der Abruf scheitert - dann uebernimmt chrome.downloads wie bisher.
+// Dieser Fallback ist wichtig: Nicht jede CDN-URL laesst sich per fetch holen,
+// etwa wenn sie auf einen Host umleitet, fuer den wir keine Berechtigung haben.
+async function tryWriteToTarget(url, relativePath) {
+  try {
+    const { state } = await targetDirStatus();
+    if (state !== 'granted') return false;
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) return false;
+    return await writeToTargetDir(relativePath, await res.arrayBuffer());
+  } catch (err) {
+    if (DEBUG) console.log('[Ziel] Direktes Schreiben fehlgeschlagen:', err.message);
+    return false;
+  }
+}
+
 // saveAs: false bei allen eigenen Downloads.
 // Hat der Nutzer "Speicherort immer erfragen" aktiviert, wuerde Chrome sonst
 // fuer JEDE Datei einen Dialog zeigen - bei einem entpackten ZIP also zwanzig
 // hintereinander. Die Erweiterung wird ja gerade installiert, damit nicht mehr
 // gefragt wird. Chromes Dialog fuer den urspruenglichen Download der Webseite
 // bleibt davon unberuehrt, den koennen wir nicht unterdruecken.
-function downloadImage(imageUrl, folderName) {
+async function downloadImage(imageUrl, folderName) {
   if (DEBUG) console.log('[IMG]', folderName.substring(0, 40), '| url:', !!imageUrl, '| bereitsGeladen:', downloadedImageFolders.has(folderName));
   if (!imageUrl || downloadedImageFolders.has(folderName)) return;
   downloadedImageFolders.add(folderName);
@@ -282,6 +302,10 @@ function downloadImage(imageUrl, folderName) {
     if (pathname.endsWith('.png')) ext = 'png';
     else if (pathname.endsWith('.webp')) ext = 'webp';
   } catch {}
+  if (await tryWriteToTarget(imageUrl, `${folderName}/preview.${ext}`)) {
+    handledUrls.delete(imageUrl);
+    return;
+  }
   chrome.downloads.download({
     url: imageUrl,
     filename: `STL_Downloads/${folderName}/preview.${ext}`,
@@ -361,15 +385,21 @@ async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
     // Beide URL-Varianten eintragen (Kyrillisch + percent-encoded), da Chrome beim Download normalisiert
     handledUrls.add(cdnUrl);
     try { handledUrls.add(new URL(cdnUrl).href); } catch {}
-    chrome.downloads.download({
-      url: cdnUrl,
-      filename: `STL_Downloads/${finalFolderName}/${safeFileName}`,
-      conflictAction: 'uniquify',
-      saveAs: false
-    }, () => {
+    const direkt = await tryWriteToTarget(cdnUrl, `${finalFolderName}/${safeFileName}`);
+    if (direkt) {
       handledUrls.delete(cdnUrl);
       try { handledUrls.delete(new URL(cdnUrl).href); } catch {}
-    });
+    } else {
+      chrome.downloads.download({
+        url: cdnUrl,
+        filename: `STL_Downloads/${finalFolderName}/${safeFileName}`,
+        conflictAction: 'uniquify',
+        saveAs: false
+      }, () => {
+        handledUrls.delete(cdnUrl);
+        try { handledUrls.delete(new URL(cdnUrl).href); } catch {}
+      });
+    }
     if (imageUrl) {
       downloadImage(imageUrl, finalFolderName);
     } else if (tab?.id && !downloadedImageFolders.has(finalFolderName) && !pendingImageFolders.has(finalFolderName)) {
@@ -613,12 +643,16 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
       || (isUuid && modelName !== 'Model' ? modelName.replace(/[<>:"/\\|?*]/g, '_').trim() + ext : nameFromUrl)
       || 'file.stl';
     handledUrls.add(downloadItem.url);
-    chrome.downloads.download({
-      url: downloadItem.url,
-      filename: `STL_Downloads/${finalFolderName}/${cleanFileName}`,
-      conflictAction: 'uniquify',
-      saveAs: false
-    }, () => handledUrls.delete(downloadItem.url));
+    if (await tryWriteToTarget(downloadItem.url, `${finalFolderName}/${cleanFileName}`)) {
+      handledUrls.delete(downloadItem.url);
+    } else {
+      chrome.downloads.download({
+        url: downloadItem.url,
+        filename: `STL_Downloads/${finalFolderName}/${cleanFileName}`,
+        conflictAction: 'uniquify',
+        saveAs: false
+      }, () => handledUrls.delete(downloadItem.url));
+    }
     if (imageUrl) downloadImage(imageUrl, finalFolderName);
     queueNotification(source, cleanFileName);
   }

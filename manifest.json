@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "__MSG_appDescription__",
   "homepage_url": "https://github.com/RicardoHipp/3D-Model-Auto-Downloader",
   "permissions": [
@@ -38,6 +38,10 @@
       "run_at": "document_start"
     }
   ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": { "128": "icon_startup.png" }

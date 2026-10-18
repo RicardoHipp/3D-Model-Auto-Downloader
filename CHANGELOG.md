@@ -4,6 +4,33 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.0.6] – 2026-10-18
+
+### Hinzugefügt
+
+- **Eigener Zielordner.** Über die Optionsseite lässt sich ein beliebiger Ordner
+  auswählen; die Erweiterung schreibt die Dateien dann direkt dorthin, statt den
+  Umweg über den Downloads-Ordner zu nehmen. Ohne Auswahl bleibt alles wie
+  bisher – der Standard ist unverändert `Downloads/STL_Downloads/`.
+
+  Damit verschwindet auch die in 1.0.5 beschriebene Einschränkung: Wer einen
+  eigenen Ordner gewählt hat, bekommt beim Entpacken eines ZIP-Archivs **keine
+  Speicherort-Dialoge mehr**, selbst wenn in Chrome "Vor dem Download jeweils
+  nachfragen" aktiviert ist. Die Erweiterung benutzt für diesen Weg Chromes
+  Download-Funktion gar nicht mehr.
+
+  Hinweise:
+
+  - Den Downloads-Ordner **selbst** sperrt Chrome für diese Funktion. Ein
+    Unterordner darin ist erlaubt und lässt sich im Auswahlfenster auch neu
+    anlegen.
+  - Die Berechtigung übersteht einen Browser-Neustart. Falls sie doch einmal
+    verfällt, weist das Popup darauf hin und sie lässt sich mit einem Klick
+    erneuern.
+  - Schlägt das direkte Schreiben für eine Datei fehl, fällt die Erweiterung
+    automatisch auf den bisherigen Weg zurück; der Download geht also nicht
+    verloren.
+
 ## [1.0.5] – 2026-10-18
 
 ### Hinzugefügt
@@ -124,6 +151,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ZIP-Dateien von MakerWorld, Printables und Thingiverse in nach Modellname und
   Plattform benannte Unterordner. ZIP-Archive werden im Arbeitsspeicher entpackt.
 
+[1.0.6]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.6
 [1.0.5]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.5
 [1.0.4]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.4
 [1.0.3]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.3

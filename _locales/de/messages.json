@@ -110,5 +110,83 @@
   "errorEmptyZip": {
     "message": "Die Zip-Datei enthält keine entpackbaren Dateien.",
     "description": "Fehler, wenn ein Archiv leer war."
+  },
+  "popupTargetLink": {
+    "message": "Zielordner ändern",
+    "description": "Popup: Link zur Optionsseite."
+  },
+  "popupTargetWarn": {
+    "message": "Die Berechtigung für deinen Zielordner ist abgelaufen. Bitte in den Optionen erneuern.",
+    "description": "Popup: erscheint, wenn die Ordnerberechtigung auf 'prompt' zurückgefallen ist."
+  },
+  "optionsHeading": {
+    "message": "Zielordner",
+    "description": "Optionsseite: Hauptüberschrift."
+  },
+  "optionsIntro": {
+    "message": "Standardmäßig legt die Erweiterung alle Dateien unter „Downloads/STL_Downloads/“ ab. Du kannst stattdessen einen eigenen Ordner wählen – dann schreibt die Erweiterung direkt dorthin.",
+    "description": "Optionsseite: erklärt die Einstellung."
+  },
+  "optionsChoose": {
+    "message": "Ordner wählen",
+    "description": "Optionsseite: Schaltfläche, noch kein Ordner gewählt."
+  },
+  "optionsChangeFolder": {
+    "message": "Anderen Ordner wählen",
+    "description": "Optionsseite: Schaltfläche, wenn bereits ein Ordner gesetzt ist."
+  },
+  "optionsRenew": {
+    "message": "Berechtigung erneuern",
+    "description": "Optionsseite: Schaltfläche bei abgelaufener Berechtigung."
+  },
+  "optionsReset": {
+    "message": "Auf Standard zurücksetzen",
+    "description": "Optionsseite: entfernt den gewählten Ordner."
+  },
+  "optionsStateNone": {
+    "message": "Kein Ordner gewählt – Dateien landen in Downloads/STL_Downloads/",
+    "description": "Optionsseite: Status, Standard ist aktiv."
+  },
+  "optionsStateGranted": {
+    "message": "Aktiv: Dateien werden in „$FOLDER$“ gespeichert",
+    "description": "Optionsseite: Status, Ordner ist beschreibbar.",
+    "placeholders": {
+      "folder": {
+        "content": "$1",
+        "example": "STL_Downloads"
+      }
+    }
+  },
+  "optionsStatePrompt": {
+    "message": "„$FOLDER$“ ist eingestellt, die Berechtigung muss aber erneuert werden.",
+    "description": "Optionsseite: Status, Berechtigung fehlt.",
+    "placeholders": {
+      "folder": {
+        "content": "$1",
+        "example": "STL_Downloads"
+      }
+    }
+  },
+  "optionsPickFailed": {
+    "message": "Ordner konnte nicht verwendet werden: $REASON$",
+    "description": "Optionsseite: Fehler bei der Ordnerauswahl.",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "it contains system files"
+      }
+    }
+  },
+  "optionsWhyHeading": {
+    "message": "Wofür ist das gut?",
+    "description": "Optionsseite: Überschrift der Erklärung."
+  },
+  "optionsWhyText": {
+    "message": "Hast du in Chrome eingestellt, dass bei jedem Download nach dem Speicherort gefragt wird, erscheint beim Entpacken eines ZIP-Archivs sonst ein Dialog pro Datei. Mit einem eigenen Zielordner entfallen diese Dialoge vollständig.",
+    "description": "Optionsseite: erklärt den Nutzen."
+  },
+  "optionsNote": {
+    "message": "Hinweis: Den Downloads-Ordner selbst sperrt Chrome für diese Funktion. Einen Unterordner darin kannst du wählen – im Auswahlfenster lässt sich dafür auch ein neuer Ordner anlegen.",
+    "description": "Optionsseite: Hinweis zur Sperrliste von Chrome."
   }
 }
