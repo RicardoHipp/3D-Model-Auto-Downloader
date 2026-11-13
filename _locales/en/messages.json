@@ -39,14 +39,6 @@
     "message": "Shows detailed logs in the browser console (F12). Reload the page to activate.",
     "description": "Popup: explanation shown while debug mode is on."
   },
-  "howToTitle": {
-    "message": "How it works",
-    "description": "Popup: heading of the short usage guide."
-  },
-  "howToText": {
-    "message": "Download a model the way you always do. The files land sorted in:",
-    "description": "Popup: first line of the usage guide, followed by the target path."
-  },
   "howToIcon": {
     "message": "Green icon = supported site (Thingiverse, MakerWorld, Printables).",
     "description": "Popup: explains what the green toolbar icon means."
@@ -111,20 +103,16 @@
     "message": "The ZIP file contains no extractable files.",
     "description": "Error when an archive turned out to be empty."
   },
-  "popupTargetLink": {
-    "message": "Change target folder",
-    "description": "Popup: link to the options page."
-  },
   "popupTargetWarn": {
     "message": "Permission for your target folder has expired. Please renew it in the options.",
     "description": "Popup: shown when the directory permission fell back to 'prompt'."
   },
   "optionsHeading": {
-    "message": "Target folder",
+    "message": "Settings",
     "description": "Options page: main heading."
   },
   "optionsIntro": {
-    "message": "By default the extension saves everything under „Downloads/STL_Downloads/“. You can pick your own folder instead – the extension then writes straight into it.",
+    "message": "The extension saves your files into a folder of your choice. Until one is set, downloads are stopped and nothing is saved.",
     "description": "Options page: explains what the setting does."
   },
   "optionsChoose": {
@@ -139,12 +127,8 @@
     "message": "Renew permission",
     "description": "Options page: button shown when permission fell back to 'prompt'."
   },
-  "optionsReset": {
-    "message": "Back to default",
-    "description": "Options page: button that removes the chosen folder."
-  },
   "optionsStateNone": {
-    "message": "No folder chosen – files go to Downloads/STL_Downloads/",
+    "message": "No folder set yet – downloads are stopped until you choose one.",
     "description": "Options page: status, default is active."
   },
   "optionsStateGranted": {
@@ -158,7 +142,7 @@
     }
   },
   "optionsStatePrompt": {
-    "message": "„$FOLDER$“ is set, but the permission needs renewing.",
+    "message": "“$FOLDER$” is set, but the permission needs renewing. Choose “Allow on every visit” when asked – then it stays permanent.",
     "description": "Options page: status, permission must be re-granted.",
     "placeholders": {
       "folder": {
@@ -178,15 +162,908 @@
     }
   },
   "optionsWhyHeading": {
-    "message": "What is this for?",
+    "message": "Why is a folder required?",
     "description": "Options page: heading of the explanation card."
   },
   "optionsWhyText": {
-    "message": "If you told Chrome to ask where to save every download, extracting a ZIP archive otherwise brings up one dialog per file. With your own target folder those dialogs disappear entirely.",
+    "message": "Chrome does not let extensions write anywhere on disk. Once you have granted access to a folder, the extension can save files straight into it – without Chrome asking for a location for every single file.",
     "description": "Options page: explains the benefit."
   },
   "optionsNote": {
     "message": "Note: Chrome blocks the Downloads folder itself for this feature. A subfolder inside it works – you can create one right in the picker.",
     "description": "Options page: note about Chrome's blocked-folder list."
+  },
+  "noTargetTitle": {
+    "message": "No target folder set",
+    "description": "Notification title when a download was blocked because no folder is configured."
+  },
+  "noTargetMessage": {
+    "message": "The download was stopped. Choose a target folder first – then your files will be saved there automatically.",
+    "description": "Notification body when a download was blocked."
+  },
+  "popupNoTarget": {
+    "message": "No target folder set yet – downloads are stopped.",
+    "description": "Popup: shown while no target folder is set and downloads are therefore blocked."
+  },
+  "permExpiredTitle": {
+    "message": "Permission expired",
+    "description": "Notification title when the folder permission needs renewing."
+  },
+  "permExpiredMessage": {
+    "message": "The download was stopped. Renew access to your target folder – choose “Allow on every visit” there to make it permanent.",
+    "description": "Notification body when the folder permission needs renewing."
+  },
+  "optionsFirstRunNote": {
+    "message": "Chrome will ask once more the next time you start the browser. Choose “Allow on every visit” there and you won't be asked again. Chrome does not offer that option the very first time.",
+    "description": "Options page: explains Chrome's two-step permission flow."
+  },
+  "bannerNoTarget": {
+    "message": "Download stopped: no target folder has been set yet.",
+    "description": "Banner on the page when a download was stopped because no folder is set."
+  },
+  "bannerPermExpired": {
+    "message": "Download stopped: permission for the target folder has expired.",
+    "description": "Banner on the page when a download was stopped because permission expired."
+  },
+  "bannerOpenOptions": {
+    "message": "Settings opened",
+    "description": "Banner footer telling the user the options page was opened."
+  },
+  "optionsForget": {
+    "message": "Remove folder",
+    "description": "Options page: button that clears the stored folder."
+  },
+  "optionsForgetNote": {
+    "message": "“Remove folder” only clears the assignment inside the extension – downloads are stopped again afterwards. The access you granted Chrome for that folder stays in place. To take it back, use “Revoke access in Chrome” above: it opens the “File editing” setting, where you click the trash icon next to the extension.",
+    "description": "Options page: explains the difference between clearing the assignment and revoking Chrome's permission."
+  },
+  "optionsRevoke": {
+    "message": "Revoke access in Chrome",
+    "description": "Options page: button that opens Chrome's file-editing settings."
+  },
+  "libHeading": {
+    "message": "My models",
+    "description": "Library page."
+  },
+  "libSearch": {
+    "message": "Search by name …",
+    "description": "Library page."
+  },
+  "libAllPlatforms": {
+    "message": "All platforms",
+    "description": "Library page."
+  },
+  "libSortNewest": {
+    "message": "Newest first",
+    "description": "Library page."
+  },
+  "libSortOldest": {
+    "message": "Oldest first",
+    "description": "Library page."
+  },
+  "libSortName": {
+    "message": "Name A–Z",
+    "description": "Library page."
+  },
+  "libLoading": {
+    "message": "Reading folder …",
+    "description": "Library page."
+  },
+  "libDelete": {
+    "message": "Move to trash",
+    "description": "Library page."
+  },
+  "libNoFolder": {
+    "message": "No target folder has been set yet. Without one the extension saves nothing – so there is nothing to show here."
+  },
+  "libNoPermission": {
+    "message": "Chrome no longer grants access to your target folder. Once it is renewed, your models will show up here again."
+  },
+  "libEmpty": {
+    "message": "No models in the target folder yet.",
+    "description": "Library page."
+  },
+  "libCount": {
+    "message": "$N$ models",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "47"
+      }
+    }
+  },
+  "libCountFiltered": {
+    "message": "$N$ of $GESAMT$ models",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      },
+      "gesamt": {
+        "content": "$2",
+        "example": "47"
+      }
+    }
+  },
+  "libFileCount": {
+    "message": "$N$ files",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "23"
+      }
+    }
+  },
+  "libDeleteConfirm": {
+    "message": "Move “$NAME$” to the trash? You can restore it from there as long as you do not empty the trash.",
+    "description": "Library page.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Benchy"
+      }
+    }
+  },
+  "libError": {
+    "message": "Could not read the folder: $GRUND$",
+    "description": "Library page.",
+    "placeholders": {
+      "grund": {
+        "content": "$1",
+        "example": "NotAllowedError"
+      }
+    }
+  },
+  "expIntro": {
+    "message": "In “My models” every model has a button that opens its folder in Windows Explorer. Two small files are needed for that – the two steps below set them up. All of this is optional: leave it out and everything else keeps working unchanged, only that one button stays without effect.",
+    "description": "Explorer integration."
+  },
+  "expPathLabel": {
+    "message": "Full path to exactly this target folder",
+    "description": "Explorer integration."
+  },
+  "expPathHelp": {
+    "message": "It has to be the same folder you picked under “Target folder” – just as a full path. You can find it by opening the folder in Explorer and clicking the address bar at the top.",
+    "description": "Explorer integration."
+  },
+  "expNeedsPath": {
+    "message": "Enter the path of your target folder, otherwise the button stays hidden.",
+    "description": "Explorer integration."
+  },
+  "libOpenExplorer": {
+    "message": "Open in Explorer",
+    "description": "Explorer integration."
+  },
+  "expPathMismatch": {
+    "message": "The path does not end with “$NAME$”. That is the folder you selected above – enter the same one here, otherwise the button opens the wrong directory.",
+    "description": "Explorer integration.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "0000"
+      }
+    }
+  },
+  "expNoTargetYet": {
+    "message": "Select a target folder above first.",
+    "description": "Explorer integration."
+  },
+  "expOwnIntro": {
+    "message": "Two small files that we generate here. Both are shown below in plain text – so you can see exactly what ends up on your computer. That is the difference to a ready-made program, where you have to trust the vendor.",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnCodeVbs": {
+    "message": "Contents of open-folder.vbs",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnCodeReg": {
+    "message": "Contents of stldl-protokoll.reg",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnSafety": {
+    "message": "What the script can do: it checks whether the given folder exists and opens it in Explorer. Nothing else – it starts no other programs and deletes nothing. The registry file only writes under your own user account, not system-wide.",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnVbsNote": {
+    "message": "Note: the script uses VBScript because that runs without a window flashing up. Microsoft has deprecated VBScript – at some point it will disappear from Windows. Until then it works reliably; after that this feature would need a different approach.",
+    "description": "Explorer integration (own setup)."
+  },
+  "expTestButton": {
+    "message": "Test now – open target folder",
+    "description": "Explorer test button."
+  },
+  "navTarget": {
+    "message": "Target folder",
+    "description": "Options page navigation."
+  },
+  "navExplorer": {
+    "message": "Open folder in Explorer",
+    "description": "Options page navigation."
+  },
+  "expPathOk": {
+    "message": "Path matches: $PFAD$",
+    "description": "Explorer integration.",
+    "placeholders": {
+      "pfad": {
+        "content": "$1",
+        "example": "D:\u00000"
+      }
+    }
+  },
+  "expTestRunning": {
+    "message": "Checking …",
+    "description": "Explorer integration."
+  },
+  "expTestWaiting": {
+    "message": "The target folder was called. One moment – checking whether the script responded.",
+    "description": "Explorer integration."
+  },
+  "expTestOk": {
+    "message": "All set. The Explorer button in “My models” works.",
+    "description": "Explorer integration."
+  },
+  "expTestFailed": {
+    "message": "No response from the script. Either it is not set up yet, or the registry file was not run. The address called was: $URL$",
+    "description": "Explorer integration.",
+    "placeholders": {
+      "url": {
+        "content": "$1",
+        "example": "stldl:D:\u00000"
+      }
+    }
+  },
+  "libExpNoPath": {
+    "message": "The path of your target folder is still missing.",
+    "description": "Explorer integration."
+  },
+  "libExpNoScript": {
+    "message": "The script for opening Explorer is not set up. You can find the instructions in the settings.",
+    "description": "Explorer integration."
+  },
+  "libExpOpening": {
+    "message": "Opening …",
+    "description": "Explorer integration."
+  },
+  "libExpOpenSettings": {
+    "message": "Open settings",
+    "description": "Explorer integration."
+  },
+  "expUndoHeading": {
+    "message": "Undo",
+    "description": "Explorer integration (undo)."
+  },
+  "expUndoText": {
+    "message": "This file removes the registry entry again. The script itself stays in place and can be deleted afterwards, along with its folder.",
+    "description": "Explorer integration (undo)."
+  },
+  "expUndoDownload": {
+    "message": "Download stldl-protokoll-entfernen.reg",
+    "description": "Explorer integration (undo)."
+  },
+  "expAssignButton": {
+    "message": "Link folder"
+  },
+  "expAssignRunning": {
+    "message": "Waiting for your choice …"
+  },
+  "expAssignWaiting": {
+    "message": "A Windows dialog is opening. Pick exactly the folder you shared under “Target folder”."
+  },
+  "expAssignOk": {
+    "message": "Linked: $PFAD$. The Explorer button in “My models” works now.",
+    "placeholders": {
+      "pfad": {
+        "content": "$1",
+        "example": "D:\u00000"
+      }
+    }
+  },
+  "expAssignCancelled": {
+    "message": "Cancelled. Nothing was changed."
+  },
+  "expAssignFailed": {
+    "message": "No response from the script. Either you closed the Windows dialog without picking a folder – or the script is not set up. In that case, go through steps 1 to 5 again."
+  },
+  "expAssignDialogTitle": {
+    "message": "Pick the same folder you granted under “Target folder” in the extension – the one your models are saved in.\nNot your downloads folder, and not the folder of a single model."
+  },
+  "expAssignDialogError": {
+    "message": "That is not the folder the extension uses.\n\nIt means the folder you granted under “Target folder” – the one your downloaded models are in. Start again and pick that one."
+  },
+  "expNeedsPermission": {
+    "message": "Linking needs write access to the target folder. Renew it above under “Target folder”, then try again here."
+  },
+  "expScriptOld": {
+    "message": "The installed script is an older version ($ALT$ instead of $NEU$). Download it again in step 2 and replace the file in the folder – the registry file stays as it is.",
+    "placeholders": {
+      "alt": {
+        "content": "$1",
+        "example": "1"
+      },
+      "neu": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "expManualSummary": {
+    "message": "Enter the path by hand instead"
+  },
+  "stoppedTitle": {
+    "message": "The download was stopped"
+  },
+  "stoppedNoneText": {
+    "message": "This page opened by itself because no target folder has been set yet – without one the extension cannot save anything. Pick a folder below, then start the download again."
+  },
+  "stoppedPermText": {
+    "message": "This page opened by itself because Chrome no longer grants access to your target folder. Press “Renew permission” below and choose “Allow on every visit”. Then start the download again."
+  },
+  "welcomeVersion": {
+    "message": "Version $V$",
+    "placeholders": {
+      "v": {
+        "content": "$1",
+        "example": "1.0.7"
+      }
+    }
+  },
+  "welcomeTitleUpdate": {
+    "message": "What’s new in version $V$",
+    "placeholders": {
+      "v": {
+        "content": "$1",
+        "example": "1.0.7"
+      }
+    }
+  },
+  "welcomeIntroUpdateFrom": {
+    "message": "The extension was updated from version $VON$. Here is what changed:",
+    "placeholders": {
+      "von": {
+        "content": "$1",
+        "example": "1.0.6"
+      }
+    }
+  },
+  "welcomeTitleInstall": {
+    "message": "Welcome"
+  },
+  "welcomeIntroInstall": {
+    "message": "This extension downloads models from MakerWorld, Printables and Thingiverse into sorted folders automatically. One click on “Download” on the site is enough – the files end up on your drive with proper names, ZIP archives already unpacked."
+  },
+  "welcomeIntroUpdate": {
+    "message": "The extension has been updated. Here is what changed:"
+  },
+  "welcomeFeaturesInstall": {
+    "message": "What the extension does"
+  },
+  "welcomeFeaturesUpdate": {
+    "message": "What’s new"
+  },
+  "welcomeBadgeNew": {
+    "message": "NEW"
+  },
+  "welcomeFooter": {
+    "message": "This page only appears once after an update. The full list of changes is in the changelog on GitHub."
+  },
+  "welcomeSetupHeading": {
+    "message": "One step is still missing"
+  },
+  "welcomeSetupText": {
+    "message": "Choose where the files should be saved. Without a target folder the extension stops every download – that is the price for Chrome never asking about the location again."
+  },
+  "welcomeSetupButton": {
+    "message": "Choose target folder"
+  },
+  "welcomeOpenOptions": {
+    "message": "Open settings"
+  },
+  "welcomeOpenLibrary": {
+    "message": "Open My models"
+  },
+  "welcomeF1Titel": {
+    "message": "My models"
+  },
+  "welcomeF1Text": {
+    "message": "An overview of everything you downloaded – with preview images, search and a filter by platform. Each model shows the files it contains, and you can delete it from there too. Reachable from the extension’s icon."
+  },
+  "welcomeF2Titel": {
+    "message": "Printables and MakerWorld without prompts"
+  },
+  "welcomeF2Text": {
+    "message": "Downloads on these two platforms are now intercepted before the browser even starts them. Chrome no longer asks where to save – not even when a ZIP archive is unpacked. Thingiverse already worked this way."
+  },
+  "welcomeF3Titel": {
+    "message": "Progress shown on the page"
+  },
+  "welcomeF3Text": {
+    "message": "A small bar in the bottom right shows what is being downloaded and unpacked – and speaks up when something did not work."
+  },
+  "welcomeF4Titel": {
+    "message": "Open the folder in Explorer"
+  },
+  "welcomeF4Text": {
+    "message": "If you like, you can set up a button that opens a model’s folder straight in Windows Explorer. The settings page creates two small files for that and shows their contents in plain text. Entirely optional – everything else works without them."
+  },
+  "welcomeF5Titel": {
+    "message": "The target folder is now required"
+  },
+  "welcomeF5Text": {
+    "message": "Files used to land in “Downloads/STL_Downloads” without any choice. That route went through Chrome’s download function – and therefore through the save-location dialog as soon as someone had “Ask where to save each file” enabled. A download is now stopped rather than taking that detour."
+  },
+  "welcomeF2TitelInstall": {
+    "message": "No save-location prompts"
+  },
+  "welcomeF2TextInstall": {
+    "message": "The extension intercepts the download before the browser starts it. Chrome therefore never asks where to save – not even when a ZIP archive is unpacked into many separate files."
+  },
+  "welcomeFooterInstall": {
+    "message": "This page only appears once. All changes to the extension are listed in the changelog on GitHub."
+  },
+  "libSetupButton": {
+    "message": "Choose target folder"
+  },
+  "popupLibraryButton": {
+    "message": "My models"
+  },
+  "popupOptionsButton": {
+    "message": "Settings"
+  },
+  "bannerFailed": {
+    "message": "Download failed"
+  },
+  "vbsHeader": {
+    "message": "Opens a folder in Windows Explorer and, when asked, reports its full\npath back.\nWindows runs this script when an address starting with stldl: is clicked.\nPart of the Chrome extension \"3D Model Auto-Downloader\".\n\nIf something goes wrong it writes open-folder.log next to itself – that\nfile says what actually arrived. When all goes well, nothing is written."
+  },
+  "vbsVersion": {
+    "message": "Version of this script. It is the first line of every reply, so the\nextension can recognise an outdated script."
+  },
+  "vbsFiles": {
+    "message": "Names of the files the script and the extension talk through."
+  },
+  "vbsUtf8": {
+    "message": "Builds characters from a sequence of bytes. Needed because a character\nsuch as an en dash takes three bytes in UTF-8 – without this step it\nwould become three characters instead of one, and the folder could not\nbe found."
+  },
+  "vbsUrlDecode": {
+    "message": "Resolve percent escapes: Chrome encodes the address before Windows\npasses it on – a colon arrives as %3A, for example."
+  },
+  "vbsReadFile": {
+    "message": "Reads a small text file. Returns an empty string if it does not exist."
+  },
+  "vbsSetup": {
+    "message": "--- Task: report our own path ------------------------------------------\n\nThe extension does not know the full path of its target folder – Chrome\nnever hands it out. So it drops a marker into the folder and calls this\ntask. We ask the user for the folder and only answer if the marker is\ninside it. That proves it is the same folder – and no foreign path can\nbe obtained this way."
+  },
+  "vbsFolderFlags": {
+    "message": "&H1 = real folders only, 17 = start at \"This PC\""
+  },
+  "vbsUnicode": {
+    "message": "Unicode (third parameter True), otherwise accents in the path are lost"
+  },
+  "vbsMain": {
+    "message": "--- Main part -----------------------------------------------------------"
+  },
+  "vbsScheme": {
+    "message": "Strip the \"stldl:\" scheme, and any leading slashes too"
+  },
+  "vbsTask": {
+    "message": "A question mark means: a task, not a path. The fields are separated by |\nbecause that character is not allowed in Windows paths."
+  },
+  "vbsTrailingSlash": {
+    "message": "Remove a trailing backslash, otherwise FolderExists finds nothing"
+  },
+  "vbsSafety": {
+    "message": "Safety net: only open folders that exist, never execute anything.\nNo program can be started through this address."
+  },
+  "vbsHeartbeat": {
+    "message": "Leave a sign of life in the opened folder. The extension looks for it a\nmoment later and knows from it that the script really ran – a protocol\ncall gives no feedback at all. The extension deletes the file right away."
+  },
+  "regRegister": {
+    "message": "Registers the \"stldl:\" scheme with Windows and links it to the script\nopen-folder.vbs. Part of the Chrome extension\n\"3D Model Auto-Downloader\"."
+  },
+  "regUndoHint": {
+    "message": "To undo this, the settings of the extension offer the file\nstldl-protokoll-entfernen.reg."
+  },
+  "regUndo": {
+    "message": "Removes the \"stldl:\" scheme again. The minus sign in front of the key\nname means delete. Affects this user account only, nothing system-wide.\n\nThe script open-folder.vbs stays where it is – you can simply delete it\nafterwards, together with its folder."
+  },
+  "expS6Dialog": {
+    "message": "The first time, Chrome asks one more thing first: “Open Microsoft ® Windows Based Script Host?” – that is the script being started, not the folder picker yet. Tick “Always allow …” there and confirm. With that box ticked the question stays away – without it, it comes back on every “Open in Explorer”."
+  },
+  "libMoving": {
+    "message": "Moving …",
+    "description": "Library page."
+  },
+  "libMoveFailed": {
+    "message": "Moving failed: $REASON$",
+    "description": "Library page.",
+    "placeholders": {
+      "reason": {
+        "content": "$1",
+        "example": "NotAllowedError"
+      }
+    }
+  },
+  "libTrashButton": {
+    "message": "Trash",
+    "description": "Library page."
+  },
+  "libTrashBack": {
+    "message": "Back to my models",
+    "description": "Library page."
+  },
+  "libTrashEmptyButton": {
+    "message": "Empty trash",
+    "description": "Library page."
+  },
+  "libTrashEmptyConfirm": {
+    "message": "Permanently delete all $COUNT$ models in the trash? This cannot be undone.",
+    "description": "Library page.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libTrashNothing": {
+    "message": "The trash is empty.",
+    "description": "Library page."
+  },
+  "libTrashNote": {
+    "message": "Deleted models stay in the folder _Trash_ inside your target folder until you empty the trash.",
+    "description": "Library page."
+  },
+  "libRestore": {
+    "message": "Restore",
+    "description": "Library page."
+  },
+  "libRestoring": {
+    "message": "Restoring …",
+    "description": "Library page."
+  },
+  "libDeleteForever": {
+    "message": "Delete permanently",
+    "description": "Library page."
+  },
+  "libDeleteForeverConfirm": {
+    "message": "Permanently delete “$NAME$”? The folder and every file in it will be removed from the disk – this cannot be undone.",
+    "description": "Library page.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Benchy"
+      }
+    }
+  },
+  "libDeletedOn": {
+    "message": "Deleted on $DATE$",
+    "description": "Library page.",
+    "placeholders": {
+      "date": {
+        "content": "$1",
+        "example": "2026-10-25"
+      }
+    }
+  },
+  "libCancel": {
+    "message": "Cancel",
+    "description": "Library page."
+  },
+  "libMoveFiles": {
+    "message": "$DONE$ of $TOTAL$ files",
+    "description": "Library page.",
+    "placeholders": {
+      "done": {
+        "content": "$1",
+        "example": "12"
+      },
+      "total": {
+        "content": "$2",
+        "example": "212"
+      }
+    }
+  },
+  "modelBack": {
+    "message": "← Back to overview",
+    "description": "Model page."
+  },
+  "modelPick": {
+    "message": "Pick a file on the left.",
+    "description": "Model page."
+  },
+  "modelHelp": {
+    "message": "Drag = rotate · Right button = pan · Wheel = zoom",
+    "description": "Model page."
+  },
+  "modelNoPreview": {
+    "message": "There is no preview for $TYPE$ files.",
+    "description": "Model page.",
+    "placeholders": {
+      "type": {
+        "content": "$1",
+        "example": "PDF"
+      }
+    }
+  },
+  "modelNoWebgl": {
+    "message": "This browser has no WebGL 2 – without it the model cannot be displayed. You can still open the files in Explorer.",
+    "description": "Model page."
+  },
+  "modelReadFailed": {
+    "message": "“$FILE$” could not be read. The file may be damaged.",
+    "description": "Model page.",
+    "placeholders": {
+      "file": {
+        "content": "$1",
+        "example": "part.stl"
+      }
+    }
+  },
+  "modelLook": {
+    "message": "Appearance",
+    "description": "Model page."
+  },
+  "modelColor": {
+    "message": "Colour",
+    "description": "Model page."
+  },
+  "modelBg": {
+    "message": "Background",
+    "description": "Model page."
+  },
+  "modelReset": {
+    "message": "Reset",
+    "description": "Model page."
+  },
+  "modelAmbient": {
+    "message": "Ambient light",
+    "description": "Model page."
+  },
+  "modelKey": {
+    "message": "Head light",
+    "description": "Model page."
+  },
+  "modelFill": {
+    "message": "Fill light",
+    "description": "Model page."
+  },
+  "modelFillDir": {
+    "message": "Light direction",
+    "description": "Model page."
+  },
+  "modelFillHeight": {
+    "message": "Light height",
+    "description": "Model page."
+  },
+  "modelRim": {
+    "message": "Rim light",
+    "description": "Model page."
+  },
+  "modelGamma": {
+    "message": "Gamma",
+    "description": "Model page."
+  },
+  "vbsAskTitle": {
+    "message": "Set up 3D Model Auto-Downloader",
+    "description": "Options page."
+  },
+  "vbsAskText": {
+    "message": "This script will copy itself into your user folder and then open stldl-protokoll.reg so Windows knows the “stldl:” scheme. Windows will ask again before that happens.\n\nAfter that you pick your target folder.\n\nLocation:",
+    "description": "Options page."
+  },
+  "vbsDoneText": {
+    "message": "Done. You can close this window and go back to the browser – it now says that everything is set up.",
+    "description": "Options page."
+  },
+  "vbsDoneNoFolder": {
+    "message": "The script is set up, but no target folder was chosen. You can assign it later in the settings.",
+    "description": "Options page."
+  },
+  "vbsRegMissing": {
+    "message": "The file stldl-protokoll.reg is not next to this script. Download both files again in the settings and keep them in the same folder.",
+    "description": "Options page."
+  },
+  "vbsCopyFailed": {
+    "message": "The script could not copy itself into your user folder.",
+    "description": "Options page."
+  },
+  "vbsInstall": {
+    "message": "--- Setting up by double-click ------------------------------------\n\nCalled without parameters, the script sets itself up: it creates its\nfolder, copies itself into it and opens the registry file next to it.\nIt does not write the entry itself - Windows does that, with its own\nconfirmation, so the change stays visible.",
+    "description": "Options page."
+  },
+  "vbsAskFirst": {
+    "message": "Ask first, act second. A double-click must not do anything the user\ndid not expect.",
+    "description": "Options page."
+  },
+  "vbsRegStep": {
+    "message": "The registry file sits next to this script, where the browser put\nthem both. Open it visibly instead of importing it silently: Windows\nis meant to ask.",
+    "description": "Options page."
+  },
+  "vbsFolderStep": {
+    "message": "Finally the target folder. The marker inside proves it is the\nfolder the extension is waiting for.",
+    "description": "Options page."
+  },
+  "vbsMarker": {
+    "message": "No marker in the folder, no answer - otherwise any path could be\nobtained through this route.",
+    "description": "Options page."
+  },
+  "expSetupS1Titel": {
+    "message": "Get both files",
+    "description": "Options page."
+  },
+  "expSetupS1Text": {
+    "message": "One click downloads two files into your downloads folder – open-folder.vbs and stldl-protokoll.reg – and opens it in Explorer. Keep them next to each other: the script looks for the second one beside itself. Older files of the same name are replaced so no copy with “(1)” in its name appears.",
+    "description": "Options page."
+  },
+  "expSetupButton": {
+    "message": "Download files and open folder",
+    "description": "Options page."
+  },
+  "expSetupS2Titel": {
+    "message": "Double-click open-folder.vbs",
+    "description": "Options page."
+  },
+  "expSetupS2Text": {
+    "message": "Windows first asks whether you really want to run the file – it came from the internet, hence the question. Then the script explains what it does, Windows confirms the registry entry, and finally you pick your target folder – exactly the one you granted above under “Target folder” for your model files. Any other folder is rejected.",
+    "description": "Options page."
+  },
+  "expSetupWaiting": {
+    "message": "Waiting for open-folder.vbs. Double-click the file in your downloads folder now – this page notices by itself once it has worked.",
+    "description": "Options page."
+  },
+  "expSetupOk": {
+    "message": "Set up: $PATH$. The Explorer button in “My models” works now.",
+    "description": "Options page.",
+    "placeholders": {
+      "path": {
+        "content": "$1",
+        "example": "D:\\0000"
+      }
+    }
+  },
+  "expSetupTimeout": {
+    "message": "No answer. Did you run the script? You can double-click it again at any time – or press the button above once more.",
+    "description": "Options page."
+  },
+  "expSetupCancel": {
+    "message": "Cancel",
+    "description": "Options page."
+  },
+  "expSetupDownloaded": {
+    "message": "Downloaded. The folder should have opened – double-click open-folder.vbs there.",
+    "description": "Options page."
+  },
+  "expSetupRunning": {
+    "message": "Waiting for the script …",
+    "description": "Options page."
+  },
+  "regPlain": {
+    "message": "When you click \"Open in Explorer\", this entry runs exactly one command\nline, namely this one:",
+    "description": "Registry file comment."
+  },
+  "regPlainHex": {
+    "message": "The @=hex(2): line below holds exactly that command line - character by\ncharacter as hex, nothing else.\n\nPlain text is not possible here. The .reg format writes plain text only\nas an ordinary string (REG_SZ), and that type does not expand\n%LOCALAPPDATA% - Windows would even mistake the %L inside it for one of\nits own placeholders. The type needed is REG_EXPAND_SZ, and the file\nformat knows it only as hex(2).\n\nTo see in plain text what actually arrived, run afterwards:\n  reg query \"HKCU\\Software\\Classes\\stldl\\shell\\open\\command\"",
+    "description": "Registry file comment."
+  },
+  "vbsTargetStore": {
+    "message": "Remembers the assigned target folder next to the script. Every later\ncall is compared against it - see the check further down.",
+    "description": "Script comment."
+  },
+  "vbsGuard": {
+    "message": "Safety gate: a registered URL scheme can be invoked by any website,\nnot just this extension. Only the assigned target folder and what\nlies inside it are opened. The comparison is pure text work and\nhappens before the script touches the path: merely asking whether\na folder \\\\server\\x exists would make Windows sign in there and\nsend the credentials along.\nPaths containing .. are refused: they would pass the comparison and\nstill end up somewhere else.",
+    "description": "Script comment."
+  },
+  "modelSize": {
+    "message": "$B$ × $T$ × $H$ mm",
+    "description": "Model page. Model dimensions",
+    "placeholders": {
+      "b": {
+        "content": "$1",
+        "example": "128,4"
+      },
+      "t": {
+        "content": "$2",
+        "example": "62,0"
+      },
+      "h": {
+        "content": "$3",
+        "example": "15,3"
+      }
+    }
+  },
+  "modelParts": {
+    "message": "Parts",
+    "description": "Model page."
+  },
+  "modelSavePart": {
+    "message": "Part as STL",
+    "description": "Model page."
+  },
+  "modelSaveAll": {
+    "message": "All parts",
+    "description": "Model page."
+  },
+  "modelPartN": {
+    "message": "Part $NR$",
+    "description": "Model page.",
+    "placeholders": {
+      "nr": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "modelSaving": {
+    "message": "Writing …",
+    "description": "Model page."
+  },
+  "modelSavedOne": {
+    "message": "Saved: $NAME$",
+    "description": "Model page.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "box_03.stl"
+      }
+    }
+  },
+  "modelSavedMany": {
+    "message": "$ANZAHL$ parts saved to folder “$ORDNER$”",
+    "description": "Model page.",
+    "placeholders": {
+      "anzahl": {
+        "content": "$1",
+        "example": "24"
+      },
+      "ordner": {
+        "content": "$2",
+        "example": "Einzelteile"
+      }
+    }
+  },
+  "modelSplit": {
+    "message": "Export individual parts",
+    "description": "Model page."
+  },
+  "modelSplitOff": {
+    "message": "Back to files",
+    "description": "Model page."
+  },
+  "infoHeader": {
+    "message": "Where this model came from. Below the blank line there is room for your own notes or the description from the website.",
+    "description": "info.txt header comment."
+  },
+  "modelOpenSource": {
+    "message": "View on $WO$ ↗",
+    "description": "Model page. Link to the source website.",
+    "placeholders": {
+      "wo": {
+        "content": "$1",
+        "example": "MakerWorld"
+      }
+    }
+  },
+  "modelSplitting": {
+    "message": "Splitting …",
+    "description": "Model page."
+  },
+  "modelOneBody": {
+    "message": "The file contains only one connected body.",
+    "description": "Model page."
+  },
+  "libCopyPath": {
+    "message": "Copy path",
+    "description": "Model page."
+  },
+  "libCopied": {
+    "message": "Copied",
+    "description": "Model page."
+  },
+  "modelFileColors": {
+    "message": "Colours from file",
+    "description": "Model page."
   }
 }

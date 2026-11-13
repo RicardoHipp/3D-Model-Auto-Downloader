@@ -39,14 +39,6 @@
     "message": "Zeigt detaillierte Logs in der Browser-Konsole (F12). Seite neu laden zum Aktivieren.",
     "description": "Popup: Erklärung, solange der Debug-Modus an ist."
   },
-  "howToTitle": {
-    "message": "So funktioniert's",
-    "description": "Popup: Überschrift der Kurzanleitung."
-  },
-  "howToText": {
-    "message": "Lade ein Modell wie gewohnt herunter. Die Dateien landen sortiert in:",
-    "description": "Popup: erste Zeile der Kurzanleitung, danach folgt der Zielpfad."
-  },
   "howToIcon": {
     "message": "Grünes Symbol = Seite wird unterstützt (Thingiverse, MakerWorld, Printables).",
     "description": "Popup: erklärt, was das grüne Symbol in der Leiste bedeutet."
@@ -111,20 +103,16 @@
     "message": "Die Zip-Datei enthält keine entpackbaren Dateien.",
     "description": "Fehler, wenn ein Archiv leer war."
   },
-  "popupTargetLink": {
-    "message": "Zielordner ändern",
-    "description": "Popup: Link zur Optionsseite."
-  },
   "popupTargetWarn": {
     "message": "Die Berechtigung für deinen Zielordner ist abgelaufen. Bitte in den Optionen erneuern.",
     "description": "Popup: erscheint, wenn die Ordnerberechtigung auf 'prompt' zurückgefallen ist."
   },
   "optionsHeading": {
-    "message": "Zielordner",
+    "message": "Einstellungen",
     "description": "Optionsseite: Hauptüberschrift."
   },
   "optionsIntro": {
-    "message": "Standardmäßig legt die Erweiterung alle Dateien unter „Downloads/STL_Downloads/“ ab. Du kannst stattdessen einen eigenen Ordner wählen – dann schreibt die Erweiterung direkt dorthin.",
+    "message": "Die Erweiterung legt deine Dateien in einem Ordner deiner Wahl ab. Solange keiner festgelegt ist, werden Downloads gestoppt und nichts gespeichert.",
     "description": "Optionsseite: erklärt die Einstellung."
   },
   "optionsChoose": {
@@ -139,12 +127,8 @@
     "message": "Berechtigung erneuern",
     "description": "Optionsseite: Schaltfläche bei abgelaufener Berechtigung."
   },
-  "optionsReset": {
-    "message": "Auf Standard zurücksetzen",
-    "description": "Optionsseite: entfernt den gewählten Ordner."
-  },
   "optionsStateNone": {
-    "message": "Kein Ordner gewählt – Dateien landen in Downloads/STL_Downloads/",
+    "message": "Noch kein Ordner festgelegt – Downloads werden gestoppt, bis du einen wählst.",
     "description": "Optionsseite: Status, Standard ist aktiv."
   },
   "optionsStateGranted": {
@@ -158,7 +142,7 @@
     }
   },
   "optionsStatePrompt": {
-    "message": "„$FOLDER$“ ist eingestellt, die Berechtigung muss aber erneuert werden.",
+    "message": "„$FOLDER$“ ist eingestellt, die Berechtigung muss aber erneuert werden. Wähle dabei „Bei jedem Besuch zulassen“ – dann bleibt es dauerhaft erlaubt.",
     "description": "Optionsseite: Status, Berechtigung fehlt.",
     "placeholders": {
       "folder": {
@@ -178,15 +162,908 @@
     }
   },
   "optionsWhyHeading": {
-    "message": "Wofür ist das gut?",
+    "message": "Warum ist ein Ordner nötig?",
     "description": "Optionsseite: Überschrift der Erklärung."
   },
   "optionsWhyText": {
-    "message": "Hast du in Chrome eingestellt, dass bei jedem Download nach dem Speicherort gefragt wird, erscheint beim Entpacken eines ZIP-Archivs sonst ein Dialog pro Datei. Mit einem eigenen Zielordner entfallen diese Dialoge vollständig.",
+    "message": "Chrome lässt Erweiterungen nicht frei auf die Festplatte schreiben. Hast du einmal einen Ordner freigegeben, darf die Erweiterung die Dateien direkt dort ablegen – ohne dass Chrome bei jeder einzelnen Datei nach dem Speicherort fragt.",
     "description": "Optionsseite: erklärt den Nutzen."
   },
   "optionsNote": {
     "message": "Hinweis: Den Downloads-Ordner selbst sperrt Chrome für diese Funktion. Einen Unterordner darin kannst du wählen – im Auswahlfenster lässt sich dafür auch ein neuer Ordner anlegen.",
     "description": "Optionsseite: Hinweis zur Sperrliste von Chrome."
+  },
+  "noTargetTitle": {
+    "message": "Kein Zielordner festgelegt",
+    "description": "Titel der Benachrichtigung, wenn ein Download mangels Ordner gestoppt wurde."
+  },
+  "noTargetMessage": {
+    "message": "Der Download wurde gestoppt. Lege zuerst einen Zielordner fest – danach werden deine Dateien automatisch dort gespeichert.",
+    "description": "Text der Benachrichtigung, wenn ein Download gestoppt wurde."
+  },
+  "popupNoTarget": {
+    "message": "Noch kein Zielordner festgelegt – Downloads werden gestoppt.",
+    "description": "Popup: shown while no target folder is set and downloads are therefore blocked."
+  },
+  "permExpiredTitle": {
+    "message": "Berechtigung abgelaufen",
+    "description": "Notification title when the folder permission needs renewing."
+  },
+  "permExpiredMessage": {
+    "message": "Der Download wurde gestoppt. Erneuere den Zugriff auf deinen Zielordner – wähle dabei „Bei jedem Besuch zulassen“, dann bleibt es dauerhaft erlaubt.",
+    "description": "Notification body when the folder permission needs renewing."
+  },
+  "optionsFirstRunNote": {
+    "message": "Beim nächsten Start des Browsers fragt Chrome noch einmal nach. Wähle dort „Bei jedem Besuch zulassen“ – danach ist dauerhaft Ruhe. Beim ersten Mal bietet Chrome diese Option noch nicht an.",
+    "description": "Options page: explains Chrome's two-step permission flow."
+  },
+  "bannerNoTarget": {
+    "message": "Download gestoppt: Es ist noch kein Zielordner festgelegt.",
+    "description": "Banner on the page when a download was stopped because no folder is set."
+  },
+  "bannerPermExpired": {
+    "message": "Download gestoppt: Die Berechtigung für den Zielordner ist abgelaufen.",
+    "description": "Banner on the page when a download was stopped because permission expired."
+  },
+  "bannerOpenOptions": {
+    "message": "Einstellungen wurden geöffnet",
+    "description": "Banner footer telling the user the options page was opened."
+  },
+  "optionsForget": {
+    "message": "Ordner entfernen",
+    "description": "Options page: button that clears the stored folder."
+  },
+  "optionsForgetNote": {
+    "message": "„Ordner entfernen“ löst nur die Zuordnung in der Erweiterung – Downloads werden danach wieder gestoppt. Die Freigabe, die du Chrome für den Ordner erteilt hast, bleibt dabei bestehen. Zurücknehmen kannst du sie oben mit „Freigabe in Chrome zurücknehmen“: Das öffnet die Einstellung „Dateien bearbeiten“, dort auf das Papierkorb-Symbol neben der Erweiterung klicken.",
+    "description": "Options page: explains the difference between clearing the assignment and revoking Chrome's permission."
+  },
+  "optionsRevoke": {
+    "message": "Freigabe in Chrome zurücknehmen",
+    "description": "Options page: button that opens Chrome's file-editing settings."
+  },
+  "libHeading": {
+    "message": "Meine Modelle",
+    "description": "Library page."
+  },
+  "libSearch": {
+    "message": "Nach Namen suchen …",
+    "description": "Library page."
+  },
+  "libAllPlatforms": {
+    "message": "Alle Plattformen",
+    "description": "Library page."
+  },
+  "libSortNewest": {
+    "message": "Neueste zuerst",
+    "description": "Library page."
+  },
+  "libSortOldest": {
+    "message": "Älteste zuerst",
+    "description": "Library page."
+  },
+  "libSortName": {
+    "message": "Name A–Z",
+    "description": "Library page."
+  },
+  "libLoading": {
+    "message": "Ordner wird gelesen …",
+    "description": "Library page."
+  },
+  "libDelete": {
+    "message": "In den Papierkorb",
+    "description": "Library page."
+  },
+  "libNoFolder": {
+    "message": "Es ist noch kein Zielordner festgelegt. Ohne ihn speichert die Erweiterung nichts – und hier gibt es entsprechend nichts zu zeigen."
+  },
+  "libNoPermission": {
+    "message": "Chrome erteilt die Freigabe für deinen Zielordner nicht mehr. Sobald sie erneuert ist, erscheinen deine Modelle wieder hier."
+  },
+  "libEmpty": {
+    "message": "Noch keine Modelle im Zielordner.",
+    "description": "Library page."
+  },
+  "libCount": {
+    "message": "$N$ Modelle",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "47"
+      }
+    }
+  },
+  "libCountFiltered": {
+    "message": "$N$ von $GESAMT$ Modellen",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      },
+      "gesamt": {
+        "content": "$2",
+        "example": "47"
+      }
+    }
+  },
+  "libFileCount": {
+    "message": "$N$ Dateien",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "23"
+      }
+    }
+  },
+  "libDeleteConfirm": {
+    "message": "„$NAME$“ in den Papierkorb verschieben? Von dort kannst du es wiederherstellen, solange du den Papierkorb nicht leerst.",
+    "description": "Library page.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Benchy"
+      }
+    }
+  },
+  "libError": {
+    "message": "Der Ordner konnte nicht gelesen werden: $GRUND$",
+    "description": "Library page.",
+    "placeholders": {
+      "grund": {
+        "content": "$1",
+        "example": "NotAllowedError"
+      }
+    }
+  },
+  "expIntro": {
+    "message": "In „Meine Modelle“ hat jedes Modell einen Knopf, der seinen Ordner im Windows-Explorer öffnet. Dafür sind zwei kleine Dateien nötig – die beiden Schritte unten richten sie ein. Das Ganze ist freiwillig: Lässt du es weg, funktioniert alles andere unverändert weiter, nur dieser eine Knopf bleibt dann ohne Wirkung.",
+    "description": "Explorer integration."
+  },
+  "expPathLabel": {
+    "message": "Vollständiger Pfad zu genau diesem Zielordner",
+    "description": "Explorer integration."
+  },
+  "expPathHelp": {
+    "message": "Es muss derselbe Ordner sein, den du unter „Zielordner“ ausgewählt hast – nur eben als vollständiger Pfad. Du findest ihn, indem du den Ordner im Explorer öffnest und oben in die Adresszeile klickst.",
+    "description": "Explorer integration."
+  },
+  "expNeedsPath": {
+    "message": "Trag noch den Pfad deines Zielordners ein, sonst bleibt der Knopf aus.",
+    "description": "Explorer integration."
+  },
+  "libOpenExplorer": {
+    "message": "Im Explorer öffnen",
+    "description": "Explorer integration."
+  },
+  "expPathMismatch": {
+    "message": "Der Pfad endet nicht auf „$NAME$“. Oben hast du diesen Ordner als Zielordner gewählt – trag denselben hier ein, sonst öffnet der Knopf das falsche Verzeichnis.",
+    "description": "Explorer integration.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "0000"
+      }
+    }
+  },
+  "expNoTargetYet": {
+    "message": "Wähle zuerst oben einen Zielordner aus.",
+    "description": "Explorer integration."
+  },
+  "expOwnIntro": {
+    "message": "Zwei kleine Dateien, die wir hier erzeugen. Beide stehen unten im Klartext – du siehst also genau, was auf deinem Rechner landet. Das ist der Unterschied zu einem fertigen Programm, bei dem du dem Hersteller vertrauen musst.",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnCodeVbs": {
+    "message": "Inhalt von open-folder.vbs",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnCodeReg": {
+    "message": "Inhalt von stldl-protokoll.reg",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnSafety": {
+    "message": "Was das Skript kann: Es prüft, ob der übergebene Ordner existiert, und öffnet ihn im Explorer. Mehr nicht – es startet keine anderen Programme und löscht nichts. Die Registrierungsdatei schreibt nur unter deinem Benutzerkonto, nicht systemweit.",
+    "description": "Explorer integration (own setup)."
+  },
+  "expOwnVbsNote": {
+    "message": "Hinweis: Das Skript nutzt VBScript, weil es damit ohne aufblitzendes Fenster läuft. Microsoft hat VBScript abgekündigt – irgendwann wird es aus Windows verschwinden. Bis dahin funktioniert es zuverlässig; danach müsste diese Funktion anders gelöst werden.",
+    "description": "Explorer integration (own setup)."
+  },
+  "expTestButton": {
+    "message": "Jetzt testen – Zielordner öffnen",
+    "description": "Explorer test button."
+  },
+  "navTarget": {
+    "message": "Zielordner",
+    "description": "Options page navigation."
+  },
+  "navExplorer": {
+    "message": "Ordner im Explorer öffnen",
+    "description": "Options page navigation."
+  },
+  "expPathOk": {
+    "message": "Pfad passt: $PFAD$",
+    "description": "Explorer integration.",
+    "placeholders": {
+      "pfad": {
+        "content": "$1",
+        "example": "D:\u00000"
+      }
+    }
+  },
+  "expTestRunning": {
+    "message": "Wird geprüft …",
+    "description": "Explorer integration."
+  },
+  "expTestWaiting": {
+    "message": "Der Zielordner wurde aufgerufen. Einen Moment – es wird geprüft, ob das Skript geantwortet hat.",
+    "description": "Explorer integration."
+  },
+  "expTestOk": {
+    "message": "Alles eingerichtet. Der Explorer-Knopf in „Meine Modelle“ funktioniert.",
+    "description": "Explorer integration."
+  },
+  "expTestFailed": {
+    "message": "Keine Antwort vom Skript. Entweder ist es noch nicht eingerichtet, oder die Registrierungsdatei wurde nicht ausgeführt. Aufgerufen wurde: $URL$",
+    "description": "Explorer integration.",
+    "placeholders": {
+      "url": {
+        "content": "$1",
+        "example": "stldl:D:\u00000"
+      }
+    }
+  },
+  "libExpNoPath": {
+    "message": "Dafür fehlt noch der Pfad deines Zielordners.",
+    "description": "Explorer integration."
+  },
+  "libExpNoScript": {
+    "message": "Das Skript zum Öffnen des Explorers ist nicht eingerichtet. Die Anleitung dazu steht in den Einstellungen.",
+    "description": "Explorer integration."
+  },
+  "libExpOpening": {
+    "message": "Wird geöffnet …",
+    "description": "Explorer integration."
+  },
+  "libExpOpenSettings": {
+    "message": "Einstellungen öffnen",
+    "description": "Explorer integration."
+  },
+  "expUndoHeading": {
+    "message": "Rückgängig machen",
+    "description": "Explorer integration (undo)."
+  },
+  "expUndoText": {
+    "message": "Mit dieser Datei wird der Registrierungseintrag wieder entfernt. Das Skript selbst bleibt liegen und kann danach samt seinem Ordner gelöscht werden.",
+    "description": "Explorer integration (undo)."
+  },
+  "expUndoDownload": {
+    "message": "stldl-protokoll-entfernen.reg herunterladen",
+    "description": "Explorer integration (undo)."
+  },
+  "expAssignButton": {
+    "message": "Ordner zuordnen"
+  },
+  "expAssignRunning": {
+    "message": "Warte auf deine Auswahl …"
+  },
+  "expAssignWaiting": {
+    "message": "Es geht ein Windows-Dialog auf. Wähle darin genau den Ordner, den du unter „Zielordner“ freigegeben hast."
+  },
+  "expAssignOk": {
+    "message": "Zugeordnet: $PFAD$. Der Explorer-Knopf in „Meine Modelle“ funktioniert jetzt.",
+    "placeholders": {
+      "pfad": {
+        "content": "$1",
+        "example": "D:\u00000"
+      }
+    }
+  },
+  "expAssignCancelled": {
+    "message": "Abgebrochen. Es wurde nichts geändert."
+  },
+  "expAssignFailed": {
+    "message": "Keine Rückmeldung vom Skript. Entweder hast du den Windows-Dialog geschlossen, ohne einen Ordner zu wählen – oder das Skript ist nicht eingerichtet. Dann die Schritte 1 bis 5 noch einmal durchgehen."
+  },
+  "expAssignDialogTitle": {
+    "message": "Wähle hier denselben Ordner aus, den du in der Erweiterung unter „Zielordner“ freigegeben hast – den, in dem deine Modelle gespeichert werden.\nNicht den Download-Ordner und nicht den Ordner eines einzelnen Modells."
+  },
+  "expAssignDialogError": {
+    "message": "Das ist nicht der Ordner, den die Erweiterung benutzt.\n\nGemeint ist der Ordner, den du unter „Zielordner“ freigegeben hast – der, in dem deine heruntergeladenen Modelle liegen. Starte den Vorgang noch einmal und wähle ihn aus."
+  },
+  "expNeedsPermission": {
+    "message": "Für die Zuordnung braucht die Erweiterung Schreibzugriff auf den Zielordner. Oben unter „Zielordner“ erneuern und dann hier nochmal versuchen."
+  },
+  "expScriptOld": {
+    "message": "Das eingerichtete Skript ist eine ältere Fassung ($ALT$ statt $NEU$). Lade es in Schritt 2 neu herunter und ersetze die Datei im Ordner – die Registrierungsdatei bleibt, wie sie ist.",
+    "placeholders": {
+      "alt": {
+        "content": "$1",
+        "example": "1"
+      },
+      "neu": {
+        "content": "$2",
+        "example": "2"
+      }
+    }
+  },
+  "expManualSummary": {
+    "message": "Pfad stattdessen von Hand eintragen"
+  },
+  "stoppedTitle": {
+    "message": "Der Download wurde angehalten"
+  },
+  "stoppedNoneText": {
+    "message": "Diese Seite ist von selbst aufgegangen, weil noch kein Zielordner festgelegt ist – ohne ihn kann die Erweiterung nichts speichern. Wähle unten einen Ordner aus und starte den Download danach noch einmal."
+  },
+  "stoppedPermText": {
+    "message": "Diese Seite ist von selbst aufgegangen, weil Chrome die Freigabe für deinen Zielordner nicht mehr erteilt. Drück unten auf „Berechtigung erneuern“ und wähle dabei „Bei jedem Besuch zulassen“. Danach den Download noch einmal starten."
+  },
+  "welcomeVersion": {
+    "message": "Version $V$",
+    "placeholders": {
+      "v": {
+        "content": "$1",
+        "example": "1.0.7"
+      }
+    }
+  },
+  "welcomeTitleUpdate": {
+    "message": "Was ist neu in Version $V$",
+    "placeholders": {
+      "v": {
+        "content": "$1",
+        "example": "1.0.7"
+      }
+    }
+  },
+  "welcomeIntroUpdateFrom": {
+    "message": "Die Erweiterung wurde von Version $VON$ aktualisiert. Das hat sich geändert:",
+    "placeholders": {
+      "von": {
+        "content": "$1",
+        "example": "1.0.6"
+      }
+    }
+  },
+  "welcomeTitleInstall": {
+    "message": "Willkommen"
+  },
+  "welcomeIntroInstall": {
+    "message": "Die Erweiterung lädt Modelle von MakerWorld, Printables und Thingiverse automatisch in sortierte Ordner. Ein Klick auf „Download“ auf der jeweiligen Seite genügt – die Dateien liegen danach fertig benannt auf der Platte, ZIP-Archive bereits entpackt."
+  },
+  "welcomeIntroUpdate": {
+    "message": "Die Erweiterung wurde aktualisiert. Das hat sich geändert:"
+  },
+  "welcomeFeaturesInstall": {
+    "message": "Was die Erweiterung kann"
+  },
+  "welcomeFeaturesUpdate": {
+    "message": "Das ist neu"
+  },
+  "welcomeBadgeNew": {
+    "message": "NEU"
+  },
+  "welcomeFooter": {
+    "message": "Diese Seite erscheint nur einmal nach einem Update. Die vollständige Liste aller Änderungen steht im Changelog auf GitHub."
+  },
+  "welcomeSetupHeading": {
+    "message": "Ein Schritt fehlt noch"
+  },
+  "welcomeSetupText": {
+    "message": "Lege fest, wohin die Dateien gespeichert werden sollen. Ohne Zielordner hält die Erweiterung jeden Download an – das ist der Preis dafür, dass Chrome nie mehr nach dem Speicherort fragt."
+  },
+  "welcomeSetupButton": {
+    "message": "Zielordner festlegen"
+  },
+  "welcomeOpenOptions": {
+    "message": "Einstellungen öffnen"
+  },
+  "welcomeOpenLibrary": {
+    "message": "Meine Modelle öffnen"
+  },
+  "welcomeF1Titel": {
+    "message": "Meine Modelle"
+  },
+  "welcomeF1Text": {
+    "message": "Eine Übersicht über alles, was heruntergeladen wurde – mit Vorschaubildern, Suche und Filter nach Plattform. Zu jedem Modell siehst du die enthaltenen Dateien, und löschen lässt es sich von dort auch. Zu erreichen über das Symbol der Erweiterung."
+  },
+  "welcomeF2Titel": {
+    "message": "Printables und MakerWorld ohne Nachfragen"
+  },
+  "welcomeF2Text": {
+    "message": "Downloads werden auf diesen beiden Plattformen jetzt abgefangen, bevor der Browser sie überhaupt startet. Chrome fragt dadurch nicht mehr nach dem Speicherort – auch dann nicht, wenn ein ZIP-Archiv entpackt wird. Für Thingiverse war das schon vorher so."
+  },
+  "welcomeF3Titel": {
+    "message": "Fortschritt direkt auf der Seite"
+  },
+  "welcomeF3Text": {
+    "message": "Ein kleines Band unten rechts zeigt, was gerade geladen und entpackt wird – und meldet sich, wenn etwas nicht geklappt hat."
+  },
+  "welcomeF4Titel": {
+    "message": "Ordner im Explorer öffnen"
+  },
+  "welcomeF4Text": {
+    "message": "Wer mag, kann sich einen Knopf einrichten, der den Ordner eines Modells direkt im Windows-Explorer öffnet. Dafür erzeugt die Einstellungsseite zwei kleine Dateien, deren Inhalt dort auch im Klartext steht. Rein freiwillig – ohne sie funktioniert alles andere genauso."
+  },
+  "welcomeF5Titel": {
+    "message": "Der Zielordner ist jetzt Pflicht"
+  },
+  "welcomeF5Text": {
+    "message": "Bisher landeten die Dateien ohne eigene Auswahl unter „Downloads/STL_Downloads“. Dieser Weg lief über Chromes Download-Funktion – und damit über den Speicherort-Dialog, sobald jemand „Vor dem Download jeweils nachfragen“ eingeschaltet hatte. Jetzt wird ein Download lieber angehalten, als diesen Umweg zu nehmen."
+  },
+  "welcomeF2TitelInstall": {
+    "message": "Keine Speicherort-Dialoge"
+  },
+  "welcomeF2TextInstall": {
+    "message": "Die Erweiterung fängt den Download ab, bevor der Browser ihn startet. Chrome fragt dadurch nicht nach dem Speicherort – auch dann nicht, wenn ein ZIP-Archiv entpackt wird und dabei viele einzelne Dateien entstehen."
+  },
+  "welcomeFooterInstall": {
+    "message": "Diese Seite erscheint nur einmal. Alle Änderungen an der Erweiterung stehen im Changelog auf GitHub."
+  },
+  "libSetupButton": {
+    "message": "Zielordner festlegen"
+  },
+  "popupLibraryButton": {
+    "message": "Meine Modelle"
+  },
+  "popupOptionsButton": {
+    "message": "Einstellungen"
+  },
+  "bannerFailed": {
+    "message": "Download fehlgeschlagen"
+  },
+  "vbsHeader": {
+    "message": "Öffnet einen Ordner im Windows-Explorer und meldet auf Anfrage seinen\nvollständigen Pfad zurück.\nWird von Windows aufgerufen, wenn eine Adresse mit stldl: angeklickt wird.\nGehört zur Chrome-Erweiterung \"3D Model Auto-Downloader\".\n\nLegt bei Problemen die Datei open-folder.log daneben – dort steht, was\ngenau angekommen ist. Läuft alles glatt, wird nichts geschrieben."
+  },
+  "vbsVersion": {
+    "message": "Fassung dieses Skripts. Steht in der ersten Zeile jeder Rückmeldung,\ndamit die Erweiterung ein veraltetes Skript erkennen kann."
+  },
+  "vbsFiles": {
+    "message": "Namen der Dateien, über die Skript und Erweiterung sich verständigen."
+  },
+  "vbsUtf8": {
+    "message": "Setzt aus einer Folge von Bytes die Zeichen zusammen. Nötig, weil ein\nZeichen wie der Gedankenstrich in UTF-8 aus drei Bytes besteht – ohne\ndiesen Schritt entstünden daraus drei Zeichen statt einem, und der\nOrdner wäre nicht auffindbar."
+  },
+  "vbsUrlDecode": {
+    "message": "Prozentzeichen auflösen: Chrome kodiert Adressen, bevor Windows sie\nweiterreicht – aus einem Doppelpunkt wird dann etwa %3A."
+  },
+  "vbsReadFile": {
+    "message": "Liest eine kleine Textdatei. Rückgabe ist leer, wenn es sie nicht gibt."
+  },
+  "vbsSetup": {
+    "message": "--- Auftrag: eigenen Pfad melden ---------------------------------------\n\nDie Erweiterung kennt den vollständigen Pfad ihres Zielordners nicht –\nChrome gibt ihn nicht heraus. Sie legt deshalb eine Kennung in den Ordner\nund ruft diesen Auftrag auf. Wir fragen den Nutzer nach dem Ordner und\nantworten nur, wenn die Kennung darin liegt. Damit ist bewiesen, dass es\nderselbe Ordner ist – und es lässt sich kein fremder Pfad erfragen."
+  },
+  "vbsFolderFlags": {
+    "message": "&H1 = nur echte Ordner zur Auswahl, 17 = Start bei \"Dieser PC\""
+  },
+  "vbsUnicode": {
+    "message": "Unicode (dritter Parameter True), sonst gehen Umlaute im Pfad verloren"
+  },
+  "vbsMain": {
+    "message": "--- Hauptteil -----------------------------------------------------------"
+  },
+  "vbsScheme": {
+    "message": "Schema \"stldl:\" entfernen, führende Schrägstriche ebenso"
+  },
+  "vbsTask": {
+    "message": "Fragezeichen heißt: Auftrag, kein Pfad. Die Felder sind mit | getrennt,\nweil dieses Zeichen in Windows-Pfaden verboten ist."
+  },
+  "vbsTrailingSlash": {
+    "message": "Abschließenden Schrägstrich entfernen, sonst findet FolderExists nichts"
+  },
+  "vbsSafety": {
+    "message": "Sicherheitsnetz: Nur vorhandene Ordner öffnen, nichts ausführen.\nDamit kann über diese Adresse kein Programm gestartet werden."
+  },
+  "vbsHeartbeat": {
+    "message": "Lebenszeichen im geöffneten Ordner hinterlassen. Die Erweiterung sieht\nkurz darauf nach und weiß daran, dass das Skript wirklich lief – ein\nProtokoll-Aufruf gibt sonst keinerlei Rückmeldung. Sie löscht die Datei\ngleich wieder."
+  },
+  "regRegister": {
+    "message": "Meldet das Schema \"stldl:\" bei Windows an und verknüpft es mit dem\nSkript open-folder.vbs. Gehört zur Chrome-Erweiterung\n\"3D Model Auto-Downloader\"."
+  },
+  "regUndoHint": {
+    "message": "Zum Rückgängigmachen gibt es in den Einstellungen der Erweiterung\ndie Datei stldl-protokoll-entfernen.reg."
+  },
+  "regUndo": {
+    "message": "Entfernt das Schema \"stldl:\" wieder. Das Minuszeichen vor dem\nSchlüsselnamen bedeutet löschen. Betrifft nur das eigene\nBenutzerkonto, nichts Systemweites.\n\nDas Skript open-folder.vbs bleibt liegen – es lässt sich danach\neinfach löschen, zusammen mit seinem Ordner."
+  },
+  "expS6Dialog": {
+    "message": "Beim ersten Mal fragt Chrome vorher noch: „Microsoft ® Windows Based Script Host öffnen?“ – das ist der Aufruf des Skripts, noch nicht die Ordnerauswahl. Setz dort den Haken „Immer zulassen …“ und bestätige. Mit dem Haken bleibt die Frage künftig aus – sonst kommt sie bei jedem „Im Explorer öffnen“ wieder."
+  },
+  "libMoving": {
+    "message": "Wird verschoben …",
+    "description": "Library page."
+  },
+  "libMoveFailed": {
+    "message": "Verschieben fehlgeschlagen: $GRUND$",
+    "description": "Library page.",
+    "placeholders": {
+      "grund": {
+        "content": "$1",
+        "example": "NotAllowedError"
+      }
+    }
+  },
+  "libTrashButton": {
+    "message": "Papierkorb",
+    "description": "Library page."
+  },
+  "libTrashBack": {
+    "message": "Zurück zu den Modellen",
+    "description": "Library page."
+  },
+  "libTrashEmptyButton": {
+    "message": "Papierkorb leeren",
+    "description": "Library page."
+  },
+  "libTrashEmptyConfirm": {
+    "message": "Alle $ANZAHL$ Modelle im Papierkorb endgültig löschen? Das lässt sich nicht rückgängig machen.",
+    "description": "Library page.",
+    "placeholders": {
+      "anzahl": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libTrashNothing": {
+    "message": "Der Papierkorb ist leer.",
+    "description": "Library page."
+  },
+  "libTrashNote": {
+    "message": "Gelöschte Modelle liegen im Ordner _Trash_ in deinem Zielordner, bis du den Papierkorb leerst.",
+    "description": "Library page."
+  },
+  "libRestore": {
+    "message": "Wiederherstellen",
+    "description": "Library page."
+  },
+  "libRestoring": {
+    "message": "Wird wiederhergestellt …",
+    "description": "Library page."
+  },
+  "libDeleteForever": {
+    "message": "Endgültig löschen",
+    "description": "Library page."
+  },
+  "libDeleteForeverConfirm": {
+    "message": "„$NAME$“ endgültig löschen? Der Ordner und alle enthaltenen Dateien werden von der Festplatte entfernt – das lässt sich nicht rückgängig machen.",
+    "description": "Library page.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Benchy"
+      }
+    }
+  },
+  "libDeletedOn": {
+    "message": "Gelöscht am $DATUM$",
+    "description": "Library page.",
+    "placeholders": {
+      "datum": {
+        "content": "$1",
+        "example": "25.10.2026"
+      }
+    }
+  },
+  "libCancel": {
+    "message": "Abbrechen",
+    "description": "Library page."
+  },
+  "libMoveFiles": {
+    "message": "$GETAN$ von $GESAMT$ Dateien",
+    "description": "Library page.",
+    "placeholders": {
+      "getan": {
+        "content": "$1",
+        "example": "12"
+      },
+      "gesamt": {
+        "content": "$2",
+        "example": "212"
+      }
+    }
+  },
+  "modelBack": {
+    "message": "← Zurück zur Übersicht",
+    "description": "Model page."
+  },
+  "modelPick": {
+    "message": "Wähle links eine Datei aus.",
+    "description": "Model page."
+  },
+  "modelHelp": {
+    "message": "Ziehen = drehen · Rechte Taste = schieben · Rad = zoomen",
+    "description": "Model page."
+  },
+  "modelNoPreview": {
+    "message": "Für $ART$-Dateien gibt es keine Vorschau.",
+    "description": "Model page.",
+    "placeholders": {
+      "art": {
+        "content": "$1",
+        "example": "PDF"
+      }
+    }
+  },
+  "modelNoWebgl": {
+    "message": "Dieser Browser kann kein WebGL 2 – ohne das lässt sich das Modell nicht darstellen. Die Dateien lassen sich trotzdem im Explorer öffnen.",
+    "description": "Model page."
+  },
+  "modelReadFailed": {
+    "message": "„$DATEI$“ ließ sich nicht lesen. Möglicherweise ist die Datei beschädigt.",
+    "description": "Model page.",
+    "placeholders": {
+      "datei": {
+        "content": "$1",
+        "example": "teil.stl"
+      }
+    }
+  },
+  "modelLook": {
+    "message": "Darstellung",
+    "description": "Model page."
+  },
+  "modelColor": {
+    "message": "Farbe",
+    "description": "Model page."
+  },
+  "modelBg": {
+    "message": "Hintergrund",
+    "description": "Model page."
+  },
+  "modelReset": {
+    "message": "Zurücksetzen",
+    "description": "Model page."
+  },
+  "modelAmbient": {
+    "message": "Grundhelligkeit",
+    "description": "Model page."
+  },
+  "modelKey": {
+    "message": "Kopflicht",
+    "description": "Model page."
+  },
+  "modelFill": {
+    "message": "Zweites Licht",
+    "description": "Model page."
+  },
+  "modelFillDir": {
+    "message": "Lichtrichtung",
+    "description": "Model page."
+  },
+  "modelFillHeight": {
+    "message": "Lichthöhe",
+    "description": "Model page."
+  },
+  "modelRim": {
+    "message": "Kantenschimmer",
+    "description": "Model page."
+  },
+  "modelGamma": {
+    "message": "Gamma",
+    "description": "Model page."
+  },
+  "vbsAskTitle": {
+    "message": "3D Model Auto-Downloader einrichten",
+    "description": "Options page."
+  },
+  "vbsAskText": {
+    "message": "Dieses Skript kopiert sich in deinen Benutzerordner und öffnet danach die Datei stldl-protokoll.reg, damit Windows das Kürzel „stldl:“ kennt. Windows fragt dabei noch einmal nach.\n\nAnschließend wählst du deinen Zielordner aus.\n\nAblageort:",
+    "description": "Options page."
+  },
+  "vbsDoneText": {
+    "message": "Fertig. Du kannst dieses Fenster schließen und im Browser weitermachen – dort steht jetzt, dass alles eingerichtet ist.",
+    "description": "Options page."
+  },
+  "vbsDoneNoFolder": {
+    "message": "Das Skript ist eingerichtet, der Zielordner wurde aber nicht ausgewählt. Du kannst ihn in den Einstellungen nachträglich zuordnen.",
+    "description": "Options page."
+  },
+  "vbsRegMissing": {
+    "message": "Die Datei stldl-protokoll.reg liegt nicht neben diesem Skript. Lade in den Einstellungen beide Dateien noch einmal herunter und lass sie im selben Ordner.",
+    "description": "Options page."
+  },
+  "vbsCopyFailed": {
+    "message": "Das Skript konnte sich nicht in den Benutzerordner kopieren.",
+    "description": "Options page."
+  },
+  "vbsInstall": {
+    "message": "--- Einrichten per Doppelklick ------------------------------------\n\nOhne Parameter aufgerufen richtet sich das Skript selbst ein: Es legt\nseinen Ablageordner an, kopiert sich hinein und öffnet die daneben\nliegende Registrierungsdatei. Den Eintrag selbst schreibt es nicht -\ndas macht Windows mit seiner eigenen Rückfrage, damit der Eingriff\nsichtbar bleibt.",
+    "description": "Options page."
+  },
+  "vbsAskFirst": {
+    "message": "Erst fragen, dann handeln. Ein Doppelklick soll nichts auslösen,\nwomit der Nutzer nicht gerechnet hat.",
+    "description": "Options page."
+  },
+  "vbsRegStep": {
+    "message": "Die Registrierungsdatei liegt neben diesem Skript, also dort, wohin\nder Browser beide geladen hat. Sichtbar öffnen, nicht still\nimportieren: Windows soll fragen dürfen.",
+    "description": "Options page."
+  },
+  "vbsFolderStep": {
+    "message": "Zum Schluss der Zielordner. Die Kennung darin beweist, dass es\nder Ordner ist, auf den die Erweiterung gerade wartet.",
+    "description": "Options page."
+  },
+  "vbsMarker": {
+    "message": "Ohne Kennung im Ordner wird nicht geantwortet - sonst ließe sich\nüber diesen Weg ein beliebiger Pfad erfragen.",
+    "description": "Options page."
+  },
+  "expSetupS1Titel": {
+    "message": "Beide Dateien holen",
+    "description": "Options page."
+  },
+  "expSetupS1Text": {
+    "message": "Ein Klick lädt zwei Dateien in deinen Download-Ordner – open-folder.vbs und stldl-protokoll.reg – und öffnet ihn im Explorer. Beide müssen nebeneinander liegen bleiben: Das Skript sucht die zweite neben sich. Gleichnamige ältere Dateien werden dabei ersetzt, damit keine Fassung mit „(1)“ im Namen entsteht.",
+    "description": "Options page."
+  },
+  "expSetupButton": {
+    "message": "Dateien herunterladen und Ordner öffnen",
+    "description": "Options page."
+  },
+  "expSetupS2Titel": {
+    "message": "open-folder.vbs doppelklicken",
+    "description": "Options page."
+  },
+  "expSetupS2Text": {
+    "message": "Windows fragt zuerst, ob du die Datei wirklich ausführen willst – sie kommt aus dem Netz, deshalb die Nachfrage. Danach erklärt das Skript, was es tut, Windows bestätigt den Registrierungseintrag, und zuletzt wählst du deinen Zielordner aus – genau denselben, den du oben unter „Zielordner“ für deine Modelldateien freigegeben hast. Ein anderer wird nicht angenommen.",
+    "description": "Options page."
+  },
+  "expSetupWaiting": {
+    "message": "Warte auf open-folder.vbs. Führe die Datei jetzt im Download-Ordner per Doppelklick aus – diese Seite merkt von selbst, wenn es geklappt hat.",
+    "description": "Options page."
+  },
+  "expSetupOk": {
+    "message": "Eingerichtet: $PFAD$. Der Explorer-Knopf in „Meine Modelle“ funktioniert jetzt.",
+    "description": "Options page.",
+    "placeholders": {
+      "pfad": {
+        "content": "$1",
+        "example": "D:\\0000"
+      }
+    }
+  },
+  "expSetupTimeout": {
+    "message": "Keine Rückmeldung. Hast du das Skript ausgeführt? Du kannst es jederzeit erneut doppelklicken – oder den Knopf oben noch einmal drücken.",
+    "description": "Options page."
+  },
+  "expSetupCancel": {
+    "message": "Abbrechen",
+    "description": "Options page."
+  },
+  "expSetupDownloaded": {
+    "message": "Heruntergeladen. Der Ordner sollte sich geöffnet haben – dort open-folder.vbs doppelklicken.",
+    "description": "Options page."
+  },
+  "expSetupRunning": {
+    "message": "Warte auf das Skript …",
+    "description": "Options page."
+  },
+  "regPlain": {
+    "message": "Beim Klick auf \"Im Explorer öffnen\" ruft dieser Eintrag genau eine\nBefehlszeile auf, nämlich diese:",
+    "description": "Registry file comment."
+  },
+  "regPlainHex": {
+    "message": "Die Zeile @=hex(2): darunter enthält genau diese Befehlszeile -\nZeichen für Zeichen als Hex, sonst nichts.\n\nIm Klartext geht es an dieser Stelle nicht. Das .reg-Format schreibt\nKlartext nur als gewöhnliche Zeichenkette (REG_SZ), und dieser Typ\nlöst %LOCALAPPDATA% nicht auf - Windows würde darin sogar das %L als\neigenen Platzhalter missverstehen. Nötig ist REG_EXPAND_SZ, und den\nkennt das Dateiformat ausschließlich als hex(2).\n\nWas wirklich angekommen ist, zeigt dir hinterher im Klartext:\n  reg query \"HKCU\\Software\\Classes\\stldl\\shell\\open\\command\"",
+    "description": "Registry file comment."
+  },
+  "vbsTargetStore": {
+    "message": "Merkt sich den zugeordneten Zielordner neben dem Skript. Jeder spaetere\nAufruf wird damit verglichen - siehe die Pruefung weiter unten.",
+    "description": "Script comment."
+  },
+  "vbsGuard": {
+    "message": "Sicherheitsriegel: Ein registriertes URL-Schema kann jede Website\naufrufen, nicht nur diese Erweiterung. Geoeffnet wird deshalb\nausschliesslich der zugeordnete Zielordner und was darin liegt.\nDer Vergleich ist reine Textarbeit und passiert, bevor das Skript\nden Pfad anfasst: Schon die Frage, ob es einen Ordner \\\\server\\x\ngibt, wuerde Windows dazu bringen, sich dort anzumelden und dabei\ndie Anmeldedaten mitzuschicken.\nPfade mit .. werden abgelehnt: Sie wuerden den Vergleich bestehen und\ntrotzdem woanders landen.",
+    "description": "Script comment."
+  },
+  "modelSize": {
+    "message": "$B$ × $T$ × $H$ mm",
+    "description": "Model page. Abmessungen des Modells",
+    "placeholders": {
+      "b": {
+        "content": "$1",
+        "example": "128,4"
+      },
+      "t": {
+        "content": "$2",
+        "example": "62,0"
+      },
+      "h": {
+        "content": "$3",
+        "example": "15,3"
+      }
+    }
+  },
+  "modelParts": {
+    "message": "Teile",
+    "description": "Model page."
+  },
+  "modelSavePart": {
+    "message": "Teil als STL",
+    "description": "Model page."
+  },
+  "modelSaveAll": {
+    "message": "Alle Teile",
+    "description": "Model page."
+  },
+  "modelPartN": {
+    "message": "Teil $NR$",
+    "description": "Model page.",
+    "placeholders": {
+      "nr": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "modelSaving": {
+    "message": "Wird geschrieben …",
+    "description": "Model page."
+  },
+  "modelSavedOne": {
+    "message": "Gespeichert: $NAME$",
+    "description": "Model page.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "box_03.stl"
+      }
+    }
+  },
+  "modelSavedMany": {
+    "message": "$ANZAHL$ Teile gespeichert im Ordner „$ORDNER$“",
+    "description": "Model page.",
+    "placeholders": {
+      "anzahl": {
+        "content": "$1",
+        "example": "24"
+      },
+      "ordner": {
+        "content": "$2",
+        "example": "Einzelteile"
+      }
+    }
+  },
+  "modelSplit": {
+    "message": "Einzelteile aus Datei exportieren",
+    "description": "Model page."
+  },
+  "modelSplitOff": {
+    "message": "Zurück zu den Dateien",
+    "description": "Model page."
+  },
+  "infoHeader": {
+    "message": "Woher dieses Modell stammt. Nach der Leerzeile ist Platz für eigene Notizen oder die Beschreibung von der Website.",
+    "description": "info.txt header comment."
+  },
+  "modelOpenSource": {
+    "message": "Auf $WO$ ansehen ↗",
+    "description": "Model page. Link to the source website.",
+    "placeholders": {
+      "wo": {
+        "content": "$1",
+        "example": "MakerWorld"
+      }
+    }
+  },
+  "modelSplitting": {
+    "message": "Wird zerlegt …",
+    "description": "Model page."
+  },
+  "modelOneBody": {
+    "message": "Die Datei enthält nur einen zusammenhängenden Körper.",
+    "description": "Model page."
+  },
+  "libCopyPath": {
+    "message": "Pfad kopieren",
+    "description": "Model page."
+  },
+  "libCopied": {
+    "message": "Kopiert",
+    "description": "Model page."
+  },
+  "modelFileColors": {
+    "message": "Farben der Datei",
+    "description": "Model page."
   }
 }

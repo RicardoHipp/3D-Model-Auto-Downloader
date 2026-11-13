@@ -4,6 +4,181 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.0.8] – 2026-11-14
+
+### Hinzugefügt
+
+- **Einzelteile exportieren.** Auf der Modellseite sitzt oben links in der
+  Ansicht der Schalter „Einzelteile aus Datei exportieren". Ist er an, steht
+  links statt der Dateiliste die Liste der Teile mit Nummer, Name und Maßen.
+  Ein Klick auf ein Teil – in der Liste oder direkt im Bild – hebt es hervor;
+  von dort lässt es sich einzeln oder zusammen mit allen anderen als STL in
+  den Unterordner `Einzelteile` schreiben. Jedes Teil wird dabei mittig und
+  mit der Unterkante auf Z=0 abgelegt.
+
+  Bei 3MF stammen die Teile aus der Datei selbst, samt der Namen, die der
+  Slicer vergeben hat. Netze, die ineinanderstecken oder aufeinanderliegen
+  (etwa ein andersfarbiger Schriftzug), bleiben ein Teil. Bei STL sucht die
+  Erweiterung die zusammenhängenden Körper – wie „In Objekte aufteilen" im
+  Slicer. Splitter von unter einem Millimeter, wie sie bei Netzfehlern
+  entstehen, werden dem nächstgelegenen Körper zugeschlagen.
+
+- **Mehrfarbige 3MF in ihren Filamentfarben.** Die Ansicht zeigt bemalte und
+  aus verschiedenfarbigen Teilen zusammengesetzte Modelle in den Farben, die
+  in der Datei hinterlegt sind. Auch teilweise bemalte Dreiecke werden so
+  zerlegt, wie die Datei es beschreibt, damit Farbgrenzen sauber verlaufen.
+  Im Feld „Darstellung" lässt sich das mit „Farben der Datei" abschalten;
+  einfarbige Modelle bleiben in der selbst gewählten Farbe.
+
+- **Maße.** Oben links in der Ansicht stehen Breite × Tiefe × Höhe in
+  Millimetern, bei ausgewähltem Teil die des Teils. Gibt ein 3MF eine andere
+  Einheit an, wird umgerechnet.
+
+- **Herkunft des Modells.** Beim Herunterladen entsteht im Modellordner eine
+  `info.txt` mit Titel, Plattform, Adresse der Modellseite und Datum. Die
+  Modellseite zeigt daraus einen Verweis „Auf … ansehen". Unter der
+  Leerzeile der Datei ist Platz für eigene Notizen; steht dort etwas, wird
+  es mit angezeigt. Eine vorhandene Datei wird nie überschrieben.
+
+- **Pfad zum Kopieren.** Antwortet das Explorer-Skript nicht, zeigt die
+  Meldung jetzt den vollständigen Pfad des Modellordners mit einem Knopf zum
+  Kopieren.
+
+### Geändert
+
+- **Das Explorer-Skript öffnet nur noch den eigenen Zielordner (Fassung 4).**
+  Ein registriertes Kürzel wie `stldl:` kann jede Website aufrufen, nicht nur
+  diese Erweiterung. Das Skript merkt sich deshalb den zugeordneten
+  Zielordner und vergleicht jeden Aufruf damit, bevor es den Pfad anfasst;
+  alles andere – fremde Ordner, Netzwerkpfade, Pfade mit `..` – wird
+  abgelehnt. Die Texte seiner Dialoge kommen nicht mehr aus der Adresse.
+
+  **Wer die Explorer-Funktion eingerichtet hat, muss das Skript einmal neu
+  herunterladen und ausführen.** Die Erweiterung erkennt die alte Fassung und
+  weist darauf hin. Nach einem Wechsel des Zielordners ist die Zuordnung
+  ebenfalls zu erneuern – bisher zeigte der Knopf dann stillschweigend auf
+  den alten Ordner.
+
+- **Große 3MF-Dateien öffnen sich deutlich schneller.** Das Vorschaubild
+  kommt aus dem Paket, statt dafür das ganze Modell zu lesen; der Leser
+  arbeitet direkt auf den entpackten Bytes; und einmal gelesene Modelle
+  bleiben im Speicher. Bei einer Datei mit 534 MB XML sank die Wartezeit von
+  rund neun auf gut zwei Sekunden.
+
+- **Kopf der Modellseite zweizeilig**, die Registrierungsdatei nennt ihren
+  Befehl zusätzlich im Klartext.
+
+### Behoben
+
+- **3MF mit mehreren Objekten in einer Teildatei wurden falsch gezeichnet.**
+  Der Leser warf alle Objekte einer Teildatei zusammen; Dreiecke zeigten
+  dadurch auf die Ecken des Nachbarobjekts und spannten sich quer durchs
+  Modell. Außerdem fehlten Komponenten, die nicht am Anfang der Teildatei
+  standen.
+
+- **3MF im ZIP64-Format ließen sich nicht öffnen.** Betroffen waren vor allem
+  Dateien von Printables – sie hatten weder Vorschaubild noch 3D-Ansicht.
+
+- **Verschieben mit der rechten Maustaste** lief nach links und rechts
+  verkehrt herum.
+
+## [1.0.7] – 2026-10-25
+
+### Hinzugefügt
+
+- **„Meine Modelle" – eine Übersicht über alles Heruntergeladene.** Die Seite
+  liest den Zielordner direkt aus und zeigt jedes Modell mit Name, Plattform
+  und Datum. Dazu Suche nach Namen, ein Filter nach Plattform und Sortierung
+  nach Datum oder Name.
+
+- **Modellseite mit 3D-Vorschau.** Ein Klick auf ein Modell öffnet eine eigene
+  Seite: links alle Dateien des Ordners mit einem Vorschaubild, rechts die
+  gewählte Datei zum Drehen, Schieben und Zoomen. Gelesen werden **STL** und
+  **3MF**; beim 3MF auch Bambu-Projektdateien mit mehreren Objekten.
+
+  Gerendert wird mit WebGL im Browser, ohne fremde Bibliothek und ohne
+  Serverkontakt – es verlässt also keine Datei den Rechner. Über „Darstellung"
+  lassen sich Farbe, Hintergrund und Beleuchtung einstellen; die Werte bleiben
+  gespeichert.
+
+- **Papierkorb statt endgültigem Löschen.** Gelöschte Modelle wandern in den
+  Ordner `_Trash_` im Zielordner, mit dem Löschdatum am Namen. Von dort lassen
+  sie sich wiederherstellen. Geleert wird nur von Hand – nichts verschwindet
+  nach Ablauf einer Frist von selbst.
+
+- **„Im Explorer öffnen" für jedes Modell.** Optional und mit zwei Schritten
+  eingerichtet. Hintergrund: Die Erweiterung kennt den Zielordner nur als
+  Verweis, nicht als Pfad – der Browser rückt ihn nicht heraus. Deshalb
+  erzeugt die Optionsseite zwei kleine Dateien, die diese Brücke über Windows schlagen:
+  ein Skript, das den Ordner öffnet, und einen Registrierungseintrag, der es
+  mit dem Kürzel `stldl:` verknüpft.
+
+  Beide Dateien stehen auf der Optionsseite vollständig im Klartext, samt
+  Kommentaren in der eingestellten Sprache, und lassen sich mit einer zweiten
+  Datei rückstandslos wieder entfernen. Wer darauf verzichtet, verliert nur
+  diesen einen Knopf – alles andere arbeitet unverändert weiter.
+
+- **Fortschrittsband auf der Website.** Während ein Download läuft oder ein
+  Archiv entpackt wird, blendet sich am unteren Rand ein schmales Band mit dem
+  aktuellen Dateinamen ein. Es meldet auch, wenn etwas schiefgeht – etwa ein
+  fehlender Zielordner – und verschwindet von selbst wieder.
+
+- **Begrüßungsseite nach Installation und Update.** Sie erklärt beim ersten
+  Start die nötige Einrichtung und zeigt nach einem Update, was neu ist. Ein
+  bloßes Chrome-Update löst sie nicht aus.
+
+- **Downloads auf Printables und MakerWorld werden abgefangen, bevor der
+  Browser sie startet.** Beide Plattformen erzeugen einen Link mit der fertigen
+  Datei-URL und klicken ihn per JavaScript an; die Erweiterung fängt diesen
+  Aufruf ab. Chrome erfährt von dem Download damit gar nichts und fragt auch
+  nicht nach dem Speicherort. Für Thingiverse gab es diesen Weg bereits.
+
+  Der Ansatz hängt an einer Browser-Schnittstelle, nicht an Beschriftungen oder
+  CSS-Klassen der Websites – ein Redesign der Seiten bricht ihn daher nicht.
+
+  **Absicherung:** Meldet die Erweiterung nicht innerhalb von 1,5 Sekunden
+  Vollzug, startet die Seite den ursprünglichen Download doch. So geht nichts
+  verloren, etwa direkt nach einem Update der Erweiterung, wenn bereits offene
+  Seiten die Verbindung zu ihr verloren haben. Beide Fälle stehen in der
+  Browser-Konsole.
+
+### Geändert
+- **Es muss jetzt ein Zielordner festgelegt werden.** Bisher war der eigene
+  Ordner optional und die Dateien landeten sonst unter
+  „Downloads/STL_Downloads/". Dieser Standardweg ging über Chromes
+  Download-Funktion – und damit über den Speicherort-Dialog, sobald jemand
+  „Vor dem Download jeweils nachfragen" aktiviert hatte.
+
+  Ist kein Ordner festgelegt, wird ein Download jetzt **gestoppt** statt
+  heruntergeladen. Die Erweiterung zeigt eine Benachrichtigung und öffnet die
+  Optionsseite, damit klar ist, was fehlt.
+
+  Einmal einen Ordner wählen genügt. Danach schreibt die Erweiterung direkt
+  dorthin, ohne jede Nachfrage.
+
+  **Zum Ablauf:** Chrome fragt beim nächsten Browserstart ein zweites Mal nach.
+  Erst dann bietet es „Bei jedem Besuch zulassen" an – beim ersten Mal gibt es
+  diese Option noch nicht, das lässt sich nicht umgehen. Die Erweiterung weist
+  an jeder betroffenen Stelle darauf hin.
+
+- **Popup neu aufgebaut.** Statt der Download-Liste führen jetzt zwei große
+  Knöpfe zu „Meine Modelle" und den Einstellungen; Status und Diagnose stehen
+  darunter. Steht eine Berechtigung zur Erneuerung an, pulsiert der
+  entsprechende Knopf, damit man es nicht übersieht.
+
+- **Rückfragen im eigenen Gewand.** Wo bisher Chromes graues Systemfenster
+  aufging, fragt die Erweiterung jetzt im Design der Seite nach – mit klarer
+  Kennzeichnung, wenn es um etwas Endgültiges geht.
+
+### Behoben
+- **Thingiverse lud trotz fehlendem Zielordner herunter.** Die Prüfung lief an
+  dieser einen Stelle nicht, die Datei landete im Downloads-Ordner und das
+  Fortschrittsband lief endlos weiter. Alle drei Wege prüfen jetzt dieselbe
+  Stelle, und das Band gibt nach spätestens zwei Minuten auf.
+
+- **„Bis zum Neustart deaktivieren" wurde ignoriert.** Die Zielordner-Prüfung
+  kam der Pause zuvor und fing den Download trotzdem ab.
+
 ## [1.0.6] – 2026-10-18
 
 ### Hinzugefügt
@@ -151,6 +326,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ZIP-Dateien von MakerWorld, Printables und Thingiverse in nach Modellname und
   Plattform benannte Unterordner. ZIP-Archive werden im Arbeitsspeicher entpackt.
 
+[1.0.7]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.7
 [1.0.6]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.6
 [1.0.5]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.5
 [1.0.4]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.4

@@ -99,8 +99,41 @@ chrome.runtime.onStartup.addListener(() => {
   });
 });
 
-chrome.runtime.onInstalled.addListener(() => {
+// Version, deren Neuerungen die Infoseite beschreibt. Nur wer von etwas
+// Aelterem kommt, bekommt sie zu sehen - ein reines Fehlerbehebungs-Update
+// soll nicht jedes Mal ungefragt einen Tab aufreissen. Bei neuen Punkten auf
+// der Seite hier mit hochziehen.
+const INFO_VERSION = '1.0.7';
+
+function versionKleiner(a, b) {
+  const za = String(a).split('.').map(Number);
+  const zb = String(b).split('.').map(Number);
+  for (let i = 0; i < Math.max(za.length, zb.length); i++) {
+    const x = za[i] || 0, y = zb[i] || 0;
+    if (x !== y) return x < y;
+  }
+  return false;
+}
+
+// Einmalig nach Installation oder Update: zeigen, was die Erweiterung kann
+// bzw. was sich geaendert hat. Ein Chrome-Update ist kein Anlass dafuer.
+function zeigeInfoseite({ reason, previousVersion }) {
+  if (reason === 'install') {
+    // Nichts weiter zu pruefen - hier ist alles neu.
+  } else if (reason === 'update') {
+    if (!previousVersion || !versionKleiner(previousVersion, INFO_VERSION)) return;
+  } else {
+    return;
+  }
+
+  const adresse = 'welcome.html?modus=' + reason
+    + (previousVersion ? '&von=' + encodeURIComponent(previousVersion) : '');
+  chrome.tabs.create({ url: chrome.runtime.getURL(adresse) });
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
   setupKeepaliveAlarm();
+  zeigeInfoseite(details);
 });
 
 chrome.tabs.onActivated.addListener((info) => updateIconForTab(info.tabId));
@@ -266,6 +299,84 @@ function buildFolderName(modelName, source) {
   return `${clean}_${source}_${timestamp}`;
 }
 
+// Reicht Fortschrittsmeldungen an die Modellseite weiter, wo das Banner sie
+// anzeigt. Schlaegt das fehl (Tab geschlossen, Seite gewechselt), ist das
+// unkritisch - der Download laeuft davon unabhaengig weiter.
+function meldeFortschritt(tabId, daten) {
+  if (!tabId) return;
+  try {
+    // action bewusst NACH dem Spread setzen: Sonst ueberschreibt ein in den
+    // Daten verbliebenes action-Feld sie wieder, und das Banner wartet ewig.
+    chrome.tabs.sendMessage(tabId, { ...daten, action: 'downloadProgress' }, () => {
+      void chrome.runtime.lastError;
+    });
+  } catch { /* Tab existiert nicht mehr */ }
+}
+
+// Zuletzt gemeldeter gestoppter Download. Ein Modell besteht aus mehreren
+// Dateien - ohne diese Sperre gaebe es pro Datei eine Benachrichtigung und
+// einen Sprung in die Einstellungen.
+let gestopptGemeldet = 0;
+
+// Ohne nutzbaren Zielordner laedt die Erweiterung bewusst nichts herunter -
+// auch nicht ersatzweise in den Downloads-Ordner. Genau das Durcheinander
+// dort ist der Grund, warum es sie gibt. Gibt true zurueck, wenn es
+// weitergehen darf.
+async function zielordnerBereit(tabId) {
+  const { state } = await targetDirStatus();
+  if (state === 'granted') return true;
+
+  // 'prompt' heisst: Ordner ist gesetzt, nur die Berechtigung fehlt. Das
+  // braucht eine andere Meldung als ein fehlender Ordner, sonst sucht der
+  // Nutzer an der falschen Stelle.
+  const istAbgelaufen = state === 'prompt';
+
+  // Auf der Seite immer melden - dort hat der Nutzer gerade hingesehen, und
+  // ein haengendes Fortschrittsband waere schlimmer als eine Meldung zu viel.
+  meldeFortschritt(tabId, {
+    state: 'fehler',
+    file: chrome.i18n.getMessage(istAbgelaufen ? 'bannerPermExpired' : 'bannerNoTarget'),
+    text: chrome.i18n.getMessage('bannerOpenOptions')
+  });
+
+  if (Date.now() - gestopptGemeldet > 15000) {
+    gestopptGemeldet = Date.now();
+    showNotification(
+      chrome.i18n.getMessage(istAbgelaufen ? 'permExpiredTitle' : 'noTargetTitle'),
+      chrome.i18n.getMessage(istAbgelaufen ? 'permExpiredMessage' : 'noTargetMessage')
+    );
+    // Grund hinterlegen, damit die Einstellungsseite erklaeren kann, warum sie
+    // gerade von selbst aufgegangen ist - sonst steht der Nutzer ohne
+    // Zusammenhang vor einer Seite, die er nicht aufgerufen hat. Ueber den
+    // Speicher statt ueber die Adresse, weil openOptionsPage() keine Parameter
+    // nimmt und so auch ein bereits offener Tab erreicht wird.
+    await chrome.storage.session.set({
+      downloadGestoppt: { grund: istAbgelaufen ? 'berechtigung' : 'kein-ordner' }
+    });
+    chrome.runtime.openOptionsPage();
+  }
+  return false;
+}
+
+// chrome.downloads meldet sich nicht von selbst zurueck: Der Rueckruf kommt,
+// sobald der Download *beginnt*. Ohne das hier liefe das Fortschrittsband
+// weiter, obwohl die Datei laengst auf der Platte liegt.
+function begleiteDownload(downloadId, tabId, datei) {
+  if (!tabId) return;
+  if (!downloadId) {
+    meldeFortschritt(tabId, { file: datei, state: 'fehler', text: chrome.i18n.getMessage('bannerFailed') });
+    return;
+  }
+  const horcher = (delta) => {
+    if (delta.id !== downloadId || !delta.state || delta.state.current === 'in_progress') return;
+    chrome.downloads.onChanged.removeListener(horcher);
+    meldeFortschritt(tabId, delta.state.current === 'complete'
+      ? { file: datei, state: 'fertig' }
+      : { file: datei, state: 'fehler', text: chrome.i18n.getMessage('bannerFailed') });
+  };
+  chrome.downloads.onChanged.addListener(horcher);
+}
+
 // Versucht, eine Datei direkt in den vom Nutzer gewaehlten Zielordner zu
 // schreiben. Gibt false zurueck, wenn kein Ordner gesetzt ist, die Berechtigung
 // fehlt oder der Abruf scheitert - dann uebernimmt chrome.downloads wie bisher.
@@ -281,6 +392,49 @@ async function tryWriteToTarget(url, relativePath) {
   } catch (err) {
     if (DEBUG) console.log('[Ziel] Direktes Schreiben fehlgeschlagen:', err.message);
     return false;
+  }
+}
+
+// --- Herkunftsvermerk ----------------------------------------------------
+//
+// Neben die Dateien kommt eine info.txt mit der Adresse der Modellseite.
+// Aufbau wie ein Briefkopf: "Schluessel: Wert" je Zeile, dann eine
+// Leerzeile, danach freier Text. So laesst sich spaeter die Beschreibung
+// der Website anhaengen, ohne das Format zu aendern - und lesbar bleibt es
+// auch mit dem Editor.
+const INFO_DATEI = 'info.txt';
+
+function infoInhalt({ titel, quelle, adresse }) {
+  const jetzt = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const zeilen = [
+    '# ' + chrome.i18n.getMessage('appName'),
+    '# ' + chrome.i18n.getMessage('infoHeader'),
+    '',
+    'Titel: ' + (titel || ''),
+    'Plattform: ' + (quelle || ''),
+    'Adresse: ' + (adresse || ''),
+    'Heruntergeladen: ' + [
+      jetzt.getFullYear() + '-' + pad(jetzt.getMonth() + 1) + '-' + pad(jetzt.getDate()),
+      pad(jetzt.getHours()) + ':' + pad(jetzt.getMinutes())
+    ].join(' '),
+    '',
+    ''
+  ];
+  // CRLF: Die Datei wird in erster Linie unter Windows gelesen, und der
+  // Editor bricht dort sonst nicht um.
+  return zeilen.join('\r\n');
+}
+
+async function schreibeInfo(folderName, angaben) {
+  try {
+    const pfad = folderName + '/' + INFO_DATEI;
+    // Niemals ueberschreiben: In der Datei kann inzwischen mehr stehen,
+    // als wir hineingeschrieben haben.
+    if (await targetFileExists(pfad)) return;
+    await writeToTargetDir(pfad, new Blob([infoInhalt(angaben)], { type: 'text/plain' }));
+  } catch (err) {
+    if (DEBUG) console.log('[Info] info.txt nicht geschrieben:', err.message);
   }
 }
 
@@ -342,9 +496,14 @@ async function setupOffscreenDocument() {
   }
 }
 
-async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
+// Verarbeitet einen Download, den ein Content-Script abgefangen hat, bevor der
+// Browser ihn starten konnte - fuer Thingiverse, Printables und MakerWorld.
+async function handleInterceptedDownload(cdnUrl, imageUrl, tab, source) {
   await loadState();
   if (isPaused) return;
+  // Gilt fuer alle drei Plattformen. Thingiverse lief hier frueher vorbei und
+  // landete ueber den Fallback im Downloads-Ordner.
+  if (!await zielordnerBereit(tab?.id)) return;
   let modelName = 'Model';
 
   try {
@@ -365,27 +524,35 @@ async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
   if (folderKey && folderMap[folderKey]) {
     finalFolderName = folderMap[folderKey];
   } else {
-    finalFolderName = buildFolderName(modelName, 'Thingiverse');
+    finalFolderName = buildFolderName(modelName, source);
     if (folderKey) setFolderMap(folderKey, finalFolderName);
   }
+
+  schreibeInfo(finalFolderName, { titel: modelName, quelle: source, adresse: folderKey });
 
   const urlWithoutQuery = cdnUrl.split('?')[0];
   const rawFileName = urlWithoutQuery.split('/').pop();
   const cleanFileName = (() => { try { return decodeURIComponent(rawFileName); } catch { return rawFileName; } })();
   const urlPath = urlWithoutQuery.toLowerCase();
   if (urlPath.endsWith('.zip')) {
-    if (downloadQueue.some(item => item.url === cdnUrl)) { if (DEBUG) console.log('[TV] SKIP zip duplikat'); return; }
-    downloadQueue.push({ url: cdnUrl, folderName: finalFolderName, imageUrl, source: 'Thingiverse' });
+    if (downloadQueue.some(item => item.url === cdnUrl)) { if (DEBUG) console.log('[DL] SKIP zip duplikat'); return; }
+    downloadQueue.push({ url: cdnUrl, folderName: finalFolderName, imageUrl, source, tabId: tab?.id });
     saveState();
     await setupOffscreenDocument();
     if (offscreenReady && downloadQueue.length > 0) processQueue();
   } else {
     const safeFileName = sanitizePath(cleanFileName);
-    if (DEBUG) console.log('[TV] download:', safeFileName, '→', finalFolderName, '| imageUrl:', !!imageUrl);
+    if (DEBUG) console.log('[DL] download:', safeFileName, '→', finalFolderName, '| imageUrl:', !!imageUrl);
     // Beide URL-Varianten eintragen (Kyrillisch + percent-encoded), da Chrome beim Download normalisiert
     handledUrls.add(cdnUrl);
     try { handledUrls.add(new URL(cdnUrl).href); } catch {}
+    meldeFortschritt(tab?.id, { file: safeFileName, state: 'laden' });
     const direkt = await tryWriteToTarget(cdnUrl, `${finalFolderName}/${safeFileName}`);
+    meldeFortschritt(tab?.id, {
+      file: safeFileName,
+      state: direkt ? 'fertig' : 'laden',
+      text: direkt ? undefined : ''
+    });
     if (direkt) {
       handledUrls.delete(cdnUrl);
       try { handledUrls.delete(new URL(cdnUrl).href); } catch {}
@@ -395,9 +562,10 @@ async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
         filename: `STL_Downloads/${finalFolderName}/${safeFileName}`,
         conflictAction: 'uniquify',
         saveAs: false
-      }, () => {
+      }, (downloadId) => {
         handledUrls.delete(cdnUrl);
         try { handledUrls.delete(new URL(cdnUrl).href); } catch {}
+        begleiteDownload(downloadId, tab?.id, safeFileName);
       });
     }
     if (imageUrl) {
@@ -417,7 +585,7 @@ async function handleThingiverseDownload(cdnUrl, imageUrl, tab) {
         } catch {}
       }, 2000);
     }
-    queueNotification('Thingiverse', safeFileName);
+    queueNotification(source, safeFileName);
   }
 }
 
@@ -429,7 +597,8 @@ function processQueue() {
     action: 'unzipAndDownload',
     url: item.url,
     folderName: item.folderName,
-    source: item.source
+    source: item.source,
+    tabId: item.tabId
   });
   if (item.imageUrl) {
     downloadImage(item.imageUrl, item.folderName);
@@ -439,7 +608,47 @@ function processQueue() {
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'thingiverseIntercept') {
     if (DEBUG) console.log('[TV] intercept:', message.url.split('/').pop(), '| imageUrl:', !!message.imageUrl);
-    handleThingiverseDownload(message.url, message.imageUrl || null, sender.tab);
+    handleInterceptedDownload(message.url, message.imageUrl || null, sender.tab, 'Thingiverse');
+  }
+  // Von content_dl_* abgefangener Download auf Printables oder MakerWorld.
+  // Die Bestaetigung ist Teil der Absicherung: Bleibt sie aus, startet die
+  // Seite den urspruenglichen Download doch, statt ihn zu verlieren.
+  if (message.action === 'interceptedDownload') {
+    const url = message.url || '';
+    // Nicht der Seite vertrauen - nur bekannte Auslieferungshosts akzeptieren
+    if (!/^https:\/\/(files\.printables\.com|[^/]*\.bblmw\.com)\//i.test(url)) {
+      sendResponse({ ok: false });
+      return true;
+    }
+    const quelle = /\.bblmw\.com\//i.test(url) ? 'MakerWorld' : 'Printables';
+    if (DEBUG) console.log('[DL] abgefangen:', quelle, url.split('/').pop().split('?')[0]);
+
+    (async () => {
+      // Pausiert heisst: Haende weg. Ohne "ok: false" wuerde die Seite den
+      // Download zwar selbst starten, die Erweiterung ihn aber trotzdem noch
+      // wegen des fehlenden Zielordners stoppen - genau das, was Pause
+      // abschalten soll.
+      await loadState();
+      if (isPaused) {
+        sendResponse({ ok: false });
+        return;
+      }
+      // Ohne Zielordner wird bewusst NICHT heruntergeladen: Der Nutzer soll
+      // merken, dass noch etwas fehlt, statt dass Chrome ihn fuer jede Datei
+      // nach dem Speicherort fragt. "ok: true" haelt den Klick blockiert, die
+      // Seite startet den urspruenglichen Download also nicht ersatzweise.
+      if (!await zielordnerBereit(sender.tab?.id)) {
+        sendResponse({ ok: true });
+        return;
+      }
+      handleInterceptedDownload(url, message.imageUrl || null, sender.tab, quelle);
+      sendResponse({ ok: true });
+    })();
+    return true;
+  }
+  if (message.action === 'progressRelay') {
+    const { tabId, action, ...rest } = message;
+    meldeFortschritt(tabId, rest);
   }
   if (message.action === 'offscreenReady') {
     offscreenReady = true;
@@ -563,6 +772,16 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
   const isPdf  = filenameLower.endsWith('.pdf')   || urlLower.includes('.pdf');
   if (!isZip && !isStl && !is3mf && !isGcode && !isPdf) return;
 
+  // Fehlt der Zielordner, wird der Download abgebrochen statt im
+  // Downloads-Ordner abgelegt. Hier hat Chrome ihn schon begonnen - also
+  // zuruecknehmen, sonst liegt die Datei doch wieder am falschen Platz.
+  const zielTab = (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+  if (!await zielordnerBereit(zielTab?.id)) {
+    chrome.downloads.cancel(downloadItem.id);
+    chrome.downloads.erase({ id: downloadItem.id });
+    return;
+  }
+
   // 5. Modellname aus offenem Tab lesen
   let modelName = 'Model';
   let imageUrl = null;
@@ -622,12 +841,14 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     if (folderKey) setFolderMap(folderKey, finalFolderName);
   }
 
+  schreibeInfo(finalFolderName, { titel: modelName, quelle: source, adresse: folderKey });
+
   // 7. Download abwickeln
   if (isZip) {
     chrome.downloads.cancel(downloadItem.id);
     chrome.downloads.erase({ id: downloadItem.id });
     if (downloadQueue.some(item => item.url === downloadItem.url)) return;
-    downloadQueue.push({ url: downloadItem.url, folderName: finalFolderName, imageUrl, source });
+    downloadQueue.push({ url: downloadItem.url, folderName: finalFolderName, imageUrl, source, tabId: matchingTab?.id });
     saveState();
     await setupOffscreenDocument();
     if (offscreenReady && downloadQueue.length > 0) processQueue();
@@ -651,7 +872,10 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
         filename: `STL_Downloads/${finalFolderName}/${cleanFileName}`,
         conflictAction: 'uniquify',
         saveAs: false
-      }, () => handledUrls.delete(downloadItem.url));
+      }, (downloadId) => {
+        handledUrls.delete(downloadItem.url);
+        begleiteDownload(downloadId, matchingTab?.id, cleanFileName);
+      });
     }
     if (imageUrl) downloadImage(imageUrl, finalFolderName);
     queueNotification(source, cleanFileName);

@@ -18,7 +18,7 @@ function sanitizeName(name) {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'unzipAndDownload') {
-    handleUnzipAndDownload(message.url, message.folderName, message.source);
+    handleUnzipAndDownload(message.url, message.folderName, message.source, message.tabId);
   }
   // Empfängt Bestätigung, dass die URL gelöscht werden kann
   if (message.action === 'downloadInitiated') {
@@ -36,15 +36,49 @@ function localisedError(key, params) {
   return err;
 }
 
-async function handleUnzipAndDownload(url, folderName, source) {
+// Meldet den Fortschritt an den Service Worker, der ihn an die Modellseite
+// weiterreicht. Ohne diese Kette saehe der Nutzer bei einem grossen Archiv
+// minutenlang nichts - Chromes eigene Anzeige entfaellt ja, weil wir nicht
+// mehr ueber chrome.downloads laden.
+function melde(tabId, daten) {
+  if (!tabId) return;
+  try { chrome.runtime.sendMessage({ action: 'progressRelay', tabId, ...daten }); } catch {}
+}
+
+async function handleUnzipAndDownload(url, folderName, source, tabId) {
   try {
     // Wichtig: credentials: 'include' sorgt dafür, dass Cookies (Login) mitgesendet werden
+    const dateiname = decodeURIComponent((url.split('?')[0].split('/').pop() || folderName));
+    melde(tabId, { file: dateiname, state: 'laden' });
+
     const response = await fetch(url, { credentials: 'include' });
     if (!response.ok) {
       throw localisedError('errorHttp', [String(response.status)]);
     }
 
-    const arrayBuffer = await response.arrayBuffer();
+    // Stueckweise lesen, um den Fortschritt zu kennen. Fehlt Content-Length,
+    // zeigt das Banner einen laufenden Balken statt einer erfundenen Zahl.
+    const gesamt = Number(response.headers.get('content-length')) || 0;
+    const reader = response.body.getReader();
+    const teile = [];
+    let geladen = 0, zuletzt = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      teile.push(value);
+      geladen += value.length;
+      const jetzt = Date.now();
+      if (jetzt - zuletzt > 150) {          // nicht bei jedem Haeppchen melden
+        zuletzt = jetzt;
+        melde(tabId, {
+          file: dateiname,
+          state: 'laden',
+          percent: gesamt ? (geladen / gesamt) * 100 : undefined,
+          text: gesamt ? undefined : (geladen / 1048576).toFixed(1) + ' MB'
+        });
+      }
+    }
+    const arrayBuffer = await new Blob(teile).arrayBuffer();
 
     const zip = await JSZip.loadAsync(arrayBuffer);
     const files = Object.entries(zip.files).filter(([_, entry]) => !entry.dir);
@@ -54,8 +88,15 @@ async function handleUnzipAndDownload(url, folderName, source) {
     }
 
     // Gehe durch alle Dateien im ZIP-Archiv
+    let fertig = 0;
     for (const [relativePath, fileEntry] of files) {
       try {
+        melde(tabId, {
+          file: relativePath.split('/').pop(),
+          state: 'entpacken',
+          percent: (fertig / files.length) * 100,
+          text: `${fertig + 1} / ${files.length}`
+        });
         // Ordnerstruktur erhalten, nicht-ASCII-Zeichen bereinigen
         const cleanPath = relativePath.split('/').map(part => sanitizeName(part)).join('/');
         const targetPath = `STL_Downloads/${folderName}/${cleanPath}`;
@@ -78,7 +119,7 @@ async function handleUnzipAndDownload(url, folderName, source) {
         } catch (targetError) {
           console.error('Zielordner-Schreiben fehlgeschlagen, nutze Downloads:', targetError);
         }
-        if (written) continue;
+        if (written) { fertig++; continue; }
 
         // Normaler Weg: MIME-Type erzwingen, damit Chrome nicht in .txt umbenennt
         const blob = new Blob([fileData], { type: mimeType });
@@ -91,12 +132,14 @@ async function handleUnzipAndDownload(url, folderName, source) {
             () => resolve()
           );
         });
+        fertig++;
       } catch (fileError) {
         console.error(`Datei übersprungen (${relativePath}):`, fileError);
       }
     }
 
     // Erfolg an Service Worker melden – der übersetzt und zeigt die Meldung
+    melde(tabId, { file: folderName, state: 'fertig', text: `${files.length} Dateien` });
     chrome.runtime.sendMessage({
       action: 'successNotification',
       source,
@@ -105,6 +148,7 @@ async function handleUnzipAndDownload(url, folderName, source) {
 
   } catch (error) {
     console.error('Fehler beim Entpacken:', error);
+    melde(tabId, { file: folderName, state: 'fehler', text: error.message });
     // Fehler an Service Worker melden. Nur unsere eigenen Fehler tragen einen
     // Schlüssel; alles andere (Netzwerk, JSZip) geht als Rohtext durch.
     chrome.runtime.sendMessage({

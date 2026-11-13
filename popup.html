@@ -4,167 +4,151 @@
   <meta charset="utf-8">
   <style>
     /* Dunkles Popup, bewusst unabhaengig vom System-Theme.
+       Farben, Kopfzeile, Karten und Knoepfe sind dieselben wie auf der
+       Einstellungs- und der Modellseite - das Popup ist die kleine
+       Ausgabe derselben Oberflaeche, nicht ein eigenes Design.
        Gedaempfte Texte nutzen #a6adc8: #6c7086 kam auf dem Hintergrund
        #1e1e2e nur auf 3.36:1 und war damit unter dem WCAG-Minimum von 4.5. */
     body {
-      font-family: system-ui, sans-serif;
-      width: 260px;
-      padding: 16px;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      width: 280px;
       margin: 0;
       background: #1e1e2e;
       color: #cdd6f4;
-    }
-    h2 {
-      font-size: 14px;
-      margin: 0 0 14px 0;
-      color: #cba6f7;
-      font-weight: 600;
-    }
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       font-size: 13px;
-      margin-bottom: 10px;
+      line-height: 1.5;
     }
+
+    .kopf {
+      background: #181825;
+      border-bottom: 1px solid #313244;
+      padding: 11px 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+    }
+    .kopf .logo {
+      font-weight: 900; font-size: 13px; color: #22c55e;
+      text-shadow: 1px 1px 0 #0d4e26;
+    }
+    .kopf .marke { font-size: 12px; font-weight: 600; color: #a6adc8; }
+
+    .inhalt { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Die beiden Ziele, zu denen man vom Popup aus wirklich will. Fuellung,
+       Rahmen und Pfeil sollen auf den ersten Blick "anklickbar" sagen - als
+       reine Farbflaeche wurde die Modelluebersicht fuer eine Ueberschrift
+       gehalten. */
+    .ziel {
+      font: inherit; font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      width: 100%; box-sizing: border-box; text-align: left;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      background: #313244; border: 1px solid #45475a; color: #cdd6f4;
+      transition: background .15s, border-color .15s;
+    }
+    .ziel .pfeil { font-size: 16px; color: #a6adc8; line-height: 1; }
+    .ziel:hover { background: #3b3d54; border-color: #cba6f7; }
+    .ziel.primaer { background: #1a3a2a; border-color: #2d5f42; color: #a6e3a1; }
+    .ziel.primaer .pfeil { color: #a6e3a1; }
+    .ziel.primaer:hover { background: #215040; border-color: #a6e3a1; }
+
+    .karte {
+      background: #181825; border: 1px solid #313244;
+      border-radius: 8px; padding: 11px 12px;
+    }
+    .reihe {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .reihe + .pause-btn { margin-top: 10px; }
+
     .badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 10px;
+      font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 10px;
     }
     .badge.active  { background: #1a3a2a; color: #a6e3a1; }
     .badge.paused  { background: #3a2e00; color: #fde047; }
+
     .pause-btn {
-      width: 100%;
-      padding: 7px 0;
-      border: none;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      margin-bottom: 14px;
+      font: inherit; font-size: 12px; font-weight: 500;
+      width: 100%; padding: 7px 0;
+      border: none; border-radius: 6px; cursor: pointer;
       transition: opacity .15s;
     }
     .pause-btn:hover { opacity: .85; }
-    .pause-btn.do-pause   { background: #3a2e00; color: #fde047; }
+    .pause-btn.do-pause   { background: #45475a; color: #cdd6f4; }
     .pause-btn.do-resume  { background: #1a3a2a; color: #a6e3a1; }
-    hr {
-      border: none;
-      border-top: 1px solid #313244;
-      margin: 0 0 12px 0;
-    }
-    .hint-pause {
-      font-size: 12px;
-      color: #a6adc8;
-      line-height: 1.5;
-      margin: -6px 0 12px 0;
-    }
-    .toggle {
-      position: relative;
-      width: 36px;
-      height: 20px;
-      flex-shrink: 0;
-    }
+
+    .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
     .toggle input { opacity: 0; width: 0; height: 0; }
     .slider {
-      position: absolute;
-      inset: 0;
-      background: #45475a;
-      border-radius: 20px;
-      cursor: pointer;
-      transition: .2s;
+      position: absolute; inset: 0;
+      background: #45475a; border-radius: 20px; cursor: pointer; transition: .2s;
     }
     .slider::before {
-      content: '';
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      left: 3px;
-      top: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: .2s;
+      content: ''; position: absolute;
+      width: 14px; height: 14px; left: 3px; top: 3px;
+      background: white; border-radius: 50%; transition: .2s;
     }
     input:checked + .slider { background: #a6e3a1; }
     input:checked + .slider::before { transform: translateX(16px); }
-    .debug-hint {
-      font-size: 12px;
-      color: #a6adc8;
-      line-height: 1.5;
-      margin: 4px 0 0 0;
-      display: none;
-    }
-    hr.sep-howto { margin: 14px 0 12px 0; }
-    .howto-title {
-      font-size: 12px;
-      font-weight: 600;
-      color: #cdd6f4;
-      margin: 0 0 7px 0;
-    }
-    .howto-text {
-      font-size: 12px;
-      color: #a6adc8;
-      line-height: 1.5;
-      margin: 0 0 8px 0;
-    }
-    .howto-warn {
-      font-size: 12px;
-      color: #fde047;
-      line-height: 1.5;
-      margin: 0 0 8px 0;
-    }
-    .howto-link { margin: 2px 0 0 0; }
-    .howto-link a {
-      font-size: 12px;
-      color: #cba6f7;
-      text-decoration: none;
-    }
-    .howto-link a:hover { text-decoration: underline; }
-    .howto-path {
-      font-size: 12px;
-      color: #a6e3a1;
-      font-family: ui-monospace, Consolas, "Courier New", monospace;
-      margin: 0 0 9px 0;
-      word-break: break-all;
+
+    .fussnote { font-size: 12px; color: #a6adc8; margin: 0; }
+    .hinweis  { font-size: 12px; color: #a6adc8; margin: 8px 0 0; }
+    .warnung {
+      font-size: 12px; line-height: 1.5; margin: 0;
+      background: #2a2305; border: 1px solid #4a3d0a; border-radius: 8px;
+      padding: 9px 11px; color: #fde047;
     }
   </style>
 </head>
 <body>
-  <h2>3D Model Auto-Downloader</h2>
 
-  <div class="row">
-    <span data-i18n="statusLabel">Status</span>
-    <span class="badge active" id="statusBadge" data-i18n="statusActive">Aktiv</span>
+<div class="kopf">
+  <span class="logo">3D</span>
+  <span class="marke" data-i18n="appName">3D Model Auto-Downloader</span>
+</div>
+
+<div class="inhalt">
+
+  <button class="ziel primaer" id="openLibrary">
+    <span data-i18n="popupLibraryButton">Meine Modelle</span>
+    <span class="pfeil" aria-hidden="true">›</span>
+  </button>
+  <button class="ziel" id="openOptions">
+    <span id="optionenText" data-i18n="popupOptionsButton">Einstellungen</span>
+    <span class="pfeil" aria-hidden="true">›</span>
+  </button>
+
+  <!-- Fehlt der Zielordner oder ist die Freigabe abgelaufen, laedt die
+       Erweiterung nichts herunter. Das muss weit oben stehen. -->
+  <p class="warnung" id="targetWarn" hidden data-i18n="popupTargetWarn">Die Berechtigung für deinen Zielordner ist abgelaufen. Bitte in den Optionen erneuern.</p>
+
+  <div class="karte">
+    <div class="reihe">
+      <span data-i18n="statusLabel">Status</span>
+      <span class="badge active" id="statusBadge" data-i18n="statusActive">Aktiv</span>
+    </div>
+    <button class="pause-btn do-pause" id="pauseBtn" data-i18n="pauseButton">Bis zum Neustart deaktivieren</button>
+    <p class="hinweis" id="pauseHint" style="display:none" data-i18n="pauseHint">Downloads werden ignoriert bis der Browser neu gestartet wird.</p>
   </div>
-  <button class="pause-btn do-pause" id="pauseBtn" data-i18n="pauseButton">Bis zum Neustart deaktivieren</button>
-  <p class="hint-pause" id="pauseHint" data-i18n="pauseHint">Downloads werden ignoriert bis der Browser neu gestartet wird.</p>
 
-  <hr>
-
-  <div class="row">
-    <span data-i18n="debugLabel">Debug-Modus</span>
-    <label class="toggle">
-      <input type="checkbox" id="debugToggle">
-      <span class="slider"></span>
-    </label>
+  <div class="karte">
+    <div class="reihe">
+      <span data-i18n="debugLabel">Debug-Modus</span>
+      <label class="toggle">
+        <input type="checkbox" id="debugToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <p class="hinweis" id="debugHint" style="display:none" data-i18n="debugHint">Zeigt detaillierte Logs in der Browser-Konsole (F12). Seite neu laden zum Aktivieren.</p>
   </div>
-  <p class="debug-hint" id="debugHint" data-i18n="debugHint">Zeigt detaillierte Logs in der Browser-Konsole (F12). Seite neu laden zum Aktivieren.</p>
 
-  <hr class="sep-howto">
+  <p class="fussnote" data-i18n="howToIcon">Grünes Symbol = Seite wird unterstützt (Thingiverse, MakerWorld, Printables).</p>
 
-  <!-- Kurzanleitung: Die Store-Beschreibung liest kaum jemand. Entscheidend ist
-       der Zielpfad – wer die Dateien nicht im gewohnten Downloads-Ordner findet,
-       hält die Erweiterung für kaputt. -->
-  <p class="howto-title" data-i18n="howToTitle">So funktioniert's</p>
-  <p class="howto-text" data-i18n="howToText">Lade ein Modell wie gewohnt herunter. Die Dateien landen sortiert in:</p>
-  <p class="howto-path" id="howtoPath">Downloads/STL_Downloads/</p>
-  <p class="howto-warn" id="targetWarn" hidden data-i18n="popupTargetWarn">Die Berechtigung für deinen Zielordner ist abgelaufen. Bitte in den Optionen erneuern.</p>
-  <p class="howto-text" data-i18n="howToIcon">Grünes Symbol = Seite wird unterstützt (Thingiverse, MakerWorld, Printables).</p>
+</div>
 
-  <p class="howto-link"><a href="#" id="openOptions" data-i18n="popupTargetLink">Zielordner ändern</a></p>
-
-  <script src="target_dir.js"></script>
-  <script src="popup.js"></script>
+<script src="target_dir.js"></script>
+<script src="popup.js"></script>
 </body>
 </html>

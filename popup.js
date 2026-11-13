@@ -52,18 +52,26 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'session' && 'isPaused' in changes) applyPauseState(!!changes.isPaused.newValue);
 });
 
-document.getElementById('openOptions').addEventListener('click', (e) => {
-  e.preventDefault();
-  chrome.runtime.openOptionsPage();
+const optionenBtn = document.getElementById('openOptions');
+
+document.getElementById('openLibrary').addEventListener('click', () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('library.html') });
 });
 
-// Hat der Nutzer einen eigenen Zielordner gewaehlt, muss die Anleitung seinen
-// Ordner nennen - sonst sucht er die Dateien im falschen Verzeichnis.
+optionenBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
+
+// Ohne Zielordner laedt die Erweiterung nichts herunter, bei abgelaufener
+// Freigabe genauso - beides muss das Popup sagen, sonst sucht der Nutzer den
+// Fehler woanders. Im ersten Fall sagt der Knopf gleich, was zu tun ist.
 (async () => {
   try {
-    const { state, name } = await targetDirStatus();
-    if (state === 'none') return;
-    document.getElementById('howtoPath').textContent = name + '/';
-    if (state === 'prompt') document.getElementById('targetWarn').hidden = false;
-  } catch { /* ohne Zielordner bleibt der Standardpfad stehen */ }
+    const { state } = await targetDirStatus();
+    if (state === 'granted') return;
+    const warn = document.getElementById('targetWarn');
+    if (state === 'none') {
+      warn.textContent = t('popupNoTarget');
+      document.getElementById('optionenText').textContent = t('libSetupButton');
+    }
+    warn.hidden = false;
+  } catch { /* Status unbekannt - dann keine Warnung behaupten */ }
 })();

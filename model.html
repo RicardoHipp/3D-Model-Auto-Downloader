@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>3D Model Auto-Downloader</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #1e1e2e; color: #cdd6f4;
+    margin: 0; font-size: 14px; line-height: 1.5;
+    height: 100vh; display: flex; flex-direction: column;
+  }
+
+  header {
+    background: #181825; border-bottom: 1px solid #313244;
+    padding: .85rem 1.5rem; flex-shrink: 0;
+  }
+  .marke-zeile { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .5rem; }
+  .marke-zeile .logo {
+    font-weight: 900; font-size: 13px; color: #22c55e; text-shadow: 1px 1px 0 #0d4e26;
+  }
+  .marke-zeile .marke { font-size: 12px; font-weight: 600; color: #a6adc8; }
+
+  /* Zwei Zeilen: oben der Titel mit den Knöpfen, darunter die Angaben.
+     In einer Zeile wurde der Titel bei langen Namen zur Schlange. */
+  .kopf { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; }
+  h1 { font-size: 1.15rem; margin: 0; color: #cdd6f4; word-break: break-word; order: 1; }
+  /* Zurück gehört zum Titel und steht gleich daneben; die Knöpfe, die am
+     Modell etwas tun, sammeln sich am rechten Rand. */
+  #zurueck { order: 2; }
+  .werkzeuge { order: 3; margin-left: auto; }
+  .meta {
+    order: 4; flex-basis: 100%;
+    display: flex; align-items: center; gap: .5rem; font-size: 12px; color: #a6adc8;
+  }
+  /* Adresse der Modellseite, aus info.txt im Modellordner. Als Schaltfläche
+     gestaltet - als blauer Text allein war nicht zu erkennen, dass er zur
+     Modellseite zurückführt. */
+  .adresse {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: 2px 9px; border-radius: 10px;
+    background: #1e1e2e; border: 1px solid #45475a;
+    color: #89b4fa; text-decoration: none; white-space: nowrap;
+  }
+  .adresse:hover { background: #252539; border-color: #89b4fa; }
+  .adresse[hidden] { display: none; }
+  .beschreibung {
+    margin: .5rem 0 0; font-size: 12px; color: #a6adc8; max-width: 60rem;
+    white-space: pre-wrap; max-height: 5.4rem; overflow: auto;
+  }
+  .beschreibung[hidden] { display: none; }
+  .quelle {
+    padding: 1px 7px; border-radius: 10px; font-weight: 600; font-size: 10px;
+    background: #313244; color: #cdd6f4;
+  }
+  .quelle.Thingiverse { background: #1a3a4a; color: #89dceb; }
+  .quelle.Printables  { background: #4a2a1a; color: #fab387; }
+  .quelle.MakerWorld  { background: #1a3a2a; color: #a6e3a1; }
+  .werkzeuge { margin-left: auto; display: flex; gap: .6rem; flex-wrap: wrap; }
+
+  button {
+    font: inherit; font-size: 13px; font-weight: 500;
+    padding: 7px 13px; border: none; border-radius: 6px; cursor: pointer;
+    background: #45475a; color: #cdd6f4;
+  }
+  button:hover { opacity: .85; }
+  button:disabled { opacity: .5; cursor: default; }
+  button.gefahr { background: #4a1f1f; color: #f38ba8; }
+  button.wichtig { background: #1a3a2a; color: #a6e3a1; }
+
+  main { flex: 1; display: flex; min-height: 0; }
+
+  /* Linke Spalte: jede Datei mit Vorschaubild */
+  .dateien {
+    width: 19rem; flex-shrink: 0; overflow: auto;
+    background: #181825; border-right: 1px solid #313244; padding: .6rem;
+  }
+  .datei {
+    display: flex; gap: .65rem; align-items: center; width: 100%;
+    padding: .45rem; margin-bottom: .3rem; border-radius: 8px;
+    background: none; border: 1px solid transparent; text-align: left;
+    cursor: pointer;
+  }
+  .datei:hover { background: #252539; }
+
+  /* Teile einer 3MF-Datei. Die Liste tritt an die Stelle der Dateiliste,
+     solange der Schalter in der Bühne gedrückt ist. */
+  .teile[hidden] { display: none; }
+  .teile h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    color: #6c7086; margin: 0 .3rem .5rem;
+  }
+  .teil {
+    display: flex; gap: .6rem; align-items: baseline; width: 100%;
+    padding: .35rem .45rem; margin-bottom: .15rem; border-radius: 7px;
+    background: none; border: 1px solid transparent; text-align: left;
+    cursor: pointer; color: #cdd6f4; font-size: 12px;
+  }
+  .teil:hover { background: #252539; }
+  .teil[aria-current="true"] { background: #2a2a40; border-color: #45475a; }
+  .teil .nr { color: #6c7086; font-variant-numeric: tabular-nums; min-width: 1.6rem; }
+  .teil .was { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .teil .mm { color: #6c7086; font-size: 11px; white-space: nowrap; }
+  .teilKnoepfe { display: flex; gap: .4rem; margin: .5rem .3rem 0; }
+  .teilKnoepfe button { flex: 1; font-size: 11px; padding: .4rem .3rem; }
+  .note { font-size: 11px; color: #a6adc8; margin: .5rem .3rem 0; }
+  .note[hidden] { display: none; }
+  .datei[aria-current="true"] { background: #252539; border-color: #cba6f7; }
+  .datei .bild {
+    width: 52px; height: 52px; flex-shrink: 0; border-radius: 6px;
+    background: #11111b; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .datei .bild img { width: 100%; height: 100%; object-fit: contain; }
+  .datei .bild .endung {
+    font-size: 10px; font-weight: 700; color: #45475a; letter-spacing: .03em;
+  }
+  .datei .text { min-width: 0; }
+  .datei .name {
+    font-size: 12px; word-break: break-all;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .datei .groesse { font-size: 11px; color: #a6adc8; }
+
+  /* Rechte Seite: die grosse Darstellung */
+  .buehne { flex: 1; position: relative; min-width: 0; background: #12121b; }
+  .buehne canvas { width: 100%; height: 100%; display: block; }
+  /* Ohne das bleiben beide Leinwände sichtbar: display aus der Regel
+     schlägt das hidden-Attribut. */
+  .buehne canvas[hidden], .buehne img[hidden] { display: none; }
+  .buehne img.gross {
+    width: 100%; height: 100%; object-fit: contain; display: block;
+  }
+  .lage {
+    position: absolute; left: 14px; bottom: 12px;
+    font-size: 11px; color: #6c7086; pointer-events: none;
+  }
+  /* Obere linke Ecke der Bühne: Abmessungen und der Schalter für die
+     Teileansicht, untereinander. */
+  .ecke {
+    position: absolute; left: 14px; top: 12px;
+    display: flex; flex-direction: column; align-items: flex-start; gap: .45rem;
+  }
+  .masse {
+    font-size: 12px; color: #a6adc8; pointer-events: none;
+    font-variant-numeric: tabular-nums;
+  }
+  .masse[hidden] { display: none; }
+  .eckKnopf {
+    font-size: 13px; padding: .5rem .9rem; border-radius: 8px;
+    background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
+    cursor: pointer;
+  }
+  .eckKnopf:hover { background: #252539; }
+  .eckKnopf[aria-pressed="true"] {
+    background: #2a2a40; border-color: #89b4fa; color: #89b4fa;
+  }
+  .eckKnopf[hidden] { display: none; }
+  .mitte {
+    position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; text-align: center; padding: 2rem;
+    color: #a6adc8; font-size: 13px;
+  }
+  .mitte[hidden] { display: none; }
+
+  /* Regler über der Bühne - zugeklappt, bis jemand etwas ändern will. */
+  .regler {
+    position: absolute; top: 12px; right: 12px; width: 15rem;
+    background: #181825e8; border: 1px solid #313244; border-radius: 8px;
+    font-size: 12px; backdrop-filter: blur(3px);
+  }
+  .regler summary {
+    cursor: pointer; padding: .5rem .7rem; color: #cdd6f4;
+    font-weight: 600; list-style: none;
+  }
+  .regler summary::-webkit-details-marker { display: none; }
+  .regler summary::after { content: ' ▾'; color: #a6adc8; }
+  .regler[open] summary::after { content: ' ▴'; }
+  .regler .inhalt { padding: 0 .7rem .7rem; }
+  .regler label { display: block; margin-bottom: .55rem; color: #a6adc8; }
+  .regler label span { display: flex; justify-content: space-between; gap: .5rem; }
+  .regler input[type="range"] { width: 100%; accent-color: #cba6f7; margin-top: .15rem; }
+  .regler input[type="color"] {
+    width: 100%; height: 24px; padding: 0; border: 1px solid #45475a;
+    border-radius: 4px; background: none; cursor: pointer; margin-top: .15rem;
+  }
+  .regler .wert { color: #a6e3a1; font-variant-numeric: tabular-nums; }
+  /* Ankreuzfeld: Haken und Beschriftung nebeneinander statt untereinander. */
+  .regler label.haken { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
+  .regler label.haken[hidden] { display: none; }
+  .regler label.haken span { display: inline; }
+  .regler label.haken input { accent-color: #cba6f7; margin: 0; }
+  .regler button { width: 100%; margin-top: .2rem; font-size: 12px; padding: 6px; }
+
+  .fortschritt {
+    position: absolute; left: 0; right: 0; top: 0; height: 3px; background: #313244;
+  }
+  .fortschritt i { display: block; height: 100%; width: 0; background: #a6e3a1; }
+  .fortschritt[hidden] { display: none; }
+
+  .warnung {
+    display: flex; align-items: flex-start; gap: .65rem;
+    font-size: 13px; color: #fde047; line-height: 1.5;
+    margin: .6rem 1.5rem 0; padding: .8rem .9rem;
+    background: #2a2305; border: 1px solid #4a3d0a; border-radius: 8px;
+  }
+  .warnung[hidden] { display: none; }
+  .warnung .zeichen {
+    flex-shrink: 0; width: 20px; height: 20px; margin-top: .1rem;
+    border-radius: 50%; background: #fde047; color: #2a2305;
+    font-weight: 900; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .warnung a { color: #fff3b0; }
+  /* Zweite Zeile mit dem vollständigen Pfad - zum Markieren oder Kopieren,
+     damit man ohne eingerichtetes Skript trotzdem hinkommt. */
+  .hinweisPfad {
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+    margin-top: .5rem;
+  }
+  .hinweisPfad code {
+    font-size: 12px; color: #fff3b0; user-select: all;
+    background: #1f1a04; border: 1px solid #4a3d0a; border-radius: 6px;
+    padding: 2px 7px; overflow-wrap: anywhere;
+  }
+  .hinweisPfad button {
+    font-size: 11px; padding: .25rem .6rem; border-radius: 6px;
+    background: #3a2f06; color: #fde047; border: 1px solid #4a3d0a;
+    cursor: pointer;
+  }
+  .hinweisPfad button:hover { background: #4a3d0a; }
+
+  dialog {
+    background: #181825; color: #cdd6f4; border: 1px solid #313244;
+    border-radius: 12px; max-width: 24rem; width: calc(100% - 2rem);
+    padding: 1.2rem 1.3rem 1.1rem;
+  }
+  dialog::backdrop { background: rgba(0,0,0,.6); }
+  dialog h2 { margin: 0 0 .5rem; font-size: 1rem; }
+  dialog p { margin: 0; color: #a6adc8; font-size: 13px; }
+  .f-fuss { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1.3rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marke-zeile">
+    <span class="logo">3D</span>
+    <span class="marke" data-i18n="appName">3D Model Auto-Downloader</span>
+  </div>
+  <div class="kopf">
+    <h1 id="titel">…</h1>
+    <div class="meta">
+      <span class="quelle" id="quelle" hidden></span>
+      <span id="datum"></span>
+      <span id="umfang"></span>
+      <a id="adresse" class="adresse" hidden target="_blank" rel="noopener noreferrer"></a>
+    </div>
+    <p class="beschreibung" id="beschreibung" hidden></p>
+    <button id="zurueck" data-i18n="modelBack">← Zurück zur Übersicht</button>
+    <div class="werkzeuge">
+      <button id="wieder" hidden data-i18n="libRestore">Wiederherstellen</button>
+      <button id="explorer" data-i18n="libOpenExplorer">Im Explorer öffnen</button>
+      <button class="gefahr" id="loeschen" data-i18n="libDelete">In den Papierkorb</button>
+    </div>
+  </div>
+</header>
+
+<div class="warnung" id="hinweis" hidden></div>
+
+<main>
+  <div class="dateien" id="dateienFach">
+    <div id="dateien"></div>
+
+    <div class="teile" id="teileFach" hidden>
+      <h2 data-i18n="modelParts">Teile</h2>
+      <div id="teileListe"></div>
+      <div class="teilKnoepfe">
+        <button id="teilSpeichern" disabled data-i18n="modelSavePart">Teil als STL</button>
+        <button id="alleSpeichern" data-i18n="modelSaveAll">Alle Teile</button>
+      </div>
+      <p class="note" id="teilInfo" hidden></p>
+    </div>
+  </div>
+  <div class="buehne" id="buehne">
+    <div class="fortschritt" id="fortschritt" hidden><i id="balken"></i></div>
+    <div class="mitte" id="mitte" data-i18n="modelPick">Wähle links eine Datei aus.</div>
+    <div class="ecke">
+      <div class="masse" id="masse" hidden></div>
+      <button class="eckKnopf" id="teileModus" hidden aria-pressed="false"
+              data-i18n="modelSplit">Einzelteile aus Datei exportieren</button>
+    </div>
+    <div class="lage" id="lage" hidden data-i18n="modelHelp">Ziehen = drehen · Rechte Taste = schieben · Rad = zoomen</div>
+
+    <details class="regler" id="regler" hidden>
+      <summary data-i18n="modelLook">Darstellung</summary>
+      <div class="inhalt">
+        <label class="haken" id="zDateiFarben" hidden>
+          <input type="checkbox" id="rDateiFarben">
+          <span data-i18n="modelFileColors">Farben der Datei</span>
+        </label>
+        <label><span data-i18n="modelColor">Farbe</span>
+          <input type="color" id="rFarbe" value="#1568d5"></label>
+        <label><span data-i18n="modelBg">Hintergrund</span>
+          <input type="color" id="rHintergrund" value="#000000"></label>
+        <label><span><span data-i18n="modelAmbient">Grundhelligkeit</span><span class="wert" id="wGrund"></span></span>
+          <input type="range" id="rGrund" min="0" max="1" step="0.01"></label>
+        <label><span><span data-i18n="modelKey">Kopflicht</span><span class="wert" id="wKopf"></span></span>
+          <input type="range" id="rKopf" min="0" max="1.5" step="0.01"></label>
+        <label><span><span data-i18n="modelFill">Zweites Licht</span><span class="wert" id="wZweit"></span></span>
+          <input type="range" id="rZweit" min="0" max="1" step="0.01"></label>
+        <label><span><span data-i18n="modelFillDir">Lichtrichtung</span><span class="wert" id="wRichtung"></span></span>
+          <input type="range" id="rRichtung" min="0" max="360" step="1"></label>
+        <label><span><span data-i18n="modelFillHeight">Lichthöhe</span><span class="wert" id="wHoehe"></span></span>
+          <input type="range" id="rHoehe" min="-90" max="90" step="1"></label>
+        <label><span><span data-i18n="modelRim">Kantenschimmer</span><span class="wert" id="wKante"></span></span>
+          <input type="range" id="rKante" min="0" max="0.6" step="0.01"></label>
+        <label><span><span data-i18n="modelGamma">Gamma</span><span class="wert" id="wGamma"></span></span>
+          <input type="range" id="rGamma" min="1.4" max="3" step="0.05"></label>
+
+        <button id="rZurueck" data-i18n="modelReset">Zurücksetzen</button>
+      </div>
+    </details>
+  </div>
+</main>
+
+<dialog id="frage">
+  <h2 id="frageTitel"></h2>
+  <p id="frageText"></p>
+  <div class="f-fuss">
+    <button id="frageNein" data-i18n="libCancel">Abbrechen</button>
+    <button id="frageJa" class="gefahr"></button>
+  </div>
+</dialog>
+
+<script src="target_dir.js"></script>
+<script src="explorer_link.js"></script>
+<script src="model_zip.js"></script>
+<script src="model_stl.js"></script>
+<script src="model_3mf.js"></script>
+<script src="model_view.js"></script>
+<script src="model.js"></script>
+</body>
+</html>

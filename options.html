@@ -4,78 +4,335 @@
 <meta charset="utf-8">
 <title>3D Model Auto-Downloader</title>
 <style>
+  :root { color-scheme: dark; }
   body {
-    font-family: system-ui, sans-serif;
-    background: #1e1e2e;
-    color: #cdd6f4;
-    margin: 0;
-    padding: 2.5rem 1.25rem 4rem;
-    font-size: 14px;
-    line-height: 1.6;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #1e1e2e; color: #cdd6f4;
+    margin: 0; font-size: 14px; line-height: 1.6;
   }
-  main { max-width: 34rem; margin: 0 auto; }
-  h1 { font-size: 1.3rem; color: #cba6f7; margin: 0 0 1.5rem; }
-  h2 { font-size: 1rem; margin: 0 0 .5rem; }
+
+  /* Zweispaltig: Menü links, Inhalt rechts. Unter 52rem rutscht das Menü
+     über den Inhalt, sonst bliebe für den Text zu wenig übrig. */
+  .seite {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: 2rem;
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    align-items: start;
+  }
+  @media (max-width: 52rem) {
+    .seite { grid-template-columns: 1fr; gap: 1.25rem; }
+    nav { position: static !important; }
+  }
+
+  /* Hinweis, warum die Seite von selbst aufging. Warnfarbe und volle Breite,
+     damit der Zusammenhang zum abgebrochenen Download sofort da ist. */
+  .meldung { background: #2a2410; border-bottom: 1px solid #a16207; }
+  .meldung-inhalt {
+    max-width: 68rem; margin: 0 auto; padding: 1rem 1.5rem;
+    display: flex; align-items: flex-start; gap: .9rem;
+  }
+  .meldung-zeichen {
+    flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%;
+    background: #fde047; color: #1e1e2e; font-weight: 900; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .meldung h2 { font-size: 14px; margin: .1rem 0 .3rem; color: #fde047; }
+  .meldung p { font-size: 13px; margin: 0; color: #e8e0c4; }
+
+  .kopf { border-bottom: 1px solid #313244; background: #181825; }
+  .kopf-inhalt {
+    max-width: 68rem; margin: 0 auto; padding: .9rem 1.5rem;
+    display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap;
+  }
+  .kopf .logo {
+    font-weight: 900; font-size: 15px; color: #22c55e;
+    text-shadow: 1px 1px 0 #0d4e26;
+  }
+  .kopf .marke { font-size: 14px; font-weight: 600; color: #cdd6f4; }
+  .kopf .trenner { color: #45475a; }
+  .kopf .unterzeile { font-size: 13px; color: #a6adc8; }
+
+  nav { position: sticky; top: 1.5rem; }
+  nav h1 { font-size: 1.05rem; color: #cba6f7; margin: 0 0 1.25rem; }
+  nav button {
+    display: block; width: 100%; text-align: left;
+    font: inherit; font-size: 13px;
+    background: none; border: none; border-left: 2px solid transparent;
+    color: #a6adc8; padding: .5rem .8rem; cursor: pointer; border-radius: 0 6px 6px 0;
+  }
+  nav button:hover { background: #252539; color: #cdd6f4; }
+  nav button[aria-current="true"] {
+    background: #252539; color: #cdd6f4; border-left-color: #cba6f7; font-weight: 600;
+  }
+
+  section[hidden] { display: none; }
+  h2 { font-size: 1.15rem; margin: 0 0 1.25rem; color: #cdd6f4; }
+  h3 { font-size: .9rem; margin: 1.5rem 0 .5rem; }
   p { color: #a6adc8; margin: 0 0 1rem; }
+  a { color: #cba6f7; }
+
   .card {
-    background: #181825;
-    border: 1px solid #313244;
-    border-radius: 8px;
-    padding: 1.25rem;
-    margin-bottom: 1.25rem;
+    background: #181825; border: 1px solid #313244;
+    border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem;
   }
   .state { font-size: 13px; margin: 0 0 1rem; }
+  /* Der Wartezustand ist kein Nebensatz: Hier haengt alles daran, dass der
+     Nutzer jetzt etwas ausserhalb des Browsers tut. */
+  .wartet {
+    display: flex; align-items: center; gap: .65rem;
+    background: #252539; border: 1px solid #45475a; border-radius: 8px;
+    padding: .75rem .9rem; margin: 0 0 1rem; color: #cdd6f4; font-size: 13px;
+  }
+  .wartet[hidden] { display: none; }
+  .wartet .kreisel {
+    width: 15px; height: 15px; flex-shrink: 0; border-radius: 50%;
+    border: 2px solid #45475a; border-top-color: #cba6f7;
+    animation: dreh .9s linear infinite;
+  }
+  @keyframes dreh { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .wartet .kreisel { animation: none; } }
   .state.granted { color: #a6e3a1; }
   .state.prompt  { color: #fde047; }
   .state.none    { color: #a6adc8; }
-  .path {
-    font-family: ui-monospace, Consolas, "Courier New", monospace;
-    color: #a6e3a1;
-    font-size: 13px;
-    word-break: break-all;
+
+  button.tat {
+    font: inherit; font-size: 13px; font-weight: 500;
+    padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer;
+    margin: 0 8px 8px 0; background: #45475a; color: #cdd6f4;
   }
-  button {
-    font: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    padding: 8px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    margin: 0 8px 8px 0;
-    background: #45475a;
-    color: #cdd6f4;
+  button.tat.primary { background: #1a3a2a; color: #a6e3a1; }
+  button.tat.warn    { background: #3a2e00; color: #fde047; }
+  button.tat:hover   { opacity: .85; }
+
+  /* Steht die Erneuerung an, ist dieser Knopf der einzige Grund, warum die
+     Seite aufgegangen ist - zwischen drei gleich grossen Nachbarn geht er
+     aber unter. Der Puls holt den Blick hin. Er haelt beim Daraufzeigen an,
+     damit er nicht unter dem Mauszeiger weiterzappelt. */
+  button.tat.pulst {
+    /* Der feine Rand liegt fest an und markiert den Knopf auch zwischen zwei
+       Wellen. outline statt border: braucht keinen Platz im Layout. */
+    outline: 1px solid rgba(253, 224, 71, .4);
+    animation: puls 2s ease-out infinite;
   }
-  button.primary { background: #1a3a2a; color: #a6e3a1; }
-  button.warn    { background: #3a2e00; color: #fde047; }
-  button:hover   { opacity: .85; }
+  button.tat.pulst:hover, button.tat.pulst:focus-visible { animation: none; }
+  /* Die Bewegung macht ein Ring, der nach aussen laeuft und verblasst - der
+     Knopf selbst bleibt stehen. Ein scale() auf dem Knopf liess die Schrift
+     bei jedem Durchlauf neu umbrechen und flimmern, weil die Buchstaben
+     dabei auf halben Bildpunkten landen. box-shadow waechst dagegen nur im
+     Umriss, die Schrift ruehrt sich nicht. */
+  @keyframes puls {
+    0%   { background: #3a2e00; box-shadow: 0 0 0 0 rgba(253, 224, 71, .5); }
+    55%  { background: #4b3b00; }
+    70%  { box-shadow: 0 0 0 11px rgba(253, 224, 71, 0); }
+    100% { background: #3a2e00; box-shadow: 0 0 0 0 rgba(253, 224, 71, 0); }
+  }
+  /* Wer Bewegung abgestellt hat, bekommt stattdessen einen festen Rand. */
+  @media (prefers-reduced-motion: reduce) {
+    button.tat.pulst { animation: none; outline-width: 2px; outline-color: rgba(253, 224, 71, .7); }
+  }
+
   .note { font-size: 12px; color: #a6adc8; margin-top: 1rem; }
+  .schalter { display: flex; align-items: center; gap: .6rem; cursor: pointer; margin: .3rem 0 .2rem; }
+  .schalter input { width: 16px; height: 16px; accent-color: #a6e3a1; cursor: pointer; }
+  .feldlabel { font-size: 12px; color: #cdd6f4; margin: 1rem 0 .35rem; }
+  input[type="text"] {
+    font: inherit; font-size: 13px; width: 100%; box-sizing: border-box;
+    font-family: ui-monospace, Consolas, "Courier New", monospace;
+    background: #1e1e2e; color: #cdd6f4;
+    border: 1px solid #45475a; border-radius: 6px; padding: 7px 10px;
+  }
+  input[type="text"]:focus { outline: 2px solid #cba6f7; outline-offset: -1px; }
+  .schritte { font-size: 13px; color: #a6adc8; padding-left: 1.2rem; margin: 0; }
+  .schritte li { margin-bottom: .45rem; }
+
+  /* Nummerierte Schritte, jeder mit seiner Aktion direkt dabei */
+  .anleitung { list-style: none; counter-reset: schritt; padding: 0; margin: 0; }
+  .anleitung > li {
+    counter-increment: schritt;
+    position: relative;
+    padding: 0 0 1.35rem 2.6rem;
+    border-left: 1px solid #313244;
+    margin-left: .9rem;
+  }
+  .anleitung > li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .anleitung > li::before {
+    content: counter(schritt);
+    position: absolute; left: -.9rem; top: 0;
+    width: 1.8rem; height: 1.8rem; border-radius: 50%;
+    background: #313244; color: #cdd6f4;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .anleitung h4 { font-size: 13px; margin: .15rem 0 .35rem; color: #cdd6f4; }
+  .anleitung p { font-size: 13px; margin: 0 0 .7rem; }
+  .anleitung .tat { margin-bottom: 0; }
+  .knopfreihe { display: flex; gap: .6rem; flex-wrap: wrap; }
+  /* Rueckfallweg: nur aufklappen, wer den Pfad lieber selbst eintraegt */
+  .ausklapp { margin-top: 1.1rem; border-top: 1px solid #313244; padding-top: .7rem; }
+  .ausklapp summary { font-size: 12px; color: #a6adc8; cursor: pointer; }
+  .ausklapp summary:hover { color: #cdd6f4; }
+  .ausklapp[open] summary { margin-bottom: .3rem; }
+  .befehl {
+    display: flex; align-items: center; gap: .6rem; margin-top: .9rem;
+    background: #11111b; border: 1px solid #313244; border-radius: 6px;
+    padding: .5rem .5rem .5rem .8rem;
+  }
+  .befehl code {
+    flex: 1; background: none; padding: 0; color: #a6e3a1;
+    font-size: 11.5px; overflow-x: auto; white-space: nowrap;
+  }
+  .befehl button { margin: 0; flex-shrink: 0; }
+  kbd {
+    font-family: inherit; font-size: .9em; background: #313244; color: #cdd6f4;
+    border-radius: 4px; padding: 1px 6px; border-bottom: 2px solid #11111b;
+  }
+  pre {
+    background: #11111b; border: 1px solid #313244; border-radius: 6px;
+    padding: .75rem .9rem; margin: .35rem 0 0;
+    font-family: ui-monospace, Consolas, "Courier New", monospace;
+    font-size: 11.5px; line-height: 1.5; color: #a6adc8;
+    overflow-x: auto; white-space: pre; max-height: 20rem; overflow-y: auto;
+  }
+  code {
+    font-family: ui-monospace, Consolas, monospace; font-size: .92em;
+    background: #11111b; padding: 1px 5px; border-radius: 4px; color: #a6e3a1;
+  }
+
 </style>
 </head>
 <body>
-<main>
 
-  <h1 data-i18n="optionsHeading">Zielordner</h1>
-
-  <div class="card">
-    <p class="state none" id="state">…</p>
-
-    <p data-i18n="optionsIntro">Standardmäßig legt die Erweiterung alle Dateien unter „Downloads/STL_Downloads/“ ab. Du kannst stattdessen einen eigenen Ordner wählen – dann schreibt die Erweiterung direkt dorthin.</p>
-
-    <button class="primary" id="choose" data-i18n="optionsChoose">Ordner wählen</button>
-    <button class="warn" id="renew" hidden data-i18n="optionsRenew">Berechtigung erneuern</button>
-    <button id="reset" hidden data-i18n="optionsReset">Auf Standard zurücksetzen</button>
+<header class="kopf">
+  <div class="kopf-inhalt">
+    <span class="logo">3D</span>
+    <span class="marke" data-i18n="appName">3D Model Auto-Downloader</span>
+    <span class="trenner">·</span>
+    <span class="unterzeile" data-i18n="optionsHeading">Einstellungen</span>
   </div>
+</header>
 
-  <div class="card">
-    <h2 data-i18n="optionsWhyHeading">Wofür ist das gut?</h2>
-    <p data-i18n="optionsWhyText">Hast du in Chrome eingestellt, dass bei jedem Download nach dem Speicherort gefragt wird, erscheint beim Entpacken eines ZIP-Archivs sonst ein Dialog pro Datei. Mit einem eigenen Zielordner entfallen diese Dialoge vollständig.</p>
-    <p class="note" data-i18n="optionsNote">Hinweis: Den Downloads-Ordner selbst sperrt Chrome für diese Funktion. Einen Unterordner darin kannst du wählen – im Auswahlfenster lässt sich dafür auch ein neuer Ordner anlegen.</p>
+<!-- Erklaert, warum diese Seite von selbst aufgegangen ist. Nur sichtbar, wenn
+     gerade ein Download daran gescheitert ist, dass der Zielordner fehlt. -->
+<div class="meldung" id="gestoppt" hidden>
+  <div class="meldung-inhalt">
+    <span class="meldung-zeichen" aria-hidden="true">!</span>
+    <div>
+      <h2 id="gestopptTitel"></h2>
+      <p id="gestopptText"></p>
+    </div>
   </div>
+</div>
 
-</main>
+<div class="seite">
+
+  <nav>
+    <button type="button" data-ziel="zielordner" aria-current="true" data-i18n="navTarget">Zielordner</button>
+    <button type="button" data-ziel="explorer" data-i18n="navExplorer">Ordner im Explorer öffnen</button>
+  </nav>
+
+  <div>
+
+    <!-- ===== Zielordner ===== -->
+    <section id="sec-zielordner">
+      <h2 data-i18n="navTarget">Zielordner</h2>
+
+      <div class="card">
+        <p class="state none" id="state">…</p>
+
+        <p data-i18n="optionsIntro">Die Erweiterung legt deine Dateien in einem Ordner deiner Wahl ab. Solange keiner festgelegt ist, werden Downloads gestoppt und nichts gespeichert.</p>
+
+        <button class="tat primary" id="choose" data-i18n="optionsChoose">Ordner wählen</button>
+        <button class="tat warn" id="renew" hidden data-i18n="optionsRenew">Berechtigung erneuern</button>
+        <button class="tat" id="forget" hidden data-i18n="optionsForget">Ordner entfernen</button>
+        <button class="tat" id="revoke" data-i18n="optionsRevoke">Freigabe in Chrome zurücknehmen</button>
+
+        <p class="note" id="firstRunNote" hidden data-i18n="optionsFirstRunNote">Beim nächsten Start des Browsers fragt Chrome noch einmal nach. Wähle dort „Bei jedem Besuch zulassen“ – danach ist dauerhaft Ruhe. Beim ersten Mal bietet Chrome diese Option noch nicht an.</p>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="optionsWhyHeading">Warum ist ein Ordner nötig?</h3>
+        <p data-i18n="optionsWhyText">Chrome lässt Erweiterungen nicht frei auf die Festplatte schreiben. Hast du einmal einen Ordner freigegeben, darf die Erweiterung die Dateien direkt dort ablegen – ohne dass Chrome bei jeder einzelnen Datei nach dem Speicherort fragt.</p>
+        <p class="note" data-i18n="optionsForgetNote">„Ordner entfernen“ löst nur die Zuordnung in der Erweiterung – Downloads werden danach wieder gestoppt. Die Freigabe, die du Chrome für den Ordner erteilt hast, bleibt dabei bestehen. Zurücknehmen kannst du sie oben mit „Freigabe in Chrome zurücknehmen“: Das öffnet die Einstellung „Dateien bearbeiten“, dort auf das Papierkorb-Symbol neben der Erweiterung klicken.</p>
+        <p class="note" data-i18n="optionsNote">Hinweis: Den Downloads-Ordner selbst sperrt Chrome für diese Funktion. Einen Unterordner darin kannst du wählen – im Auswahlfenster lässt sich dafür auch ein neuer Ordner anlegen.</p>
+      </div>
+    </section>
+
+    <!-- ===== Explorer ===== -->
+    <section id="sec-explorer" hidden>
+      <h2 data-i18n="navExplorer">Ordner im Explorer öffnen</h2>
+
+      <div class="card">
+        <p data-i18n="expIntro">In „Meine Modelle“ hat jedes Modell einen Knopf, der seinen Ordner im Windows-Explorer öffnet. Dafür sind zwei kleine Dateien nötig – die beiden Schritte unten richten sie ein. Das Ganze ist freiwillig: Lässt du es weg, funktioniert alles andere unverändert weiter, nur dieser eine Knopf bleibt dann ohne Wirkung.</p>
+        <p class="note" data-i18n="expOwnIntro">Zwei kleine Dateien, die wir hier erzeugen. Beide stehen unten im Klartext – du siehst also genau, was auf deinem Rechner landet. Das ist der Unterschied zu einem fertigen Programm, bei dem du dem Hersteller vertrauen musst.</p>
+
+        <ol class="anleitung">
+
+          <li>
+            <h4 data-i18n="expSetupS1Titel">Beide Dateien holen</h4>
+            <p data-i18n="expSetupS1Text">Ein Klick lädt das Skript und die Registrierungsdatei herunter und öffnet den Download-Ordner.</p>
+            <div class="knopfreihe">
+              <button class="tat primary" id="expHolen" data-i18n="expSetupButton">Dateien herunterladen und Ordner öffnen</button>
+            </div>
+            <p class="state" id="expHolInfo" hidden></p>
+          </li>
+
+          <li>
+            <h4 data-i18n="expSetupS2Titel">open-folder.vbs doppelklicken</h4>
+            <p data-i18n="expSetupS2Text">Windows fragt zuerst, ob du die Datei wirklich ausführen willst. Danach erklärt das Skript, was es tut, Windows bestätigt den Registrierungseintrag, und zuletzt wählst du deinen Zielordner aus – genau denselben, den du oben unter „Zielordner“ freigegeben hast.</p>
+            <div class="knopfreihe">
+              <button class="tat" id="expAbbrechen" hidden data-i18n="expSetupCancel">Abbrechen</button>
+            </div>
+            <p class="state" id="expZuordnenInfo" hidden></p>
+            <p class="state" id="expState"></p>
+
+            <details class="ausklapp">
+              <summary data-i18n="expManualSummary">Pfad stattdessen von Hand eintragen</summary>
+              <p class="feldlabel" data-i18n="expPathLabel">Vollständiger Pfad zu genau diesem Zielordner</p>
+              <input type="text" id="expPath" spellcheck="false" placeholder="D:\0000">
+              <p class="note" data-i18n="expPathHelp">Es muss derselbe Ordner sein, den du unter „Zielordner“ ausgewählt hast – nur eben als vollständiger Pfad.</p>
+
+              <div class="knopfreihe" style="margin-top:.9rem">
+                <button class="tat" id="expZuordnen" data-i18n="expAssignButton">Ordner zuordnen</button>
+                <button class="tat" id="expTest" data-i18n="expTestButton">Jetzt testen – Zielordner öffnen</button>
+              </div>
+              <p class="note" data-i18n="expS6Dialog">Beim ersten Mal fragt Chrome vorher noch: „Microsoft ® Windows Based Script Host öffnen?“ – das ist der Aufruf des Skripts. Setz dort den Haken „Immer zulassen …“ und bestätige.</p>
+              <p class="note" id="expTestUrl" hidden></p>
+            </details>
+          </li>
+
+        </ol>
+
+        <p class="note" data-i18n="expOwnSafety">Was das Skript kann: Es prüft, ob der übergebene Ordner existiert, und öffnet ihn im Explorer. Mehr nicht – es startet keine anderen Programme und löscht nichts. Die Registrierungsdatei schreibt nur unter deinem Benutzerkonto, nicht systemweit.</p>
+        <p class="note" data-i18n="expOwnVbsNote">Hinweis: Das Skript nutzt VBScript, weil es damit ohne aufblitzendes Fenster läuft. Microsoft hat VBScript abgekündigt – irgendwann wird es aus Windows verschwinden. Bis dahin funktioniert es zuverlässig; danach müsste diese Funktion anders gelöst werden.</p>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="expOwnCodeVbs">Inhalt von open-folder.vbs</h3>
+        <pre id="codeVbs"></pre>
+        <h3 data-i18n="expOwnCodeReg">Inhalt von stldl-protokoll.reg</h3>
+        <pre id="codeReg"></pre>
+      </div>
+
+      <div class="card">
+        <h3 data-i18n="expUndoHeading">Rückgängig machen</h3>
+        <p data-i18n="expUndoText">Mit dieser Datei wird der Registrierungseintrag wieder entfernt. Das Skript selbst bleibt liegen und kann danach samt seinem Ordner gelöscht werden.</p>
+        <div class="knopfreihe">
+          <button class="tat" id="dlRegAus" data-i18n="expUndoDownload">stldl-protokoll-entfernen.reg herunterladen</button>
+        </div>
+        <pre id="codeRegAus"></pre>
+      </div>
+
+    </section>
+
+  </div>
+</div>
 
 <script src="target_dir.js"></script>
+<script src="explorer_link.js"></script>
+<script src="explorer_setup.js"></script>
 <script src="options.js"></script>
 </body>
 </html>

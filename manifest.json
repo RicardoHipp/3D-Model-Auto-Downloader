@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "description": "__MSG_appDescription__",
   "homepage_url": "https://github.com/RicardoHipp/3D-Model-Auto-Downloader",
   "permissions": [
@@ -27,15 +27,64 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://www.thingiverse.com/*", "https://*.thingiverse.com/*"],
-      "js": ["content_main.js"],
+      "matches": [
+        "https://www.thingiverse.com/*",
+        "https://*.thingiverse.com/*"
+      ],
+      "js": [
+        "content_main.js"
+      ],
       "world": "MAIN",
       "run_at": "document_start"
     },
     {
-      "matches": ["https://www.thingiverse.com/*", "https://*.thingiverse.com/*"],
-      "js": ["content_isolated.js"],
+      "matches": [
+        "https://www.thingiverse.com/*",
+        "https://*.thingiverse.com/*"
+      ],
+      "js": [
+        "content_isolated.js"
+      ],
       "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://printables.com/*",
+        "https://*.printables.com/*",
+        "https://makerworld.com/*",
+        "https://*.makerworld.com/*"
+      ],
+      "js": [
+        "content_dl_main.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://printables.com/*",
+        "https://*.printables.com/*",
+        "https://makerworld.com/*",
+        "https://*.makerworld.com/*"
+      ],
+      "js": [
+        "content_dl_isolated.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.thingiverse.com/*",
+        "https://*.thingiverse.com/*",
+        "https://printables.com/*",
+        "https://*.printables.com/*",
+        "https://makerworld.com/*",
+        "https://*.makerworld.com/*"
+      ],
+      "js": [
+        "progress_banner.js"
+      ],
+      "run_at": "document_idle"
     }
   ],
   "options_ui": {
@@ -44,7 +93,9 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": { "128": "icon_startup.png" }
+    "default_icon": {
+      "128": "icon_startup.png"
+    }
   },
   "background": {
     "service_worker": "background.js"

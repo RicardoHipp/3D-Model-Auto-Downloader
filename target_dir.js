@@ -98,3 +98,24 @@ async function writeToTargetDir(relativePath, data) {
   await writable.close();
   return true;
 }
+
+// Gibt es die Datei im Zielordner schon? Wird gebraucht, um nichts zu
+// ueberschreiben, was spaeter einmal von Hand ergaenzt wurde.
+async function targetFileExists(relativePath) {
+  try {
+    const handle = await getTargetDir();
+    if (!handle) return false;
+    if (await handle.queryPermission({ mode: 'read' }) !== 'granted') return false;
+
+    const parts = relativePath.split('/').filter(Boolean);
+    const fileName = parts.pop();
+    if (!fileName) return false;
+
+    let dir = handle;
+    for (const part of parts) dir = await dir.getDirectoryHandle(part);
+    await dir.getFileHandle(fileName);
+    return true;
+  } catch {
+    return false;          // Ordner oder Datei gibt es nicht
+  }
+}
