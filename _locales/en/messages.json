@@ -1029,7 +1029,7 @@
     "description": "Model page."
   },
   "modelSplitOff": {
-    "message": "Back to files",
+    "message": "Back to file overview",
     "description": "Model page."
   },
   "infoHeader": {
@@ -1065,5 +1065,275 @@
   "modelFileColors": {
     "message": "Colours from file",
     "description": "Model page."
+  },
+  "modelStepLoading": {
+    "message": "Reading STEP file ($GROESSE$) …\nLarge files take a while, up to a minute or more.",
+    "description": "Model page.",
+    "placeholders": {
+      "groesse": {
+        "content": "$1",
+        "example": "45.8 MB"
+      }
+    }
+  },
+  "modelStepDetail": {
+    "message": "Detail",
+    "description": "Model page, STEP detail."
+  },
+  "modelStepCoarse": {
+    "message": "Coarse",
+    "description": "Model page, STEP detail."
+  },
+  "modelStepNormal": {
+    "message": "Standard",
+    "description": "Model page, STEP detail."
+  },
+  "modelStepFine": {
+    "message": "Fine",
+    "description": "Model page, STEP detail."
+  },
+  "modelStepVeryFine": {
+    "message": "Very fine",
+    "description": "Model page, STEP detail."
+  },
+  "modelStepWorking": {
+    "message": "recalculating …",
+    "description": "Model page, STEP detail."
+  },
+  "modelTriangles": {
+    "message": "$ANZAHL$ triangles",
+    "description": "Model page, STEP detail.",
+    "placeholders": {
+      "anzahl": {
+        "content": "$1",
+        "example": "31.196"
+      }
+    }
+  },
+  "modelStepDeviation": {
+    "message": "$STUFE$ · ±$MM$ mm",
+    "description": "Model page, STEP.",
+    "placeholders": {
+      "stufe": {
+        "content": "$1",
+        "example": "Fine"
+      },
+      "mm": {
+        "content": "$2",
+        "example": "0.08"
+      }
+    }
+  },
+  "modelStepPhase": {
+    "message": "$ABSCHNITT$ – $PROZENT$ %",
+    "description": "Model page, STEP.",
+    "placeholders": {
+      "abschnitt": {
+        "content": "$1",
+        "example": "Reading file"
+      },
+      "prozent": {
+        "content": "$2",
+        "example": "43"
+      }
+    }
+  },
+  "modelStepPhaseRead": {
+    "message": "Reading file",
+    "description": "Model page, STEP."
+  },
+  "modelStepPhaseShapes": {
+    "message": "Building shapes",
+    "description": "Model page, STEP."
+  },
+  "modelStepPhaseMesh": {
+    "message": "Meshing",
+    "description": "Model page, STEP."
+  },
+  "modelStepThreads": {
+    "message": "$GENUTZT$ of $GESAMT$ threads",
+    "description": "Model page, STEP threads.",
+    "placeholders": {
+      "genutzt": {
+        "content": "$1",
+        "example": "12"
+      },
+      "gesamt": {
+        "content": "$2",
+        "example": "16"
+      }
+    }
+  },
+  "modelStepThreadsHint": {
+    "message": "This many processor threads mesh the model at the same time. Two are left free so the computer stays responsive.",
+    "description": "Model page, STEP threads."
+  },
+  "modelPdfNewTab": {
+    "message": "Open in new tab ↗",
+    "description": "Model page, PDF."
+  },
+  "modelDetails": {
+    "message": "Description",
+    "description": "Model page, description entry."
+  },
+  "modelDetailsPlatform": {
+    "message": "Platform",
+    "description": "Model page, description entry."
+  },
+  "modelDetailsDownloaded": {
+    "message": "Downloaded",
+    "description": "Model page, description entry."
+  },
+  "modelDetailsSource": {
+    "message": "Model page",
+    "description": "Model page, description entry."
+  },
+  "modelDetailsNone": {
+    "message": "No description is stored for this model.",
+    "description": "Model page, description entry."
+  },
+  "modelStepFaces": {
+    "message": "face $FERTIG$ of $GESAMT$",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "fertig": {
+        "content": "$1",
+        "example": "1,237"
+      },
+      "gesamt": {
+        "content": "$2",
+        "example": "1,240"
+      }
+    }
+  },
+  "modelStepEdges": {
+    "message": "preparing edges",
+    "description": "Model page, STEP meshing progress."
+  },
+  "modelStepFirstMesh": {
+    "message": "first mesh",
+    "description": "Model page, STEP meshing progress."
+  },
+  "modelStepPass": {
+    "message": "pass $N$ of at most 11",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "4"
+      }
+    }
+  },
+  "modelStepInsert": {
+    "message": "inserting points $P$ %",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "p": {
+        "content": "$1",
+        "example": "45"
+      }
+    }
+  },
+  "modelStepCheck": {
+    "message": "checking triangles $P$ %",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "p": {
+        "content": "$1",
+        "example": "45"
+      }
+    }
+  },
+  "modelStepBorders": {
+    "message": "cleaning up borders $P$ %",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "p": {
+        "content": "$1",
+        "example": "45"
+      }
+    }
+  },
+  "modelStepActive": {
+    "message": "$N$ in progress at once",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "modelStepShape": {
+    "message": "shape $NR$ of $ANZAHL$",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "nr": {
+        "content": "$1",
+        "example": "2"
+      },
+      "anzahl": {
+        "content": "$2",
+        "example": "5"
+      }
+    }
+  },
+  "modelStepSurfacePoints": {
+    "message": "placing points on the face",
+    "description": "Model page, STEP meshing progress."
+  },
+  "modelStepClassify": {
+    "message": "checking points inside/outside $P$ %",
+    "description": "Model page, STEP meshing progress.",
+    "placeholders": {
+      "p": {
+        "content": "$1",
+        "example": "45"
+      }
+    }
+  },
+  "modelStepCleanup": {
+    "message": "tidying the mesh",
+    "description": "Model page, STEP meshing progress."
+  },
+  "modelStepDamaged": {
+    "message": "The STEP file is faulty; the display may differ",
+    "description": "Model page, faulty STEP file."
+  },
+  "modelStepDamagedFaces": {
+    "message": "$N$ face(s) could not be displayed",
+    "description": "Model page, faulty STEP file.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "modelStepDamagedEdges": {
+    "message": "$N$ edge(s) repaired",
+    "description": "Model page, faulty STEP file.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "1"
+      }
+    }
+  },
+  "modelShowAll": {
+    "message": "Show all",
+    "description": "Model page, parts view."
+  },
+  "modelHideAll": {
+    "message": "Hide all",
+    "description": "Model page, parts view."
+  },
+  "modelShowPart": {
+    "message": "Show part",
+    "description": "Model page, parts view."
+  },
+  "modelHidePart": {
+    "message": "Hide part",
+    "description": "Model page, parts view."
   }
 }

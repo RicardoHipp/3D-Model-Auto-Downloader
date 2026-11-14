@@ -67,3 +67,121 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+
+==============================================================================
+occt-import-js 0.0.23 und Open CASCADE Technology
+==============================================================================
+
+Verwendet zum Lesen von STEP-Dateien (vendor/occt-import-js.js/.wasm und
+die Fassung mit Threads vendor/occt-import-js-mt.js/.wasm). Selbst gebaut aus occt-import-js 0.0.23 mit
+Aenderungen - was geaendert ist und wie es gebaut wird, steht im
+Repository dieser Erweiterung unter vendor/occt-import-js-quelle/
+(LIESMICH.txt, aenderungen.diff, aendern.py, bauen.sh; Adresse unten).
+
+  occt-import-js       Copyright (c) Viktor Kovacs
+                       https://github.com/kovacsv/occt-import-js
+  Open CASCADE         Copyright (c) Open CASCADE SAS
+  Technology           https://dev.opencascade.org
+
+Lizenz: GNU Lesser General Public License, Version 2.1. Der vollstaendige
+Wortlaut liegt bei: vendor/LICENSE-occt-import-js.txt und
+vendor/LICENSE-occt.txt (dort auch die Ausnahme von Open CASCADE).
+
+Die Bibliothek ist als eigene Datei eingebunden und kann gegen eine andere
+Fassung ausgetauscht werden. Den Quelltext gibt es unter
+https://github.com/kovacsv/occt-import-js (Tag 0.0.23) und
+https://github.com/Open-Cascade-SAS/OCCT (Stand d2abb6d8), die Aenderungen im
+Repository dieser Erweiterung:
+https://github.com/RicardoHipp/3D-Model-Auto-Downloader/tree/main/vendor/occt-import-js-quelle
+
+
+==============================================================================
+Emscripten 3.1.69 - Laufzeitteile in vendor/occt-import-js*.js/.wasm
+https://emscripten.org
+==============================================================================
+
+occt-import-js ist mit Emscripten nach WebAssembly uebersetzt. Dabei kommen
+Teile von Emscripten selbst in die Ausgabe: der JavaScript-Rahmen um die
+.wasm (darin auch Code aus Node.js) und die C-Bibliothek musl. Deren
+Lizenzen folgen.
+
+Ebenfalls enthalten sind libc++, libc++abi und compiler-rt aus dem LLVM-
+Projekt (Apache License 2.0 mit LLVM Exceptions). Die LLVM-Ausnahme erlaubt
+die Weitergabe in uebersetzter Form ohne Lizenzhinweis; sie sind deshalb nur
+der Vollstaendigkeit halber genannt: https://llvm.org/LICENSE.txt
+
+-------------------------------------------------------------------------
+Emscripten
+Emscripten ist doppelt lizenziert: MIT oder University of Illinois/NCSA.
+Diese Erweiterung nutzt es unter der MIT-Lizenz; deren Text folgt.
+-------------------------------------------------------------------------
+
+Copyright (c) 2010-2014 Emscripten authors, see AUTHORS file.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+-------------------------------------------------------------------------
+Node.js - Teile davon im JavaScript-Rahmen von Emscripten (library_path.js)
+-------------------------------------------------------------------------
+
+Copyright Joyent, Inc. and other Node contributors. All rights reserved.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+IN THE SOFTWARE.
+
+-------------------------------------------------------------------------
+musl libc - in Emscripten enthalten
+https://musl.libc.org
+-------------------------------------------------------------------------
+
+Copyright © 2005-2020 Rich Felker, et al.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -29,6 +29,16 @@
 !model_stl.js
 !model_3mf.js
 !model_view.js
+!model_step_worker.js
+!vendor/
+!vendor/occt-import-js.js
+!vendor/occt-import-js.wasm
+!vendor/occt-import-js-mt.js
+!vendor/occt-import-js-mt.wasm
+!vendor/LICENSE-occt-import-js.txt
+!vendor/LICENSE-occt.txt
+!vendor/occt-import-js-quelle/
+!vendor/occt-import-js-quelle/*
 !target_dir.js
 !explorer_link.js
 !explorer_setup.js

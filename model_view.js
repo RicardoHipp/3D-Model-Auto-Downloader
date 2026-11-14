@@ -201,6 +201,8 @@ class Betrachter {
 
     // Nummer des hervorgehobenen Teils; null heisst: alle gleich hell.
     this.hervor = null;
+    // Teilnummern, die nicht gezeichnet werden (Teileansicht: ausblenden).
+    this.ausgeblendet = new Set();
     // Mehrfarbige Dateien in ihren Filamentfarben zeigen. hatDateiFarben
     // sagt, ob die aktuelle Datei ueberhaupt welche mitbringt.
     this.dateiFarben = true;
@@ -292,6 +294,7 @@ class Betrachter {
     });
 
     this.hervor = null;
+    this.ausgeblendet = new Set();
     this.passeEin(netze);
     this.zeichne();
   }
@@ -373,6 +376,7 @@ class Betrachter {
     let letzteFarbe = null;
 
     for (const n of this.netze) {
+      if (this.ausgeblendet.has(n.teil)) continue;
       const betont = this.hervor === null || n.teil === this.hervor;
 
       // Mehrfarbig: je Filament ein Abschnitt des Indexpuffers. Zurueck-
@@ -465,6 +469,8 @@ class Betrachter {
     gl.uniformMatrix4fv(this.kennOrte.mvp, false, this.letzteMvp);
 
     this.netze.forEach((n, i) => {
+      // Ausgeblendetes laesst sich auch nicht anklicken.
+      if (this.ausgeblendet.has(n.teil)) return;
       // Nummer ab 1, damit die 0 für "nichts getroffen" frei bleibt.
       const nummer = i + 1;
       gl.uniform4f(this.kennOrte.kennung,

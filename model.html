@@ -86,8 +86,38 @@
   }
   .datei:hover { background: #252539; }
 
+  /* Unterordner: Kopfzeile zum Auf- und Zuklappen, der Inhalt eingerueckt
+     mit einer feinen Linie links - so sieht man, was dazugehoert. */
+  .ordnerKopf {
+    display: flex; align-items: center; gap: .6rem; width: 100%;
+    padding: .65rem .7rem; margin-bottom: .3rem; border-radius: 8px;
+    background: #1e1e2e; border: 1px solid #45475a; text-align: left;
+    cursor: pointer; color: #cdd6f4; font-size: 14px; font-weight: 600;
+  }
+  .ordnerKopf:hover { background: #252539; border-color: #89b4fa; }
+  /* Pfeil im eigenen Kaestchen: deutlich als Schalter zu erkennen. */
+  .ordnerKopf .pfeil {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    background: #313244; color: #89b4fa; font-size: 12px; font-weight: 700; transition: transform .15s;
+  }
+  .ordnerKopf[aria-expanded="true"] .pfeil { transform: rotate(90deg); }
+  .ordnerKopf[aria-expanded="true"] { border-color: #585b70; }
+  .ordnerKopf .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ordnerKopf .name::before { content: "\1F4C1"; margin-right: .45rem; font-size: 17px; font-weight: 400; vertical-align: -2px; }
+  .ordnerKopf .anzahl {
+    font-size: 11px; font-weight: 600; color: #a6adc8;
+    background: #313244; border-radius: 999px; padding: .1rem .55rem;
+  }
+  .ordnerInhalt { margin: 0 0 .4rem .55rem; padding-left: .45rem; border-left: 1px solid #313244; }
+  .ordnerInhalt[hidden] { display: none; }
+
   /* Teile einer 3MF-Datei. Die Liste tritt an die Stelle der Dateiliste,
      solange der Schalter in der Bühne gedrückt ist. */
+  /* Teileansicht: Nur die Liste rollt, Knoepfe oben und unten bleiben stehen. */
+  .dateien:has(> .teile:not([hidden])) { overflow: hidden; display: flex; flex-direction: column; }
+  .teile { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #teileListe { flex: 1; min-height: 0; overflow: auto; }
   .teile[hidden] { display: none; }
   .teile h2 {
     font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
@@ -100,6 +130,18 @@
     cursor: pointer; color: #cdd6f4; font-size: 12px;
   }
   .teil:hover { background: #252539; }
+  /* Zeile: Auge zum Ein-/Ausblenden, daneben das Teil zum Auswaehlen. */
+  .teilZeile { display: flex; align-items: center; gap: .15rem; margin-bottom: .15rem; }
+  .teilZeile .teil { flex: 1; min-width: 0; margin-bottom: 0; }
+  .teilZeile .auge {
+    flex-shrink: 0; width: 26px; height: 26px; padding: 0; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid transparent; color: #89b4fa; cursor: pointer;
+  }
+  .teilZeile .auge:hover { background: #252539; border-color: #45475a; }
+  .teilZeile.aus .auge { color: #6c7086; }
+  .teilZeile.aus .teil { opacity: .45; }
+  .teilKnoepfe.sicht { margin: 0 .3rem .5rem; }
   .teil[aria-current="true"] { background: #2a2a40; border-color: #45475a; }
   .teil .nr { color: #6c7086; font-variant-numeric: tabular-nums; min-width: 1.6rem; }
   .teil .was { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -124,6 +166,43 @@
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
   .datei .groesse { font-size: 11px; color: #a6adc8; }
+  /* Eintrag "Beschreibung" ganz oben - etwas abgesetzt von den Dateien. */
+  .datei.details { border-bottom: 1px solid #313244; border-radius: 8px 8px 0 0; margin-bottom: .55rem; }
+  .datei.details .bild { font-size: 24px; color: #89b4fa; font-weight: 700; }
+
+  /* Beschreibung auf der Buehne: ruhig gesetzt, gut lesbar. */
+  .buehne .details {
+    position: absolute; inset: 0; overflow: auto;
+    padding: 2rem 2.5rem 3rem; background: #181825; color: #cdd6f4;
+  }
+  .buehne .details[hidden] { display: none; }
+  /* Mittig, breiter als eine reine Textspalte - aber nicht randlos. */
+  .details .inhalt { max-width: 64rem; margin: 0 auto; }
+  .details .oben { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.75rem; }
+  .details .titelbild {
+    flex: 0 0 auto; width: 300px; max-width: 40%; aspect-ratio: 4 / 3; object-fit: cover;
+    border-radius: 8px; border: 1px solid #313244; background: #1e1e2e; cursor: zoom-in;
+  }
+  .details .kopfText { flex: 1; min-width: 0; }
+  .details h2 { font-size: 1.4rem; margin: .1rem 0 1rem; }
+  .details dl {
+    display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem;
+    margin: 0; padding: .8rem 1rem;
+    background: #1e1e2e; border: 1px solid #313244; border-radius: 8px; font-size: 12px;
+  }
+  .details dt { color: #6c7086; }
+  .details dd { margin: 0; color: #cdd6f4; overflow-wrap: anywhere; }
+  .details .text { font-size: 15px; line-height: 1.65; }
+  @media (max-width: 900px) {
+    .details .oben { flex-direction: column; }
+    .details .titelbild { width: 100%; max-width: 420px; }
+  }
+  .details .text p { margin: 0 0 .9rem; }
+  .details .text ul { margin: 0 0 .9rem; padding-left: 1.3rem; }
+  .details .text li { margin: .15rem 0; }
+  .details a { color: #89b4fa; text-decoration: none; overflow-wrap: anywhere; }
+  .details a:hover { text-decoration: underline; }
+  .details .leer { color: #6c7086; font-style: italic; }
 
   /* Rechte Seite: die grosse Darstellung */
   .buehne { flex: 1; position: relative; min-width: 0; background: #12121b; }
@@ -134,14 +213,40 @@
   .buehne img.gross {
     width: 100%; height: 100%; object-fit: contain; display: block;
   }
+  /* PDF in Chromes eigenem Betrachter, ueber die ganze Buehne. */
+  .buehne iframe.pdf {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    border: 0; background: #525659;
+  }
+  .buehne iframe.pdf[hidden] { display: none; }
+  .pdfLeiste {
+    position: absolute; right: 14px; bottom: 12px;
+  }
+  .pdfLeiste[hidden] { display: none; }
+  .pdfLeiste a {
+    display: inline-block; font-size: 12px; padding: .35rem .7rem;
+    background: #1e1e2ee6; color: #cdd6f4; border: 1px solid #45475a;
+    border-radius: 7px; text-decoration: none;
+  }
+  .pdfLeiste a:hover { border-color: #89b4fa; color: #89b4fa; }
   .lage {
     position: absolute; left: 14px; bottom: 12px;
     font-size: 11px; color: #6c7086; pointer-events: none;
   }
-  /* Obere linke Ecke der Bühne: Abmessungen und der Schalter für die
-     Teileansicht, untereinander. */
+  /* Leiste oben auf der Bühne. Sie liegt über dem Modell: Nur die
+     Bedienelemente selbst nehmen die Maus an, dazwischen dreht man weiter. */
+  .obenLeiste {
+    position: absolute; left: 14px; right: 12px; top: 12px;
+    display: flex; flex-wrap: wrap; align-items: flex-start; gap: .6rem;
+    pointer-events: none;          /* dazwischen bleibt das Modell bedienbar */
+  }
+  .obenLeiste .feinheit, .obenLeiste .eckKnopf, .obenLeiste .regler { pointer-events: auto; }
+  /* Links und rechts gleich dehnbar, die Mitte nach Inhalt: So steht der
+     Schalter genau mittig. min-width sorgt dafuer, dass umgebrochen wird,
+     bevor etwas gequetscht wird. */
+  .ecke, .rechts { flex: 1 1 0; min-width: max-content; }
+  .rechts { display: flex; justify-content: flex-end; }
   .ecke {
-    position: absolute; left: 14px; top: 12px;
     display: flex; flex-direction: column; align-items: flex-start; gap: .45rem;
   }
   .masse {
@@ -149,6 +254,12 @@
     font-variant-numeric: tabular-nums;
   }
   .masse[hidden] { display: none; }
+  /* Fehlerhafte STEP-Datei - unter den Massen, gelb wie andere Warnungen. */
+  .stepWarnung {
+    font-size: 12px; color: #f9e2af; max-width: 34rem;
+    background: #1e1e2ecc; border: 1px solid #4a3d0a; border-radius: 8px; padding: .3rem .6rem;
+  }
+  .stepWarnung[hidden] { display: none; }
   .eckKnopf {
     font-size: 13px; padding: .5rem .9rem; border-radius: 8px;
     background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
@@ -159,16 +270,38 @@
     background: #2a2a40; border-color: #89b4fa; color: #89b4fa;
   }
   .eckKnopf[hidden] { display: none; }
+  /* Schalter fuer die Einzelteile: oben mittig ueber dem Modell. */
+  .obenMitte .eckKnopf { white-space: nowrap; }
+  /* Feinheit einer STEP-Datei: Regler mit Stufe und Dreieckszahl daneben,
+     damit der Unterschied auch in Zahlen sichtbar ist. */
+  .feinheit {
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+    font-size: 12px; color: #a6adc8;
+    background: #1e1e2ecc; border: 1px solid #313244; border-radius: 8px;
+    padding: .35rem .6rem;
+  }
+  .feinheit[hidden] { display: none; }
+  .feinheit input { width: 7rem; accent-color: #cba6f7; margin: 0; }
+  .feinheit .stufe { color: #cdd6f4; min-width: 9.5rem; }
+  .feinheit .zahl { color: #6c7086; font-variant-numeric: tabular-nums; }
+  .feinheit.rechnet .zahl { color: #fab387; }
+  .feinheit .kerne {
+    color: #6c7086; font-variant-numeric: tabular-nums;
+    border-left: 1px solid #313244; padding-left: .5rem;
+  }
+  .feinheit .kerne[hidden] { display: none; }
   .mitte {
     position: absolute; inset: 0; display: flex; align-items: center;
     justify-content: center; text-align: center; padding: 2rem;
     color: #a6adc8; font-size: 13px;
+    /* Mehrzeilige Hinweise wie beim Lesen einer STEP-Datei. */
+    white-space: pre-line;
   }
   .mitte[hidden] { display: none; }
 
   /* Regler über der Bühne - zugeklappt, bis jemand etwas ändern will. */
   .regler {
-    position: absolute; top: 12px; right: 12px; width: 15rem;
+    width: 15rem;
     background: #181825e8; border: 1px solid #313244; border-radius: 8px;
     font-size: 12px; backdrop-filter: blur(3px);
   }
@@ -200,6 +333,15 @@
   }
   .fortschritt i { display: block; height: 100%; width: 0; background: #a6e3a1; }
   .fortschritt[hidden] { display: none; }
+  /* Rechnet, aber ohne neuen Zwischenstand: ein Schimmer gleitet ueber die
+     ganze Leiste. Der Balken selbst bleibt beim echten Stand stehen. */
+  .fortschritt { overflow: hidden; }
+  .fortschritt.wartet::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 30%;
+    background: linear-gradient(90deg, transparent, #a6e3a1cc, transparent);
+    animation: schimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes schimmer { from { left: -30%; } to { left: 100%; } }
 
   .warnung {
     display: flex; align-items: flex-start; gap: .65rem;
@@ -277,6 +419,10 @@
 
     <div class="teile" id="teileFach" hidden>
       <h2 data-i18n="modelParts">Teile</h2>
+      <div class="teilKnoepfe sicht">
+        <button id="alleEin" data-i18n="modelShowAll">Alle einblenden</button>
+        <button id="alleAus" data-i18n="modelHideAll">Alle ausblenden</button>
+      </div>
       <div id="teileListe"></div>
       <div class="teilKnoepfe">
         <button id="teilSpeichern" disabled data-i18n="modelSavePart">Teil als STL</button>
@@ -288,13 +434,29 @@
   <div class="buehne" id="buehne">
     <div class="fortschritt" id="fortschritt" hidden><i id="balken"></i></div>
     <div class="mitte" id="mitte" data-i18n="modelPick">Wähle links eine Datei aus.</div>
+    <!-- Leiste oben: links Feinheit und Masse, mittig der Teile-Schalter,
+         rechts "Darstellung". Wird es zu eng, bricht sie um, statt dass
+         sich die Teile ueberdecken. -->
+    <div class="obenLeiste">
     <div class="ecke">
+      <!-- Regler zuerst, die Masse darunter. Ohne Regler (alles ausser
+           STEP) rutschen die Masse von selbst nach oben. -->
+      <div class="feinheit" id="feinheit" hidden>
+        <label for="rFeinheit" data-i18n="modelStepDetail">Feinheit</label>
+        <input type="range" id="rFeinheit" min="0" max="3" step="1" value="1">
+        <span class="stufe" id="wFeinheit"></span>
+        <span class="zahl" id="feinDreiecke"></span>
+        <span class="kerne" id="feinKerne" hidden></span>
+      </div>
       <div class="masse" id="masse" hidden></div>
+      <div class="stepWarnung" id="stepWarnung" hidden></div>
+    </div>
+    <!-- Oben in der Mitte, zwischen Feinheit links und Darstellung rechts -->
+    <div class="obenMitte">
       <button class="eckKnopf" id="teileModus" hidden aria-pressed="false"
               data-i18n="modelSplit">Einzelteile aus Datei exportieren</button>
     </div>
-    <div class="lage" id="lage" hidden data-i18n="modelHelp">Ziehen = drehen · Rechte Taste = schieben · Rad = zoomen</div>
-
+    <div class="rechts">
     <details class="regler" id="regler" hidden>
       <summary data-i18n="modelLook">Darstellung</summary>
       <div class="inhalt">
@@ -324,6 +486,10 @@
         <button id="rZurueck" data-i18n="modelReset">Zurücksetzen</button>
       </div>
     </details>
+    </div>
+    </div>
+    <div class="lage" id="lage" hidden data-i18n="modelHelp">Ziehen = drehen · Rechte Taste = schieben · Rad = zoomen</div>
+
   </div>
 </main>
 

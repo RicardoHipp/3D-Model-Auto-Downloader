@@ -27,6 +27,15 @@
     "https://cults3d.com/*",
     "https://*.cults3d.com/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "cross_origin_opener_policy": {
+    "value": "same-origin"
+  },
+  "cross_origin_embedder_policy": {
+    "value": "require-corp"
+  },
   "content_scripts": [
     {
       "matches": [

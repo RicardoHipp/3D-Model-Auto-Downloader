@@ -1,0 +1,75 @@
+occt-import-js - geänderte Fassung für den 3D Model Auto-Downloader
+====================================================================
+
+vendor/occt-import-js.js und vendor/occt-import-js.wasm sind aus
+occt-import-js 0.0.23 (https://github.com/kovacsv/occt-import-js, Tag 0.0.23)
+mit Open CASCADE Technology auf Stand d2abb6d844231cb8f29be6894440874a4700e4a5
+gebaut, mit den Änderungen in diesem Ordner. Beide stehen unter der LGPL 2.1,
+siehe vendor/LICENSE-occt-import-js.txt und vendor/LICENSE-occt.txt.
+
+Was geändert ist (aenderungen.diff zeigt es Zeile für Zeile):
+
+1. LoadStepFile / RetriangulateStepFile / ReleaseStepFile: Eine STEP-Datei
+   wird einmal eingelesen und behalten; danach lässt sie sich mit anderer
+   Feinheit neu zerlegen, ohne sie erneut einzulesen. Das Einlesen ist der
+   teure Teil. ReadStepFile bleibt unverändert verfügbar.
+
+2. Vor dem Zerlegen wird die vorhandene Zerlegung verworfen
+   (BRepTools::Clean). Sonst behält OpenCascade eine feinere Zerlegung, wenn
+   man zu einer gröberen Stufe zurückkehrt.
+
+3. Ecken und Dreiecke kommen als Float32Array/Uint32Array zurück, statt Zahl
+   für Zahl über die Grenze zu JavaScript geschrieben zu werden.
+
+4. Fortschritt: Datei lesen, Formen erzeugen und in Dreiecke zerlegen
+   melden ihren Stand an die JavaScript-Funktion occtFortschritt(abschnitt,
+   anteil), sofern es sie gibt. Das Lesen wird dafuer stueckweise aus dem
+   Puffer gegeben, die beiden anderen Schritte nutzen den Fortschritts-
+   anschluss von OpenCascade (Message_ProgressIndicator).
+
+5. Gebaut mit -sDYNAMIC_EXECUTION=0: kein zur Laufzeit erzeugter Code. Chrome-
+   Erweiterungen mit Manifest V3 verbieten den.
+
+6. Zwei Fassungen: occt-import-js.js/.wasm laeuft auf einem Kern,
+   occt-import-js-mt.js/.wasm verteilt das Zerlegen in Dreiecke auf mehrere
+   (CMake-Schalter OCCT_IMPORT_THREADS, Emscripten-Threads). Die zweite
+   braucht gemeinsamen Speicher (SharedArrayBuffer), also eine isolierte
+   Seite. Neu: SetupThreads(n) legt die Zahl der Threads fest.
+
+7. Zaehler fuer die Fortschrittsanzeige beim Zerlegen in Dreiecke
+   (BRepMesh_Statistik.hxx/.cxx, neu in OpenCascade/src/BRepMesh, dazu
+   einzelne Zeilen in BRepMesh_FaceDiscret, BRepMesh_Delaun,
+   BRepMesh_DelaunayBaseMeshAlgo, BRepMesh_DelaunayNodeInsertionMeshAlgo
+   und BRepMesh_DelaunayDeflectionControlMeshAlgo): Form, Flaechen gesamt/
+   fertig/in Arbeit, Nachbesserungs-Durchgang und der laufende Schritt
+   (Punkte einfuegen, Dreiecke pruefen, Raender bereinigen, Punkte innen/
+   aussen pruefen ...) mit seinem Stand. GetMeshStats() gibt eine
+   Int32Array-Ansicht darauf; in der Thread-Fassung liegt sie in gemeinsamem Speicher und laesst sich von der
+   Seite mitlesen, waehrend gerechnet wird. Am Ergebnis aendert das nichts.
+
+8. Reparatur nach dem Einlesen (importer-step.cpp): Manche STEP-Dateien
+   speichern einen Vollkreis als Kante mit leerem Bereich, Anfang und Ende
+   am selben Punkt. OpenCascade liest daraus einen Kreis der Laenge null,
+   der Flaeche fehlt ein Rand, und das Zerlegen spannt Dreiecke quer ueber
+   sie. Solche Kanten werden auf den vollen Umlauf gesetzt. Das behebt den
+   Fehler nicht in jedem Fall ganz; deshalb zaehlt die Bibliothek reparierte
+   Kanten und Flaechen, die sich nicht zerlegen liessen, und gibt beides mit
+   GetImportWarnings() heraus - die Seite weist dann auf eine fehlerhafte
+   Datei hin. Dateien ohne solche Kanten bleiben unberuehrt.
+
+Selbst bauen
+------------
+
+Mit Docker, im Abbild der Emscripten-Fassung, mit der auch das Original
+gebaut wird:
+
+  docker run --rm -v "<dieser Ordner>:/patch:ro" -v "<Ausgabeordner>:/out" ^
+      emscripten/emsdk:3.1.69 bash /patch/bauen.sh
+
+bauen.sh holt die Quellen von GitHub, wendet aendern.py an und legt beide
+Fassungen (occt-import-js.* und occt-import-js-mt.*) im Ausgabeordner ab.
+
+Fuer Versuche gibt es bauen_schnell.sh: gleicher Ablauf, aber mit einem
+Docker-Volume als dauerhaftem Bauordner. Nur der erste Lauf baut alles,
+danach wird nur neu uebersetzt, was aendern.py veraendert. Aufruf siehe
+Kopf der Datei. Fuer eine Veroeffentlichung gilt bauen.sh.

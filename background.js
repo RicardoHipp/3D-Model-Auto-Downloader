@@ -404,7 +404,7 @@ async function tryWriteToTarget(url, relativePath) {
 // auch mit dem Editor.
 const INFO_DATEI = 'info.txt';
 
-function infoInhalt({ titel, quelle, adresse }) {
+function infoInhalt({ titel, quelle, adresse, beschreibung }) {
   const jetzt = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   const zeilen = [
@@ -418,12 +418,135 @@ function infoInhalt({ titel, quelle, adresse }) {
       jetzt.getFullYear() + '-' + pad(jetzt.getMonth() + 1) + '-' + pad(jetzt.getDate()),
       pad(jetzt.getHours()) + ':' + pad(jetzt.getMinutes())
     ].join(' '),
-    '',
     ''
   ];
+  // Die Beschreibung der Website steht im freien Teil nach der Leerzeile -
+  // dort, wo auch eigene Notizen hingehoeren.
+  if (beschreibung) zeilen.push(...beschreibung.split('\n'));
+  zeilen.push('');
   // CRLF: Die Datei wird in erster Linie unter Windows gelesen, und der
   // Editor bricht dort sonst nicht um.
   return zeilen.join('\r\n');
+}
+
+// --- Beschreibung der Modellseite -----------------------------------------
+//
+// Laeuft im Tab der Plattform, also mit der Anmeldung des Nutzers und ohne
+// eigene Berechtigung - Abrufe dort sind Abrufe derselben Seite. Jede
+// Plattform legt die Beschreibung anders ab:
+//
+//   MakerWorld   in den Seitendaten (__NEXT_DATA__), als Uebersetzung und im
+//                Original. Neu abgerufen: Nach einem Wechsel innerhalb der
+//                Seite gehoeren die Daten im Tab noch zur vorigen.
+//   Printables   Block unter "Description". Auf dem Reiter "Files", wo man
+//                herunterlaedt, steht er nicht - also die Modellseite holen.
+//   Thingiverse  Reiter "Details" mit Absaetzen; sonst die Seitendaten
+//                (ld+json), die haben die Absaetze verloren.
+//   Cults        Heruntergeladen wird auf der Bestellseite - also die
+//                Modellseite holen, Block unter "Beschreibung".
+//
+// Gibt reinen Text zurueck: Absaetze und Aufzaehlungen bleiben erhalten,
+// Verweise bekommen ihre Adresse in Klammern dahinter.
+async function beschreibungAusSeite(plattform, modellAdresse) {
+  const BLOCK = /^(P|DIV|LI|UL|OL|H[1-6]|TR|TABLE|SECTION|ARTICLE|BLOCKQUOTE|PRE|HR|FIGURE)$/;
+  const zuText = (wurzel) => {
+    let aus = '';
+    const lauf = (knoten) => {
+      for (const n of knoten.childNodes) {
+        if (n.nodeType === 3) { aus += n.nodeValue.replace(/\s+/g, ' '); continue; }
+        if (n.nodeType !== 1) continue;
+        const tag = n.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'BUTTON') continue;
+        if (tag === 'BR') { aus += '\n'; continue; }
+        const block = BLOCK.test(tag);
+        if (block) aus += '\n';
+        if (tag === 'LI') aus += '\u2022 ';
+        lauf(n);
+        const ziel = tag === 'A' ? n.getAttribute('href') || '' : '';
+        // Adresse dahinter - ausser der Verweistext ist selbst schon eine.
+        if (/^https?:/i.test(ziel) && !/^\s*https?:/i.test(n.textContent || '')) aus += ' (' + ziel + ')';
+        if (block) aus += '\n';
+      }
+    };
+    lauf(wurzel);
+    const roh = aus.split('\n').map((z) => z.replace(/[ \t]+/g, ' ').trim());
+    // Steckt der Text eines Punktes in einem eigenen Absatz, stuende der
+    // Punkt allein in seiner Zeile - dann rueckt er vor den Text.
+    for (let i = 0; i < roh.length; i++) {
+      if (roh[i] !== '•') continue;
+      let j = i + 1;
+      while (j < roh.length && roh[j] === '') j++;
+      if (j < roh.length) roh[j] = '• ' + roh[j];
+      roh[i] = '';
+    }
+    const zeilen = roh.filter((z, i, alle) => z !== '' || alle[i - 1] !== '');   // nie zwei Leerzeilen
+    // Manche Seiten packen jeden Aufzaehlungspunkt in einen eigenen Absatz;
+    // die Leerzeile dazwischen faellt weg, damit die Liste eine Liste bleibt.
+    const ohneLuecken = zeilen.filter((z, i) =>
+      z !== '' || !(zeilen[i - 1]?.startsWith('• ') && zeilen[i + 1]?.startsWith('• ')));
+    return ohneLuecken.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  };
+  const ausHtml = (html) => zuText(new DOMParser().parseFromString(html, 'text/html').body);
+  const ausLd = (doc) => {
+    for (const s of doc.querySelectorAll('script[type="application/ld+json"]')) {
+      try {
+        const j = JSON.parse(s.textContent);
+        const d = Array.isArray(j) ? j.find((x) => x && x.description)?.description : j.description;
+        if (d) return String(d).trim();
+      } catch { /* naechster Block */ }
+    }
+    return '';
+  };
+  const hole = async (url) => new DOMParser().parseFromString(
+    await (await fetch(url, { credentials: 'include' })).text(), 'text/html');
+
+  try {
+    const url = (modellAdresse || location.href).split('#')[0];
+    let text = '';
+    if (plattform === 'MakerWorld') {
+      const doc = await hole(url);
+      const daten = JSON.parse(doc.getElementById('__NEXT_DATA__')?.textContent || '{}');
+      const modell = daten?.props?.pageProps?.design;
+      const html = modell?.summaryTranslated || modell?.summary || '';
+      text = html ? ausHtml(html) : ausLd(doc);
+    } else if (plattform === 'Thingiverse') {
+      const teile = [...document.querySelectorAll('[class*="DetailDescription__detailDescriptionPart"]')];
+      text = teile.map(zuText).filter(Boolean).join('\n\n') || ausLd(document) || ausLd(await hole(url));
+    } else if (plattform === 'Printables') {
+      // Immer die Hauptseite des Modells: Die Reiter (".../files",
+      // ".../comments") liefern nur die Kurzfassung.
+      const doc = await hole(url.replace(/(\/model\/\d+[^/?]*).*$/, '$1'));
+      const kopf = [...doc.querySelectorAll('h2')]
+        .find((h) => /^(Description|Beschreibung)$/i.test(h.textContent.trim()));
+      const block = kopf?.closest('.section-header')?.parentElement?.querySelector('.user-inserted')
+        || doc.querySelector('.user-inserted');
+      text = block ? zuText(block) : ausLd(doc);
+    } else if (plattform === 'Cults') {
+      const doc = await hole(url);
+      const block = doc.querySelector('.creation-page__tab-section .rich');
+      text = block ? zuText(block) : ausLd(doc);
+    }
+    // Obergrenze: Die info.txt soll lesbar bleiben, und manche Seiten
+    // haengen ganze Anleitungen an.
+    return text.length > 20000 ? text.slice(0, 20000) + '\n[...]' : text;
+  } catch {
+    return '';
+  }
+}
+
+async function holeBeschreibung(tabId, plattform, adresse) {
+  if (!tabId) return '';
+  try {
+    const [ergebnis] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: beschreibungAusSeite,
+      args: [plattform, adresse || null]
+    });
+    return typeof ergebnis?.result === 'string' ? ergebnis.result : '';
+  } catch (err) {
+    if (DEBUG) console.log('[Info] Beschreibung nicht gelesen:', err.message);
+    return '';
+  }
 }
 
 async function schreibeInfo(folderName, angaben) {
@@ -528,7 +651,8 @@ async function handleInterceptedDownload(cdnUrl, imageUrl, tab, source) {
     if (folderKey) setFolderMap(folderKey, finalFolderName);
   }
 
-  schreibeInfo(finalFolderName, { titel: modelName, quelle: source, adresse: folderKey });
+  holeBeschreibung(tab?.id, source, folderKey).then((beschreibung) =>
+    schreibeInfo(finalFolderName, { titel: modelName, quelle: source, adresse: folderKey, beschreibung }));
 
   const urlWithoutQuery = cdnUrl.split('?')[0];
   const rawFileName = urlWithoutQuery.split('/').pop();
@@ -910,7 +1034,8 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     if (folderKey) setFolderMap(folderKey, finalFolderName);
   }
 
-  schreibeInfo(finalFolderName, { titel: modelName, quelle: source, adresse: folderKey });
+  holeBeschreibung(matchingTab?.id, source, folderKey).then((beschreibung) =>
+    schreibeInfo(finalFolderName, { titel: modelName, quelle: source, adresse: folderKey, beschreibung }));
 
   // 7. Download abwickeln
   if (isZip) {
