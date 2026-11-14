@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "__MSG_appDescription__",
   "homepage_url": "https://github.com/RicardoHipp/3D-Model-Auto-Downloader",
   "permissions": [
@@ -23,7 +23,9 @@
     "https://*.prusa3d.com/*",
     "https://www.thingiverse.com/*",
     "https://*.thingiverse.com/*",
-    "https://cdn.thingiverse.com/*"
+    "https://cdn.thingiverse.com/*",
+    "https://cults3d.com/*",
+    "https://*.cults3d.com/*"
   ],
   "content_scripts": [
     {

@@ -16,7 +16,7 @@ self.addEventListener('unhandledrejection', (e) => {
 let DEBUG = false;
 let isPaused = false;
 
-const supportedHosts = ['makerworld.com', 'printables.com', 'thingiverse.com'];
+const supportedHosts = ['makerworld.com', 'printables.com', 'thingiverse.com', 'cults3d.com'];
 
 function isSupportedUrl(url) {
   try { return supportedHosts.some(h => new URL(url).hostname.includes(h)); } catch { return false; }
@@ -732,6 +732,11 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
 
   const isMakerWorld = ref.includes('makerworld.com') || urlStr.includes('makerworld.com') || urlStr.includes('bblmw.com');
   const isPrintables = ref.includes('printables.com') || urlStr.includes('printables.com');
+  // Cults: Gratis-Modelle laufen ueber eine Bestellung, die der Nutzer selbst
+  // anlegt. Wir greifen erst beim Link "Herunterladen aller" ein - ein
+  // gewoehnlicher Link auf cults3d.com/<sprache>/downloaden/<nr>, der auf
+  // download.cults3d.com weiterleitet und dort eine ZIP liefert.
+  const isCults = ref.includes('cults3d.com') || urlStr.includes('cults3d.com');
 
   // Tabs früh abfragen – für Thingiverse-Fallback und Startup-Schutz
   const tabs = await chrome.tabs.query({});
@@ -742,10 +747,12 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
   const isThingiverse = ref.includes('thingiverse.com') || urlStr.includes('thingiverse.com')
     || (hasThingiTab && urlStr.includes('cdn.thingiverse.com'));
 
-  if (!isMakerWorld && !isPrintables && !isThingiverse) return;
+  if (!isMakerWorld && !isPrintables && !isThingiverse && !isCults) return;
 
-  const source = isMakerWorld ? 'MakerWorld' : isPrintables ? 'Printables' : 'Thingiverse';
-  const sourceKeyword = isMakerWorld ? 'makerworld.com' : isPrintables ? 'printables.com' : 'thingiverse.com';
+  const source = isMakerWorld ? 'MakerWorld' : isPrintables ? 'Printables'
+    : isCults ? 'Cults' : 'Thingiverse';
+  const sourceKeyword = isMakerWorld ? 'makerworld.com' : isPrintables ? 'printables.com'
+    : isCults ? 'cults3d.com' : 'thingiverse.com';
 
   const referrerOrigin = ref ? (() => { try { return new URL(ref).origin; } catch { return null; } })() : null;
 
@@ -772,6 +779,12 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
   const isPdf  = filenameLower.endsWith('.pdf')   || urlLower.includes('.pdf');
   if (!isZip && !isStl && !is3mf && !isGcode && !isPdf) return;
 
+  // Cults: Abrufen laesst sich nur die signierte Adresse, auf die der Link
+  // weiterleitet (siehe unten bei "Download abwickeln"). Kennt Chrome sie
+  // noch nicht, bleibt der Download, wie er ist - besser im Download-Ordner
+  // als abgebrochen und dann an der Sperre gescheitert.
+  if (isCults && !/^https:\/\/download\.cults3d\.com\//.test(downloadItem.finalUrl || '')) return;
+
   // Fehlt der Zielordner, wird der Download abgebrochen statt im
   // Downloads-Ordner abgelegt. Hier hat Chrome ihn schon begonnen - also
   // zuruecknehmen, sonst liegt die Datei doch wieder am falschen Platz.
@@ -787,6 +800,9 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
   let imageUrl = null;
   const referrer = ref;
   let matchingTab = null;
+  // Bei Cults steht der Download auf der Bestellseite; info.txt und der
+  // Ordnerschluessel sollen aber auf die Modellseite zeigen.
+  let cultsModellSeite = null;
 
   try {
     // Printables: Modell-ID aus CDN-URL extrahieren und direkt den richtigen Tab finden
@@ -798,6 +814,15 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
         matchingTab = tabs.find(t => t.url?.includes(`printables.com/model/${modelId}`));
       }
     }
+    // Cults: Der Referrer ist nur "https://cults3d.com/" - die Seite gibt
+    // keinen Pfad preis. Geklickt wurde aber eben gerade, also ist es der
+    // aktive Tab; sonst irgendeine offene Bestellseite.
+    if (isCults) {
+      const aktiv = (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
+      matchingTab = aktiv?.url?.includes('cults3d.com') ? aktiv
+        : tabs.find(t => /cults3d\.com\/[a-z]{2}\/(bestellungen|orders|commandes|pedidos|ordini)\//.test(t.url || ''))
+          ?? tabs.find(t => t.url?.includes('cults3d.com'));
+    }
     // Mit Referrer: exakt per URL matchen. Ohne Referrer (Thingiverse): per Domain-Keyword
     if (!matchingTab) {
       const referrerPath = referrer ? referrer.split('?')[0] : null;
@@ -805,7 +830,50 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
         ? (tabs.find(t => t.url?.startsWith(referrerPath)) ?? tabs.find(t => { try { return new URL(t.url).origin === referrerOrigin; } catch { return false; } }))
         : tabs.find(t => t.url?.includes(sourceKeyword));
     }
-    if (matchingTab) {
+    if (matchingTab && isCults) {
+      // Auf der Bestellseite ist die h1 nur "Herunterladen #85250637". Den
+      // Titel liefert der Link zur Modellseite, erkannt am Kurznamen aus dem
+      // Download-Link - der ist in jeder Sprache gleich, der Pfad davor nicht.
+      let kurzname = null;
+      try { kurzname = new URL(urlStr).searchParams.get('creation'); } catch {}
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: matchingTab.id },
+        args: [kurzname],
+        func: (kurz) => {
+          const istModell = (a) => {
+            try {
+              const pfad = new URL(a.href).pathname.replace(/\/+$/, '');
+              return kurz ? pfad.endsWith('/' + kurz) : /\/(modell-3d|3d-model|modele-3d|modelo-3d|modello-3d)\//.test(pfad);
+            } catch { return false; }
+          };
+          const links = [...document.querySelectorAll('a[href]')].filter(istModell);
+          const mitText = links.find(a => (a.innerText || '').trim());
+
+          // Das Vorschaubild steht ein paar Ebenen ueber dem Titel, nicht im
+          // Link selbst. Es ist ein 113-Pixel-Daumennagel von images.cults3d.com
+          // - dessen Adresse traegt aber das Original von fbi.cults3d.com am
+          // Ende mit, und das nehmen wir.
+          let bild = null;
+          for (let k = mitText, stufe = 0; k && !bild && stufe < 6; stufe++) {
+            k = k.parentElement;
+            bild = k?.querySelector('img') || null;
+          }
+          let imgUrl = bild?.currentSrc || bild?.src || null;
+          const original = imgUrl ? imgUrl.lastIndexOf('https://') : -1;
+          if (original > 0) imgUrl = imgUrl.slice(original);
+
+          return {
+            title: (mitText?.innerText || '').trim() || null,
+            modelUrl: mitText?.href || links[0]?.href || null,
+            imgUrl
+          };
+        }
+      });
+      const r = results?.[0]?.result;
+      if (r?.title) modelName = r.title;
+      if (r?.imgUrl) imageUrl = r.imgUrl;
+      if (r?.modelUrl) cultsModellSeite = r.modelUrl;
+    } else if (matchingTab) {
       const results = await chrome.scripting.executeScript({
         target: { tabId: matchingTab.id },
         func: () => {
@@ -826,12 +894,13 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
 
   if (modelName === 'Model' && downloadItem.filename) {
     const baseName = downloadItem.filename.split(/[\\/]/).pop() || 'Model';
-    modelName = baseName.replace(/\.zip$/i, '').replace(/-3mf$/i, '').replace(/-stl$/i, '');
+    modelName = baseName.replace(/\.zip$/i, '').replace(/-3mf$/i, '').replace(/-stl$/i, '')
+      .replace(/\d{8}-\d+-[a-z0-9]+$/i, '');
   }
 
   // 6. Ordnername generieren
   // Key = Tab-URL (spezifische Modellseite), nicht der Referrer (könnte für mehrere Modelle gleich sein)
-  const folderKey = matchingTab?.url || referrer;
+  const folderKey = cultsModellSeite || matchingTab?.url || referrer;
   let finalFolderName;
   if (folderKey && folderMap[folderKey]) {
     finalFolderName = folderMap[folderKey];
@@ -845,10 +914,17 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
 
   // 7. Download abwickeln
   if (isZip) {
+    // Cults: Der Link auf cults3d.com antwortet ohne die Sitzung des Browsers
+    // mit 403. Er leitet aber auf eine signierte Adresse von
+    // download.cults3d.com weiter (CloudFront, 15 Minuten gueltig), die keine
+    // Cookies braucht - und die kennt Chrome hier schon als finalUrl.
+    // Fehlt sie, lassen wir den Download lieber normal laufen, statt ihn
+    // abzubrechen und dann an der Sperre zu scheitern.
+    const zipUrl = isCults ? downloadItem.finalUrl : downloadItem.url;
     chrome.downloads.cancel(downloadItem.id);
     chrome.downloads.erase({ id: downloadItem.id });
-    if (downloadQueue.some(item => item.url === downloadItem.url)) return;
-    downloadQueue.push({ url: downloadItem.url, folderName: finalFolderName, imageUrl, source, tabId: matchingTab?.id });
+    if (downloadQueue.some(item => item.url === zipUrl)) return;
+    downloadQueue.push({ url: zipUrl, folderName: finalFolderName, imageUrl, source, tabId: matchingTab?.id });
     saveState();
     await setupOffscreenDocument();
     if (offscreenReady && downloadQueue.length > 0) processQueue();

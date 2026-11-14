@@ -4,7 +4,7 @@
     "description": "Extension name. Brand name, kept identical in every language."
   },
   "appDescription": {
-    "message": "Automatically saves STL, 3MF and ZIP files from MakerWorld, Printables and Thingiverse into sorted subfolders.",
+    "message": "Automatically saves STL, 3MF and ZIP files from MakerWorld, Printables, Thingiverse and Cults3D into sorted subfolders.",
     "description": "Short description shown in the Chrome Web Store. Limit: 132 characters."
   },
   "statusLabel": {
@@ -40,7 +40,7 @@
     "description": "Popup: explanation shown while debug mode is on."
   },
   "howToIcon": {
-    "message": "Green icon = supported site (Thingiverse, MakerWorld, Printables).",
+    "message": "Green icon = supported site (Thingiverse, MakerWorld, Printables, Cults3D).",
     "description": "Popup: explains what the green toolbar icon means."
   },
   "notifySuccessTitle": {
@@ -532,7 +532,7 @@
     "message": "Welcome"
   },
   "welcomeIntroInstall": {
-    "message": "This extension downloads models from MakerWorld, Printables and Thingiverse into sorted folders automatically. One click on “Download” on the site is enough – the files end up on your drive with proper names, ZIP archives already unpacked."
+    "message": "This extension downloads models from MakerWorld, Printables, Thingiverse and Cults3D into sorted folders automatically. One click on “Download” on the site is enough – the files end up on your drive with proper names, ZIP archives already unpacked."
   },
   "welcomeIntroUpdate": {
     "message": "The extension has been updated. Here is what changed:"

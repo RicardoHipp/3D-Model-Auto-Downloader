@@ -87,6 +87,16 @@ async function handleUnzipAndDownload(url, folderName, source, tabId) {
       throw localisedError('errorEmptyZip');
     }
 
+    // Liegen alle Dateien im selben Unterordner, faellt der weg. Cults packt
+    // zum Beispiel "Ersteller/Modell/datei.stl" - im Modellordner stuende
+    // sonst noch einmal derselbe Name zwei Ebenen tief.
+    const gemeinsam = (() => {
+      const ordner = files.map(([pfad]) => pfad.split('/').slice(0, -1));
+      let tiefe = 0;
+      while (ordner.every(o => o.length > tiefe && o[tiefe] === ordner[0][tiefe])) tiefe++;
+      return tiefe ? ordner[0].slice(0, tiefe).join('/') + '/' : '';
+    })();
+
     // Gehe durch alle Dateien im ZIP-Archiv
     let fertig = 0;
     for (const [relativePath, fileEntry] of files) {
@@ -98,7 +108,8 @@ async function handleUnzipAndDownload(url, folderName, source, tabId) {
           text: `${fertig + 1} / ${files.length}`
         });
         // Ordnerstruktur erhalten, nicht-ASCII-Zeichen bereinigen
-        const cleanPath = relativePath.split('/').map(part => sanitizeName(part)).join('/');
+        const cleanPath = relativePath.slice(gemeinsam.length)
+          .split('/').map(part => sanitizeName(part)).join('/');
         const targetPath = `STL_Downloads/${folderName}/${cleanPath}`;
 
         // MIME-Type anhand der Dateiendung erzwingen, um fälschliches Umbenennen in .txt durch Chrome zu verhindern

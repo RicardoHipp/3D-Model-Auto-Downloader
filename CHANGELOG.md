@@ -4,6 +4,36 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.0.9] – 2026-11-14
+
+### Hinzugefügt
+
+- **Cults3D als vierte Plattform.** Gratis-Modelle laufen bei Cults über eine
+  Bestellung: Erst legt „Herunterladen – Gratis" sie an, dann lädt
+  „Herunterladen aller" die Dateien als ZIP. Den ersten Schritt macht weiter
+  der Nutzer selbst – er ist eine Handlung im eigenen Konto, und bei
+  kostenpflichtigen Modellen führt derselbe Knopf in den Bezahlvorgang. Die
+  Erweiterung greift erst beim zweiten Klick ein: ZIP entpacken, Vorschaubild
+  und `info.txt` dazulegen, alles im eigenen Ordner mit der Plattform
+  „Cults".
+
+  Der Titel kommt von der Bestellseite, die `info.txt` zeigt auf die
+  Modellseite. Abgerufen wird die signierte Adresse auf
+  `download.cults3d.com`, auf die Cults weiterleitet – der Link davor
+  antwortet ohne Sitzung des Browsers mit 403.
+
+### Geändert
+
+- **„Neueste zuerst" sortiert auch nach Uhrzeit.** Bisher kannte die
+  Übersicht nur das Datum aus dem Ordnernamen; Modelle desselben Tages
+  standen in zufälliger Reihenfolge. Jetzt zählt innerhalb eines Tages der
+  Zeitpunkt des Downloads, abgelesen an der ältesten Datei im Ordner.
+
+- **ZIP-Archive ohne überflüssige Ordnerebenen.** Liegen alle Dateien eines
+  Archivs im selben Unterordner, fällt der beim Entpacken weg. Cults packt
+  etwa „Ersteller/Modell/datei.stl" – im Modellordner stand sonst derselbe
+  Name noch einmal zwei Ebenen tief.
+
 ## [1.0.8] – 2026-11-14
 
 ### Hinzugefügt

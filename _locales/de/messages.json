@@ -4,7 +4,7 @@
     "description": "Name der Erweiterung. Markenname, bleibt in jeder Sprache gleich."
   },
   "appDescription": {
-    "message": "Lädt STL, 3MF und ZIP-Dateien von MakerWorld, Printables und Thingiverse automatisch in sortierte Unterordner.",
+    "message": "Lädt STL, 3MF und ZIP-Dateien von MakerWorld, Printables, Thingiverse und Cults3D automatisch in sortierte Unterordner.",
     "description": "Kurzbeschreibung im Chrome Web Store. Grenze: 132 Zeichen."
   },
   "statusLabel": {
@@ -40,7 +40,7 @@
     "description": "Popup: Erklärung, solange der Debug-Modus an ist."
   },
   "howToIcon": {
-    "message": "Grünes Symbol = Seite wird unterstützt (Thingiverse, MakerWorld, Printables).",
+    "message": "Grünes Symbol = Seite wird unterstützt (Thingiverse, MakerWorld, Printables, Cults3D).",
     "description": "Popup: erklärt, was das grüne Symbol in der Leiste bedeutet."
   },
   "notifySuccessTitle": {
@@ -532,7 +532,7 @@
     "message": "Willkommen"
   },
   "welcomeIntroInstall": {
-    "message": "Die Erweiterung lädt Modelle von MakerWorld, Printables und Thingiverse automatisch in sortierte Ordner. Ein Klick auf „Download“ auf der jeweiligen Seite genügt – die Dateien liegen danach fertig benannt auf der Platte, ZIP-Archive bereits entpackt."
+    "message": "Die Erweiterung lädt Modelle von MakerWorld, Printables, Thingiverse und Cults3D automatisch in sortierte Ordner. Ein Klick auf „Download“ auf der jeweiligen Seite genügt – die Dateien liegen danach fertig benannt auf der Platte, ZIP-Archive bereits entpackt."
   },
   "welcomeIntroUpdate": {
     "message": "Die Erweiterung wurde aktualisiert. Das hat sich geändert:"

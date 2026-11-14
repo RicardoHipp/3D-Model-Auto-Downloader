@@ -160,7 +160,29 @@ async function modelleAus(ordner) {
       ...zerlegeOrdnername(ohneMarke)
     });
   }
+  // Der Ordnername kennt nur den Tag. Fuer die Reihenfolge innerhalb eines
+  // Tages braucht es die Uhrzeit - die steht an den Dateien darin.
+  await Promise.all(raus.map(async (m) => { m.zeit = await zeitVon(m.handle); }));
   return raus;
+}
+
+// Wann das Modell heruntergeladen wurde: die aelteste Datei im Ordner.
+// Die juengste taugt nicht - die aendert sich, sobald man etwas dazulegt.
+// Nur die oberste Ebene, Unterordner wie "Einzelteile" entstehen spaeter.
+// getFile() liest dabei nur die Angaben, nicht den Inhalt.
+async function zeitVon(ordner) {
+  let aelteste = Infinity;
+  let gezaehlt = 0;
+  try {
+    for await (const [, eintrag] of ordner.entries()) {
+      if (eintrag.kind !== 'file') continue;
+      const zeit = (await eintrag.getFile()).lastModified;
+      if (zeit < aelteste) aelteste = zeit;
+      // Fuer die Reihenfolge genuegen ein paar Dateien.
+      if (++gezaehlt >= 12) break;
+    }
+  } catch { /* Ordner nicht lesbar - dann ohne Uhrzeit */ }
+  return Number.isFinite(aelteste) ? aelteste : 0;
 }
 
 // Gibt den Papierkorb-Ordner zurück, mit anlegen nur auf Wunsch: Beim bloßen
@@ -191,10 +213,14 @@ function gefiltert() {
     (!suchbegriff || m.titel.toLowerCase().includes(suchbegriff))
   );
   const sortierung = sortEl.value;
+  // Erst nach dem Tag im Ordnernamen - der steht auf der Karte und soll
+  // zur Reihenfolge passen -, innerhalb des Tages nach der Uhrzeit.
+  const nachDatum = (a, b) =>
+    (a.datum || '').localeCompare(b.datum || '') || (a.zeit || 0) - (b.zeit || 0);
   liste.sort((a, b) =>
     sortierung === 'name-auf' ? a.titel.localeCompare(b.titel, 'de')
-    : sortierung === 'datum-auf' ? (a.datum || '').localeCompare(b.datum || '')
-    : (b.datum || '').localeCompare(a.datum || '')
+    : sortierung === 'datum-auf' ? nachDatum(a, b)
+    : nachDatum(b, a)
   );
   return liste;
 }
