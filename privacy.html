@@ -20,45 +20,59 @@
 <body>
 
 <h1>Datenschutzerklärung</h1>
-<p class="stand">3D Model Downloader &amp; Organizer (Chrome-Erweiterung) · Stand: 1. August 2026</p>
+<p class="stand">3D Model Downloader &amp; Organizer (Chrome-Erweiterung) · Stand: 15. November 2026</p>
 
 <h2>Kurzfassung</h2>
 <p>
-  Diese Erweiterung erhebt, speichert und überträgt <strong>keine personenbezogenen Daten</strong>.
+  Diese Erweiterung erhebt und überträgt <strong>keine personenbezogenen Daten</strong>.
   Es gibt keinen Server, keine Analyse, kein Tracking und keine Weitergabe an Dritte.
-  Alle Verarbeitungsschritte finden ausschließlich lokal in Ihrem Browser statt.
+  Alles, was die Erweiterung verarbeitet oder speichert, bleibt auf Ihrem Gerät – in Ihrem
+  Browser und in dem Ordner, den Sie selbst als Zielordner auswählen.
 </p>
 
 <h2>Was die Erweiterung tut</h2>
 <p>
-  Die Erweiterung erkennt Downloads von 3D-Druckdateien auf Thingiverse, MakerWorld und
-  Printables und legt sie in einem nach Modellname und Plattform benannten Unterordner ab.
-  ZIP-Archive werden dabei im Arbeitsspeicher des Browsers entpackt.
+  Die Erweiterung erkennt Downloads von 3D-Druckdateien auf Thingiverse, MakerWorld, Printables
+  und Cults3D und legt sie in einem nach Modellname, Plattform und Datum benannten Unterordner
+  Ihres Zielordners ab. ZIP-Archive werden dabei im Arbeitsspeicher des Browsers entpackt.
+  Außerdem bietet sie eine Übersicht über die gespeicherten Modelle mit eigenen Tags, eine
+  3D-Vorschau und das Umwandeln von Dateien in STL – auch das ausschließlich lokal.
 </p>
 
 <h2>Auf welche Daten zugegriffen wird</h2>
 <p>
-  Für diese Aufgabe liest die Erweiterung die folgenden Informationen. Sie werden ausschließlich
-  im Arbeitsspeicher verarbeitet, nicht dauerhaft gespeichert und nicht übertragen:
+  Beim Herunterladen liest die Erweiterung auf den vier unterstützten Plattformen:
 </p>
 <ul>
-  <li><strong>Adressen geöffneter Tabs</strong> der drei unterstützten Plattformen – um zu erkennen, zu welchem Modell ein Download gehört.</li>
-  <li><strong>Modellname und Vorschaubild</strong> der geöffneten Modellseite – um den Zielordner zu benennen und die Vorschau zu speichern.</li>
-  <li><strong>Download-Adressen</strong> der Auslieferungsserver – um die Dateien in den richtigen Ordner umzuleiten.</li>
+  <li><strong>Adressen geöffneter Tabs</strong> – um zu erkennen, zu welchem Modell ein Download gehört.</li>
+  <li><strong>Modellname, Vorschaubild und Beschreibung</strong> der Modellseite – um den Zielordner zu benennen und Vorschau, Link und Beschreibung neben dem Modell abzulegen. Dafür ruft die Erweiterung die Modellseite der jeweiligen Plattform auf.</li>
+  <li><strong>Download-Adressen</strong> der Auslieferungsserver – um die Dateien in den richtigen Ordner zu leiten.</li>
 </ul>
 <p>
-  Beim Herunterladen von ZIP-Archiven wird die Anfrage mit den Anmeldedaten Ihrer aktiven
-  Browser-Sitzung an die jeweilige Plattform gestellt, damit Downloads funktionieren, die eine
-  Anmeldung voraussetzen. Diese Anmeldedaten werden von der Erweiterung weder gelesen noch
-  gespeichert – sie werden ausschließlich vom Browser an die betreffende Plattform gesendet,
-  genau wie beim normalen Herunterladen über die Website.
+  Anfragen an die Plattformen werden mit den Anmeldedaten Ihrer aktiven Browser-Sitzung gestellt,
+  damit Downloads funktionieren, die eine Anmeldung voraussetzen. Diese Anmeldedaten werden von der
+  Erweiterung weder gelesen noch gespeichert – sie werden ausschließlich vom Browser an die
+  betreffende Plattform gesendet, genau wie beim normalen Herunterladen über die Website.
 </p>
 
-<h2>Lokal gespeicherte Einstellungen</h2>
+<h2>Was gespeichert wird</h2>
+<p><strong>In Ihrem Zielordner</strong>, neben den heruntergeladenen Dateien:</p>
+<ul>
+  <li>das Vorschaubild des Modells,</li>
+  <li>eine Textdatei <code>info.txt</code> mit Titel, Plattform, Adresse der Modellseite, Zeitpunkt des Downloads, der Beschreibung des Erstellers und Ihren eigenen Tags,</li>
+  <li>Dateien, die Sie selbst erzeugen, etwa als STL gespeicherte Modelle oder Einzelteile.</li>
+</ul>
+<p><strong>Im lokalen Speicher des Browsers:</strong></p>
+<ul>
+  <li>der Zugriff auf den gewählten Zielordner,</li>
+  <li>ein Zwischenspeicher für die Übersicht: Ordnernamen, Titel, Tags und verkleinerte Vorschaubilder der Modelle, damit die Übersicht schnell öffnet,</li>
+  <li>neu angelegte, noch keinem Modell zugeordnete Tags,</li>
+  <li>Einstellungen: Darstellung der 3D-Vorschau, Pfad für „Im Explorer öffnen“, Pausenzustand und Debug-Modus,</li>
+  <li>für die laufende Browsersitzung: die Zuordnung von Modellseite zu Zielordner und die Warteschlange offener Downloads.</li>
+</ul>
 <p>
-  Im lokalen Browserspeicher werden ausschließlich abgelegt: die Zuordnung von Modellseite zu
-  Zielordner, der Pausenzustand und die Einstellung des Debug-Modus. Diese Daten verlassen Ihr
-  Gerät nicht und werden beim Entfernen der Erweiterung gelöscht.
+  Diese Daten verlassen Ihr Gerät nicht. Der Speicher im Browser wird beim Entfernen der
+  Erweiterung gelöscht; die Dateien im Zielordner bleiben, bis Sie sie selbst löschen.
 </p>
 
 <h2>Keine Weitergabe</h2>
@@ -78,43 +92,57 @@
 
 <div class="en">
 <h1>Privacy Policy</h1>
-<p class="stand">3D Model Downloader &amp; Organizer (Chrome extension) · Last updated: 1 August 2026</p>
+<p class="stand">3D Model Downloader &amp; Organizer (Chrome extension) · Last updated: 15 November 2026</p>
 
 <h2>Summary</h2>
 <p>
-  This extension does <strong>not collect, store or transmit any personal data</strong>. There is no
-  server, no analytics, no tracking and no sharing with third parties. All processing happens
-  locally in your browser.
+  This extension does <strong>not collect or transmit any personal data</strong>. There is no
+  server, no analytics, no tracking and no sharing with third parties. Everything the extension
+  processes or stores stays on your device – in your browser and in the folder you choose as
+  your target folder.
 </p>
 
 <h2>What the extension does</h2>
 <p>
-  It detects downloads of 3D printing files on Thingiverse, MakerWorld and Printables and saves
-  them into a subfolder named after the model and platform. ZIP archives are extracted in browser
-  memory.
+  It detects downloads of 3D printing files on Thingiverse, MakerWorld, Printables and Cults3D and
+  saves them into a subfolder of your target folder, named after the model, platform and date. ZIP
+  archives are extracted in browser memory. It also offers a library of your saved models with
+  your own tags, a 3D preview and conversion of files to STL – all of it locally as well.
 </p>
 
 <h2>Data accessed</h2>
 <p>
-  The following information is read, held in memory only, never stored permanently and never
-  transmitted anywhere:
+  When downloading, the extension reads the following on the four supported platforms:
 </p>
 <ul>
-  <li><strong>URLs of open tabs</strong> on the three supported platforms – to determine which model a download belongs to.</li>
-  <li><strong>Model title and preview image</strong> of the open model page – to name the target folder and save the preview.</li>
-  <li><strong>Download URLs</strong> of the platforms' delivery servers – to redirect files into the correct folder.</li>
+  <li><strong>URLs of open tabs</strong> – to determine which model a download belongs to.</li>
+  <li><strong>Model title, preview image and description</strong> of the model page – to name the target folder and to save the preview, the link and the description next to the model. To do so, the extension loads the model page from the respective platform.</li>
+  <li><strong>Download URLs</strong> of the platforms' delivery servers – to route files into the correct folder.</li>
 </ul>
 <p>
-  When downloading ZIP archives, the request is sent with your active browser session so that
-  downloads requiring a login work as expected. The extension neither reads nor stores those
-  credentials; they are sent by the browser to the platform exactly as during a normal download.
+  Requests to the platforms are sent with your active browser session so that downloads requiring a
+  login work as expected. The extension neither reads nor stores those credentials; they are sent by
+  the browser to the platform exactly as during a normal download.
 </p>
 
-<h2>Locally stored settings</h2>
+<h2>What is stored</h2>
+<p><strong>In your target folder</strong>, next to the downloaded files:</p>
+<ul>
+  <li>the model's preview image,</li>
+  <li>a text file <code>info.txt</code> with title, platform, address of the model page, time of download, the creator's description and your own tags,</li>
+  <li>files you create yourself, such as models or individual parts saved as STL.</li>
+</ul>
+<p><strong>In local browser storage:</strong></p>
+<ul>
+  <li>access to the chosen target folder,</li>
+  <li>a cache for the library: folder names, titles, tags and reduced preview images of the models, so that the library opens quickly,</li>
+  <li>newly created tags not yet assigned to a model,</li>
+  <li>settings: display of the 3D preview, the path for "Open in Explorer", the paused state and debug mode,</li>
+  <li>for the current browser session: the mapping of model page to target folder and the queue of pending downloads.</li>
+</ul>
 <p>
-  Only the following is kept in local browser storage: the mapping of model page to target folder,
-  the paused state and the debug-mode setting. This data never leaves your device and is removed
-  when the extension is uninstalled.
+  This data never leaves your device. Browser storage is removed when the extension is
+  uninstalled; the files in your target folder stay until you delete them yourself.
 </p>
 
 <h2>No sharing</h2>

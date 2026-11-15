@@ -6,6 +6,9 @@
 !LICENSE
 !LIZENZEN-DRITTER.txt
 !CHANGELOG.md
+!README.md
+!docs/
+!docs/screenshot.jpg
 !manifest.json
 !background.js
 !content_isolated.js
