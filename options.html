@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>3D Model Auto-Downloader</title>
+<title>3D Model Downloader &amp; Organizer</title>
 <style>
   :root { color-scheme: dark; }
   body {
@@ -42,21 +42,20 @@
   .meldung h2 { font-size: 14px; margin: .1rem 0 .3rem; color: #fde047; }
   .meldung p { font-size: 13px; margin: 0; color: #e8e0c4; }
 
-  .kopf { border-bottom: 1px solid #313244; background: #181825; }
+  .kopf {
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    background: rgba(24, 24, 37, .72);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
   .kopf-inhalt {
     max-width: 68rem; margin: 0 auto; padding: .9rem 1.5rem;
-    display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap;
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
   }
-  .kopf .logo {
-    font-weight: 900; font-size: 15px; color: #22c55e;
-    text-shadow: 1px 1px 0 #0d4e26;
-  }
-  .kopf .marke { font-size: 14px; font-weight: 600; color: #cdd6f4; }
-  .kopf .trenner { color: #45475a; }
-  .kopf .unterzeile { font-size: 13px; color: #a6adc8; }
+  /* Neben dem "3D" (Home-Knopf, home.js) steht nur, welche Seite das ist. */
+  .kopf .unterzeile { font-size: 1.15rem; font-weight: 600; color: #0a84ff; }
 
   nav { position: sticky; top: 1.5rem; }
-  nav h1 { font-size: 1.05rem; color: #cba6f7; margin: 0 0 1.25rem; }
+  nav h1 { font-size: 1.05rem; color: #0a84ff; margin: 0 0 1.25rem; }
   nav button {
     display: block; width: 100%; text-align: left;
     font: inherit; font-size: 13px;
@@ -65,17 +64,17 @@
   }
   nav button:hover { background: #252539; color: #cdd6f4; }
   nav button[aria-current="true"] {
-    background: #252539; color: #cdd6f4; border-left-color: #cba6f7; font-weight: 600;
+    background: #252539; color: #cdd6f4; border-left-color: #0a84ff; font-weight: 600;
   }
 
   section[hidden] { display: none; }
   h2 { font-size: 1.15rem; margin: 0 0 1.25rem; color: #cdd6f4; }
   h3 { font-size: .9rem; margin: 1.5rem 0 .5rem; }
   p { color: #a6adc8; margin: 0 0 1rem; }
-  a { color: #cba6f7; }
+  a { color: #0a84ff; }
 
   .card {
-    background: #181825; border: 1px solid #313244;
+    background: #181825; border: 1px solid rgba(255, 255, 255, .07);
     border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem;
   }
   .state { font-size: 13px; margin: 0 0 1rem; }
@@ -83,13 +82,13 @@
      Nutzer jetzt etwas ausserhalb des Browsers tut. */
   .wartet {
     display: flex; align-items: center; gap: .65rem;
-    background: #252539; border: 1px solid #45475a; border-radius: 8px;
+    background: #252539; border: 1px solid rgba(255, 255, 255, .12); border-radius: 8px;
     padding: .75rem .9rem; margin: 0 0 1rem; color: #cdd6f4; font-size: 13px;
   }
   .wartet[hidden] { display: none; }
   .wartet .kreisel {
     width: 15px; height: 15px; flex-shrink: 0; border-radius: 50%;
-    border: 2px solid #45475a; border-top-color: #cba6f7;
+    border: 2px solid rgba(255, 255, 255, .12); border-top-color: #0a84ff;
     animation: dreh .9s linear infinite;
   }
   @keyframes dreh { to { transform: rotate(360deg); } }
@@ -142,9 +141,9 @@
     font: inherit; font-size: 13px; width: 100%; box-sizing: border-box;
     font-family: ui-monospace, Consolas, "Courier New", monospace;
     background: #1e1e2e; color: #cdd6f4;
-    border: 1px solid #45475a; border-radius: 6px; padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, .12); border-radius: 6px; padding: 7px 10px;
   }
-  input[type="text"]:focus { outline: 2px solid #cba6f7; outline-offset: -1px; }
+  input[type="text"]:focus { outline: 2px solid #0a84ff; outline-offset: -1px; }
   .schritte { font-size: 13px; color: #a6adc8; padding-left: 1.2rem; margin: 0; }
   .schritte li { margin-bottom: .45rem; }
 
@@ -154,7 +153,7 @@
     counter-increment: schritt;
     position: relative;
     padding: 0 0 1.35rem 2.6rem;
-    border-left: 1px solid #313244;
+    border-left: 1px solid rgba(255, 255, 255, .07);
     margin-left: .9rem;
   }
   .anleitung > li:last-child { border-left-color: transparent; padding-bottom: 0; }
@@ -171,13 +170,13 @@
   .anleitung .tat { margin-bottom: 0; }
   .knopfreihe { display: flex; gap: .6rem; flex-wrap: wrap; }
   /* Rueckfallweg: nur aufklappen, wer den Pfad lieber selbst eintraegt */
-  .ausklapp { margin-top: 1.1rem; border-top: 1px solid #313244; padding-top: .7rem; }
+  .ausklapp { margin-top: 1.1rem; border-top: 1px solid rgba(255, 255, 255, .07); padding-top: .7rem; }
   .ausklapp summary { font-size: 12px; color: #a6adc8; cursor: pointer; }
   .ausklapp summary:hover { color: #cdd6f4; }
   .ausklapp[open] summary { margin-bottom: .3rem; }
   .befehl {
     display: flex; align-items: center; gap: .6rem; margin-top: .9rem;
-    background: #11111b; border: 1px solid #313244; border-radius: 6px;
+    background: #11111b; border: 1px solid rgba(255, 255, 255, .07); border-radius: 6px;
     padding: .5rem .5rem .5rem .8rem;
   }
   .befehl code {
@@ -190,7 +189,7 @@
     border-radius: 4px; padding: 1px 6px; border-bottom: 2px solid #11111b;
   }
   pre {
-    background: #11111b; border: 1px solid #313244; border-radius: 6px;
+    background: #11111b; border: 1px solid rgba(255, 255, 255, .07); border-radius: 6px;
     padding: .75rem .9rem; margin: .35rem 0 0;
     font-family: ui-monospace, Consolas, "Courier New", monospace;
     font-size: 11.5px; line-height: 1.5; color: #a6adc8;
@@ -202,14 +201,13 @@
   }
 
 </style>
+<link rel="stylesheet" href="modern.css">
 </head>
 <body>
 
 <header class="kopf">
   <div class="kopf-inhalt">
-    <span class="logo">3D</span>
-    <span class="marke" data-i18n="appName">3D Model Auto-Downloader</span>
-    <span class="trenner">·</span>
+    <a class="home">3D</a>
     <span class="unterzeile" data-i18n="optionsHeading">Einstellungen</span>
   </div>
 </header>
@@ -334,5 +332,6 @@
 <script src="explorer_link.js"></script>
 <script src="explorer_setup.js"></script>
 <script src="options.js"></script>
+<script src="home.js"></script>
 </body>
 </html>

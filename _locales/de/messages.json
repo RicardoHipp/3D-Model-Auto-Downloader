@@ -1,6 +1,6 @@
 {
   "appName": {
-    "message": "3D Model Auto-Downloader",
+    "message": "3D Model Downloader & Organizer",
     "description": "Name der Erweiterung. Markenname, bleibt in jeder Sprache gleich."
   },
   "appDescription": {
@@ -226,7 +226,7 @@
     "description": "Library page."
   },
   "libSearch": {
-    "message": "Nach Namen suchen …",
+    "message": "Nach Namen oder Tag suchen …",
     "description": "Library page."
   },
   "libAllPlatforms": {
@@ -616,7 +616,7 @@
     "message": "Download fehlgeschlagen"
   },
   "vbsHeader": {
-    "message": "Öffnet einen Ordner im Windows-Explorer und meldet auf Anfrage seinen\nvollständigen Pfad zurück.\nWird von Windows aufgerufen, wenn eine Adresse mit stldl: angeklickt wird.\nGehört zur Chrome-Erweiterung \"3D Model Auto-Downloader\".\n\nLegt bei Problemen die Datei open-folder.log daneben – dort steht, was\ngenau angekommen ist. Läuft alles glatt, wird nichts geschrieben."
+    "message": "Öffnet einen Ordner im Windows-Explorer und meldet auf Anfrage seinen\nvollständigen Pfad zurück.\nWird von Windows aufgerufen, wenn eine Adresse mit stldl: angeklickt wird.\nGehört zur Chrome-Erweiterung \"3D Model Downloader & Organizer\".\n\nLegt bei Problemen die Datei open-folder.log daneben – dort steht, was\ngenau angekommen ist. Läuft alles glatt, wird nichts geschrieben."
   },
   "vbsVersion": {
     "message": "Fassung dieses Skripts. Steht in der ersten Zeile jeder Rückmeldung,\ndamit die Erweiterung ein veraltetes Skript erkennen kann."
@@ -661,7 +661,7 @@
     "message": "Lebenszeichen im geöffneten Ordner hinterlassen. Die Erweiterung sieht\nkurz darauf nach und weiß daran, dass das Skript wirklich lief – ein\nProtokoll-Aufruf gibt sonst keinerlei Rückmeldung. Sie löscht die Datei\ngleich wieder."
   },
   "regRegister": {
-    "message": "Meldet das Schema \"stldl:\" bei Windows an und verknüpft es mit dem\nSkript open-folder.vbs. Gehört zur Chrome-Erweiterung\n\"3D Model Auto-Downloader\"."
+    "message": "Meldet das Schema \"stldl:\" bei Windows an und verknüpft es mit dem\nSkript open-folder.vbs. Gehört zur Chrome-Erweiterung\n\"3D Model Downloader & Organizer\"."
   },
   "regUndoHint": {
     "message": "Zum Rückgängigmachen gibt es in den Einstellungen der Erweiterung\ndie Datei stldl-protokoll-entfernen.reg."
@@ -688,10 +688,6 @@
   },
   "libTrashButton": {
     "message": "Papierkorb",
-    "description": "Library page."
-  },
-  "libTrashBack": {
-    "message": "Zurück zu den Modellen",
     "description": "Library page."
   },
   "libTrashEmptyButton": {
@@ -765,10 +761,6 @@
         "example": "212"
       }
     }
-  },
-  "modelBack": {
-    "message": "← Zurück zur Übersicht",
-    "description": "Model page."
   },
   "modelPick": {
     "message": "Wähle links eine Datei aus.",
@@ -847,7 +839,7 @@
     "description": "Model page."
   },
   "vbsAskTitle": {
-    "message": "3D Model Auto-Downloader einrichten",
+    "message": "3D Model Downloader & Organizer einrichten",
     "description": "Options page."
   },
   "vbsAskText": {
@@ -1045,14 +1037,6 @@
         "example": "MakerWorld"
       }
     }
-  },
-  "modelSplitting": {
-    "message": "Wird zerlegt …",
-    "description": "Model page."
-  },
-  "modelOneBody": {
-    "message": "Die Datei enthält nur einen zusammenhängenden Körper.",
-    "description": "Model page."
   },
   "libCopyPath": {
     "message": "Pfad kopieren",
@@ -1335,5 +1319,189 @@
   "modelHidePart": {
     "message": "Teil ausblenden",
     "description": "Model page, parts view."
+  },
+  "libSyncing": {
+    "message": "Wird aktualisiert …",
+    "description": "Library and model page, tags."
+  },
+  "libTags": {
+    "message": "Tags",
+    "description": "Library and model page, tags."
+  },
+  "libTagsEdit": {
+    "message": "Tags bearbeiten",
+    "description": "Library and model page, tags."
+  },
+  "libTagsEditHint": {
+    "message": "Tags bearbeiten (Rechtsklick geht auch, Strg+Klick markiert mehrere Modelle)",
+    "description": "Library and model page, tags."
+  },
+  "libTagsFor": {
+    "message": "Für $N$ markierte Modelle",
+    "description": "Library and model page, tags.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libTagAdd": {
+    "message": "Tag hinzufügen …",
+    "description": "Library and model page, tags."
+  },
+  "libTagRemove": {
+    "message": "Tag entfernen",
+    "description": "Library and model page, tags."
+  },
+  "libTagsPartial": {
+    "message": "Nur bei einem Teil der markierten Modelle",
+    "description": "Library and model page, tags."
+  },
+  "libSelected": {
+    "message": "$N$ markiert",
+    "description": "Library and model page, tags.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libSelectNone": {
+    "message": "Markierung aufheben",
+    "description": "Library and model page, tags."
+  },
+  "libDone": {
+    "message": "Fertig",
+    "description": "Library and model page, tags."
+  },
+  "libTagError": {
+    "message": "Tags konnten nicht gespeichert werden: $GRUND$",
+    "description": "Library and model page, tags.",
+    "placeholders": {
+      "grund": {
+        "content": "$1",
+        "example": "NotAllowedError"
+      }
+    }
+  },
+  "libTagDragHint": {
+    "message": "Antippen filtert, auf ein Modell ziehen vergibt den Tag",
+    "description": "Library and model page, tags."
+  },
+  "libTagNew": {
+    "message": "Tag hinzufügen",
+    "description": "Library page, tags."
+  },
+  "libTagNewPlaceholder": {
+    "message": "Neuer Tag, Enter",
+    "description": "Library page, tags."
+  },
+  "libTagHelpTitle": {
+    "message": "So funktionieren Tags",
+    "description": "Library page, tags."
+  },
+  "libHelpWhatH": {
+    "message": "Was sind Tags?",
+    "description": "Library page, tags."
+  },
+  "libHelpWhat": {
+    "message": "Eigene Stichwörter für deine Modelle, z. B. „Garten“, „Geschenk“ oder „schon gedruckt“. Ein Modell kann beliebig viele haben. Groß- und Kleinschreibung zählen nicht: „Garten“ und „garten“ sind derselbe Tag.",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignH": {
+    "message": "Tags vergeben",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignDrag": {
+    "message": "Ziehen: Einen Tag aus der Leiste oben mit der Maus auf ein Modell ziehen und loslassen.",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignRight": {
+    "message": "Rechtsklick auf ein Modell (oder das # oben rechts im Bild, wenn die Maus darüber ist) öffnet das Tag-Fenster. Dort einen neuen Tag eintippen und Enter drücken, oder einen vorhandenen unten anklicken.",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignPage": {
+    "message": "Auf der Seite eines Modells steht unter den Angaben die Zeile „Tags“ – dort geht es genauso.",
+    "description": "Library page, tags."
+  },
+  "libHelpNewH": {
+    "message": "Neuen Tag anlegen",
+    "description": "Library page, tags."
+  },
+  "libHelpNew": {
+    "message": "„+ Tag hinzufügen“ in der Leiste anklicken, Namen eintippen, Enter. Der Tag erscheint gestrichelt in der Leiste, bis er an einem Modell hängt – zieh ihn einfach auf die passenden Modelle. Sind gerade Modelle markiert, bekommen sie den neuen Tag sofort.",
+    "description": "Library page, tags."
+  },
+  "libHelpManyH": {
+    "message": "Mehrere Modelle auf einmal",
+    "description": "Library page, tags."
+  },
+  "libHelpMany": {
+    "message": "Strg+Klick auf Modelle markiert sie (blauer Rahmen). Ein Tag, der auf eines der markierten Modelle gezogen wird, kommt an alle. „Tags bearbeiten“ oben oder ein Rechtsklick auf ein markiertes Modell bearbeitet alle zusammen; Tags, die nur ein Teil davon hat, sind blass gestrichelt.",
+    "description": "Library page, tags."
+  },
+  "libHelpRemoveH": {
+    "message": "Tag entfernen",
+    "description": "Library page, tags."
+  },
+  "libHelpRemove": {
+    "message": "Im Tag-Fenster (Rechtsklick) oder auf der Modellseite auf das × am Tag klicken. Hängt ein Tag an keinem Modell mehr, verschwindet er aus der Leiste.",
+    "description": "Library page, tags."
+  },
+  "libHelpFilterH": {
+    "message": "Filtern",
+    "description": "Library page, tags."
+  },
+  "libHelpFilter": {
+    "message": "Einen Tag in der Leiste anklicken zeigt nur Modelle mit diesem Tag; noch einmal klicken hebt das auf. Mehrere ausgewählte Tags: Es bleiben die Modelle, die alle davon haben. Die Zahl am Tag sagt, wie viele Modelle ihn tragen. Das Suchfeld findet Tags ebenfalls.",
+    "description": "Library page, tags."
+  },
+  "libHelpStoreH": {
+    "message": "Wo die Tags gespeichert sind",
+    "description": "Library page, tags."
+  },
+  "libHelpStore": {
+    "message": "In der Datei info.txt im Ordner des Modells, als Zeile „Tags: …“. Sie wandern also mit dem Ordner mit, überstehen eine Neuinstallation der Erweiterung und lassen sich auch mit dem Editor ändern – die Übersicht bemerkt das beim nächsten Öffnen.",
+    "description": "Library page, tags."
+  },
+  "libDeleteSelected": {
+    "message": "$N$ in den Papierkorb",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libDeleteSelectedConfirm": {
+    "message": "$N$ markierte Modelle in den Papierkorb verschieben? Von dort kannst du sie wiederherstellen, solange du den Papierkorb nicht leerst.",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libRestoreSelected": {
+    "message": "$N$ wiederherstellen",
+    "description": "Library page, trash.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "navHome": {
+    "message": "Startseite – Meine Modelle",
+    "description": "Home button at the top left of every page."
+  },
+  "libSort": {
+    "message": "Sortierung",
+    "description": "Library page."
   }
 }

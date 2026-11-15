@@ -549,13 +549,35 @@ async function holeBeschreibung(tabId, plattform, adresse) {
   }
 }
 
+// Bestehende info.txt um die Beschreibung ergaenzen - aber nur, wenn nach
+// dem Kopf ("Titel:", "Adresse:" ...) noch nichts steht. Gibt den neuen
+// Inhalt zurueck, oder null, wenn nichts zu tun ist oder die Datei nicht
+// nach unserem Aufbau aussieht.
+function infoMitBeschreibung(bisher, beschreibung) {
+  if (!beschreibung) return null;
+  const zeilen = bisher.split(/\r?\n/);
+  const kopf = zeilen.findIndex((z) => /^(Titel|Adresse|Plattform|Heruntergeladen):/.test(z));
+  if (kopf < 0) return null;
+  let ende = zeilen.indexOf('', kopf);
+  if (ende < 0) ende = zeilen.length;
+  if (zeilen.slice(ende + 1).some((z) => z.trim() !== '')) return null;
+  return [...zeilen.slice(0, ende), '', ...beschreibung.split('\n'), ''].join('\r\n');
+}
+
 async function schreibeInfo(folderName, angaben) {
   try {
     const pfad = folderName + '/' + INFO_DATEI;
-    // Niemals ueberschreiben: In der Datei kann inzwischen mehr stehen,
-    // als wir hineingeschrieben haben.
-    if (await targetFileExists(pfad)) return;
-    await writeToTargetDir(pfad, new Blob([infoInhalt(angaben)], { type: 'text/plain' }));
+    const bisher = await readTargetFile(pfad);
+    if (bisher === null) {
+      await writeToTargetDir(pfad, new Blob([infoInhalt(angaben)], { type: 'text/plain' }));
+      return;
+    }
+    // Schon da, etwa von einem frueheren Herunterladen. Nie ueberschreiben:
+    // In der Datei kann inzwischen mehr stehen, als wir hineingeschrieben
+    // haben. Nur wenn der freie Teil noch leer ist - aeltere Fassungen
+    // schrieben keine Beschreibung -, kommt die Beschreibung dazu.
+    const ergaenzt = infoMitBeschreibung(bisher, angaben.beschreibung);
+    if (ergaenzt) await writeToTargetDir(pfad, new Blob([ergaenzt], { type: 'text/plain' }));
   } catch (err) {
     if (DEBUG) console.log('[Info] info.txt nicht geschrieben:', err.message);
   }
@@ -1065,8 +1087,11 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
       || (isUuid && modelName !== 'Model' ? modelName.replace(/[<>:"/\\|?*]/g, '_').trim() + ext : nameFromUrl)
       || 'file.stl';
     handledUrls.add(downloadItem.url);
+    // Fortschrittsband auf der Seite, wie bei den abgefangenen Downloads.
+    meldeFortschritt(matchingTab?.id, { file: cleanFileName, state: 'laden' });
     if (await tryWriteToTarget(downloadItem.url, `${finalFolderName}/${cleanFileName}`)) {
       handledUrls.delete(downloadItem.url);
+      meldeFortschritt(matchingTab?.id, { file: cleanFileName, state: 'fertig' });
     } else {
       chrome.downloads.download({
         url: downloadItem.url,

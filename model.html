@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>3D Model Auto-Downloader</title>
+<title>3D Model Downloader &amp; Organizer</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -14,22 +14,19 @@
   }
 
   header {
-    background: #181825; border-bottom: 1px solid #313244;
+    background: rgba(24, 24, 37, .72);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
     padding: .85rem 1.5rem; flex-shrink: 0;
   }
-  .marke-zeile { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .5rem; }
-  .marke-zeile .logo {
-    font-weight: 900; font-size: 13px; color: #22c55e; text-shadow: 1px 1px 0 #0d4e26;
-  }
-  .marke-zeile .marke { font-size: 12px; font-weight: 600; color: #a6adc8; }
 
   /* Zwei Zeilen: oben der Titel mit den Knöpfen, darunter die Angaben.
      In einer Zeile wurde der Titel bei langen Namen zur Schlange. */
   .kopf { display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; }
+  .kopf .home { order: 0; }
   h1 { font-size: 1.15rem; margin: 0; color: #cdd6f4; word-break: break-word; order: 1; }
-  /* Zurück gehört zum Titel und steht gleich daneben; die Knöpfe, die am
-     Modell etwas tun, sammeln sich am rechten Rand. */
-  #zurueck { order: 2; }
+  /* Die Knöpfe, die am Modell etwas tun, sammeln sich am rechten Rand.
+     Zurück zur Übersicht geht es über das Haus links oben (home.js). */
   .werkzeuge { order: 3; margin-left: auto; }
   .meta {
     order: 4; flex-basis: 100%;
@@ -41,11 +38,44 @@
   .adresse {
     display: inline-flex; align-items: center; gap: .3rem;
     padding: 2px 9px; border-radius: 10px;
-    background: #1e1e2e; border: 1px solid #45475a;
-    color: #89b4fa; text-decoration: none; white-space: nowrap;
+    background: #1e1e2e; border: 1px solid rgba(255, 255, 255, .12);
+    color: #0a84ff; text-decoration: none; white-space: nowrap;
   }
-  .adresse:hover { background: #252539; border-color: #89b4fa; }
+  .adresse:hover { background: #252539; border-color: #0a84ff; }
   .adresse[hidden] { display: none; }
+  /* Eigene Tags unter den Angaben - unauffaellig, bis man hineinklickt. */
+  .tagsKopf {
+    order: 5; flex-basis: 100%; display: flex; align-items: center; gap: .5rem;
+    font-size: 12px; color: #a6adc8; margin-top: -.3rem;
+  }
+  .tagsKopf[hidden] { display: none; }
+  .tagsKopf .fehler { color: #f38ba8; }
+  .tagEingabe { display: flex; flex-wrap: wrap; gap: .3rem; align-items: center; flex: 1; }
+  .tag {
+    display: inline-flex; align-items: center; gap: .2rem;
+    font-size: 11px; line-height: 1.4; padding: 1px 3px 1px 8px; border-radius: 10px;
+    background: #2a2a40; color: #64b5ff; border: 1px solid #3b3b58;
+  }
+  .tagWeg {
+    background: none; border: none; padding: 0 4px; font-size: 13px; line-height: 1;
+    color: inherit; border-radius: 50%; cursor: pointer;
+  }
+  .tagWeg:hover { background: #45475a; }
+  .tagFeld {
+    font: inherit; font-size: 12px; width: 9rem; padding: 2px 6px;
+    background: none; color: #cdd6f4; border: 1px dashed rgba(255, 255, 255, .12); border-radius: 10px;
+  }
+  .tagFeld:focus { outline: none; border-style: solid; border-color: #0a84ff; }
+  /* Vorhandene Tags zum Anklicken - nur, solange man im Feld ist; sonst
+     stuende im Kopf jeder Seite die ganze Tag-Sammlung. */
+  .tagsKopf { flex-wrap: wrap; }
+  .tagVorschlaege { flex-basis: 100%; display: none; flex-wrap: wrap; gap: .3rem; padding-left: 2.6rem; }
+  .tagsKopf:focus-within .tagVorschlaege:not([hidden]) { display: flex; }
+  .tag.vorschlag {
+    font: inherit; font-size: 11px; padding: 1px 8px; cursor: pointer;
+    background: none; color: #a6adc8; border: 1px dashed rgba(255, 255, 255, .12);
+  }
+  .tag.vorschlag:hover { color: #64b5ff; border-color: #64b5ff; border-style: solid; }
   .beschreibung {
     margin: .5rem 0 0; font-size: 12px; color: #a6adc8; max-width: 60rem;
     white-space: pre-wrap; max-height: 5.4rem; overflow: auto;
@@ -72,11 +102,13 @@
   button.wichtig { background: #1a3a2a; color: #a6e3a1; }
 
   main { flex: 1; display: flex; min-height: 0; }
+  /* Beim Oeffnen zoomt der Inhalt kurz auf (modern.css); der Kopf steht. */
+  main { animation: einzoomen .5s cubic-bezier(.34, 1.3, .64, 1) backwards; transform-origin: 50% 0; }
 
   /* Linke Spalte: jede Datei mit Vorschaubild */
   .dateien {
     width: 19rem; flex-shrink: 0; overflow: auto;
-    background: #181825; border-right: 1px solid #313244; padding: .6rem;
+    background: #181825; border-right: 1px solid rgba(255, 255, 255, .07); padding: .6rem;
   }
   .datei {
     display: flex; gap: .65rem; align-items: center; width: 100%;
@@ -91,15 +123,15 @@
   .ordnerKopf {
     display: flex; align-items: center; gap: .6rem; width: 100%;
     padding: .65rem .7rem; margin-bottom: .3rem; border-radius: 8px;
-    background: #1e1e2e; border: 1px solid #45475a; text-align: left;
+    background: #1e1e2e; border: 1px solid rgba(255, 255, 255, .12); text-align: left;
     cursor: pointer; color: #cdd6f4; font-size: 14px; font-weight: 600;
   }
-  .ordnerKopf:hover { background: #252539; border-color: #89b4fa; }
+  .ordnerKopf:hover { background: #252539; border-color: #0a84ff; }
   /* Pfeil im eigenen Kaestchen: deutlich als Schalter zu erkennen. */
   .ordnerKopf .pfeil {
     flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
-    background: #313244; color: #89b4fa; font-size: 12px; font-weight: 700; transition: transform .15s;
+    background: #313244; color: #0a84ff; font-size: 12px; font-weight: 700; transition: transform .15s;
   }
   .ordnerKopf[aria-expanded="true"] .pfeil { transform: rotate(90deg); }
   .ordnerKopf[aria-expanded="true"] { border-color: #585b70; }
@@ -109,7 +141,7 @@
     font-size: 11px; font-weight: 600; color: #a6adc8;
     background: #313244; border-radius: 999px; padding: .1rem .55rem;
   }
-  .ordnerInhalt { margin: 0 0 .4rem .55rem; padding-left: .45rem; border-left: 1px solid #313244; }
+  .ordnerInhalt { margin: 0 0 .4rem .55rem; padding-left: .45rem; border-left: 1px solid rgba(255, 255, 255, .07); }
   .ordnerInhalt[hidden] { display: none; }
 
   /* Teile einer 3MF-Datei. Die Liste tritt an die Stelle der Dateiliste,
@@ -136,13 +168,13 @@
   .teilZeile .auge {
     flex-shrink: 0; width: 26px; height: 26px; padding: 0; border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
-    background: none; border: 1px solid transparent; color: #89b4fa; cursor: pointer;
+    background: none; border: 1px solid transparent; color: #0a84ff; cursor: pointer;
   }
-  .teilZeile .auge:hover { background: #252539; border-color: #45475a; }
+  .teilZeile .auge:hover { background: #252539; border-color: rgba(255, 255, 255, .12); }
   .teilZeile.aus .auge { color: #6c7086; }
   .teilZeile.aus .teil { opacity: .45; }
   .teilKnoepfe.sicht { margin: 0 .3rem .5rem; }
-  .teil[aria-current="true"] { background: #2a2a40; border-color: #45475a; }
+  .teil[aria-current="true"] { background: #2a2a40; border-color: rgba(255, 255, 255, .12); }
   .teil .nr { color: #6c7086; font-variant-numeric: tabular-nums; min-width: 1.6rem; }
   .teil .was { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .teil .mm { color: #6c7086; font-size: 11px; white-space: nowrap; }
@@ -150,7 +182,7 @@
   .teilKnoepfe button { flex: 1; font-size: 11px; padding: .4rem .3rem; }
   .note { font-size: 11px; color: #a6adc8; margin: .5rem .3rem 0; }
   .note[hidden] { display: none; }
-  .datei[aria-current="true"] { background: #252539; border-color: #cba6f7; }
+  .datei[aria-current="true"] { background: #252539; border-color: #0a84ff; }
   .datei .bild {
     width: 52px; height: 52px; flex-shrink: 0; border-radius: 6px;
     background: #11111b; overflow: hidden;
@@ -167,8 +199,8 @@
   }
   .datei .groesse { font-size: 11px; color: #a6adc8; }
   /* Eintrag "Beschreibung" ganz oben - etwas abgesetzt von den Dateien. */
-  .datei.details { border-bottom: 1px solid #313244; border-radius: 8px 8px 0 0; margin-bottom: .55rem; }
-  .datei.details .bild { font-size: 24px; color: #89b4fa; font-weight: 700; }
+  .datei.details { border-bottom: 1px solid rgba(255, 255, 255, .07); border-radius: 8px 8px 0 0; margin-bottom: .55rem; }
+  .datei.details .bild { font-size: 24px; color: #0a84ff; font-weight: 700; }
 
   /* Beschreibung auf der Buehne: ruhig gesetzt, gut lesbar. */
   .buehne .details {
@@ -181,14 +213,14 @@
   .details .oben { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.75rem; }
   .details .titelbild {
     flex: 0 0 auto; width: 300px; max-width: 40%; aspect-ratio: 4 / 3; object-fit: cover;
-    border-radius: 8px; border: 1px solid #313244; background: #1e1e2e; cursor: zoom-in;
+    border-radius: 8px; border: 1px solid rgba(255, 255, 255, .07); background: #1e1e2e; cursor: zoom-in;
   }
   .details .kopfText { flex: 1; min-width: 0; }
   .details h2 { font-size: 1.4rem; margin: .1rem 0 1rem; }
   .details dl {
     display: grid; grid-template-columns: max-content 1fr; gap: .35rem 1rem;
     margin: 0; padding: .8rem 1rem;
-    background: #1e1e2e; border: 1px solid #313244; border-radius: 8px; font-size: 12px;
+    background: #1e1e2e; border: 1px solid rgba(255, 255, 255, .07); border-radius: 8px; font-size: 12px;
   }
   .details dt { color: #6c7086; }
   .details dd { margin: 0; color: #cdd6f4; overflow-wrap: anywhere; }
@@ -200,7 +232,7 @@
   .details .text p { margin: 0 0 .9rem; }
   .details .text ul { margin: 0 0 .9rem; padding-left: 1.3rem; }
   .details .text li { margin: .15rem 0; }
-  .details a { color: #89b4fa; text-decoration: none; overflow-wrap: anywhere; }
+  .details a { color: #0a84ff; text-decoration: none; overflow-wrap: anywhere; }
   .details a:hover { text-decoration: underline; }
   .details .leer { color: #6c7086; font-style: italic; }
 
@@ -225,10 +257,10 @@
   .pdfLeiste[hidden] { display: none; }
   .pdfLeiste a {
     display: inline-block; font-size: 12px; padding: .35rem .7rem;
-    background: #1e1e2ee6; color: #cdd6f4; border: 1px solid #45475a;
+    background: #1e1e2ee6; color: #cdd6f4; border: 1px solid rgba(255, 255, 255, .12);
     border-radius: 7px; text-decoration: none;
   }
-  .pdfLeiste a:hover { border-color: #89b4fa; color: #89b4fa; }
+  .pdfLeiste a:hover { border-color: #0a84ff; color: #0a84ff; }
   .lage {
     position: absolute; left: 14px; bottom: 12px;
     font-size: 11px; color: #6c7086; pointer-events: none;
@@ -262,12 +294,12 @@
   .stepWarnung[hidden] { display: none; }
   .eckKnopf {
     font-size: 13px; padding: .5rem .9rem; border-radius: 8px;
-    background: #1e1e2e; color: #cdd6f4; border: 1px solid #45475a;
+    background: #1e1e2e; color: #cdd6f4; border: 1px solid rgba(255, 255, 255, .12);
     cursor: pointer;
   }
   .eckKnopf:hover { background: #252539; }
   .eckKnopf[aria-pressed="true"] {
-    background: #2a2a40; border-color: #89b4fa; color: #89b4fa;
+    background: #2a2a40; border-color: #0a84ff; color: #0a84ff;
   }
   .eckKnopf[hidden] { display: none; }
   /* Schalter fuer die Einzelteile: oben mittig ueber dem Modell. */
@@ -277,17 +309,17 @@
   .feinheit {
     display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
     font-size: 12px; color: #a6adc8;
-    background: #1e1e2ecc; border: 1px solid #313244; border-radius: 8px;
+    background: #1e1e2ecc; border: 1px solid rgba(255, 255, 255, .07); border-radius: 8px;
     padding: .35rem .6rem;
   }
   .feinheit[hidden] { display: none; }
-  .feinheit input { width: 7rem; accent-color: #cba6f7; margin: 0; }
+  .feinheit input { width: 7rem; accent-color: #0a84ff; margin: 0; }
   .feinheit .stufe { color: #cdd6f4; min-width: 9.5rem; }
   .feinheit .zahl { color: #6c7086; font-variant-numeric: tabular-nums; }
   .feinheit.rechnet .zahl { color: #fab387; }
   .feinheit .kerne {
     color: #6c7086; font-variant-numeric: tabular-nums;
-    border-left: 1px solid #313244; padding-left: .5rem;
+    border-left: 1px solid rgba(255, 255, 255, .07); padding-left: .5rem;
   }
   .feinheit .kerne[hidden] { display: none; }
   .mitte {
@@ -302,7 +334,7 @@
   /* Regler über der Bühne - zugeklappt, bis jemand etwas ändern will. */
   .regler {
     width: 15rem;
-    background: #181825e8; border: 1px solid #313244; border-radius: 8px;
+    background: #181825e8; border: 1px solid rgba(255, 255, 255, .07); border-radius: 8px;
     font-size: 12px; backdrop-filter: blur(3px);
   }
   .regler summary {
@@ -315,9 +347,9 @@
   .regler .inhalt { padding: 0 .7rem .7rem; }
   .regler label { display: block; margin-bottom: .55rem; color: #a6adc8; }
   .regler label span { display: flex; justify-content: space-between; gap: .5rem; }
-  .regler input[type="range"] { width: 100%; accent-color: #cba6f7; margin-top: .15rem; }
+  .regler input[type="range"] { width: 100%; accent-color: #0a84ff; margin-top: .15rem; }
   .regler input[type="color"] {
-    width: 100%; height: 24px; padding: 0; border: 1px solid #45475a;
+    width: 100%; height: 24px; padding: 0; border: 1px solid rgba(255, 255, 255, .12);
     border-radius: 4px; background: none; cursor: pointer; margin-top: .15rem;
   }
   .regler .wert { color: #a6e3a1; font-variant-numeric: tabular-nums; }
@@ -325,7 +357,7 @@
   .regler label.haken { display: flex; align-items: center; gap: .45rem; cursor: pointer; }
   .regler label.haken[hidden] { display: none; }
   .regler label.haken span { display: inline; }
-  .regler label.haken input { accent-color: #cba6f7; margin: 0; }
+  .regler label.haken input { accent-color: #0a84ff; margin: 0; }
   .regler button { width: 100%; margin-top: .2rem; font-size: 12px; padding: 6px; }
 
   .fortschritt {
@@ -376,7 +408,7 @@
   .hinweisPfad button:hover { background: #4a3d0a; }
 
   dialog {
-    background: #181825; color: #cdd6f4; border: 1px solid #313244;
+    background: #181825; color: #cdd6f4; border: 1px solid rgba(255, 255, 255, .07);
     border-radius: 12px; max-width: 24rem; width: calc(100% - 2rem);
     padding: 1.2rem 1.3rem 1.1rem;
   }
@@ -385,15 +417,13 @@
   dialog p { margin: 0; color: #a6adc8; font-size: 13px; }
   .f-fuss { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1.3rem; }
 </style>
+<link rel="stylesheet" href="modern.css">
 </head>
 <body>
 
 <header>
-  <div class="marke-zeile">
-    <span class="logo">3D</span>
-    <span class="marke" data-i18n="appName">3D Model Auto-Downloader</span>
-  </div>
   <div class="kopf">
+    <a class="home">3D</a>
     <h1 id="titel">…</h1>
     <div class="meta">
       <span class="quelle" id="quelle" hidden></span>
@@ -401,8 +431,13 @@
       <span id="umfang"></span>
       <a id="adresse" class="adresse" hidden target="_blank" rel="noopener noreferrer"></a>
     </div>
+    <div class="tagsKopf" id="tags" hidden>
+      <span data-i18n="libTags">Tags</span>
+      <div id="tagsEingabe"></div>
+      <span class="fehler" id="tagsFehler" hidden></span>
+      <div id="tagsVorschlaege" hidden></div>
+    </div>
     <p class="beschreibung" id="beschreibung" hidden></p>
-    <button id="zurueck" data-i18n="modelBack">← Zurück zur Übersicht</button>
     <div class="werkzeuge">
       <button id="wieder" hidden data-i18n="libRestore">Wiederherstellen</button>
       <button id="explorer" data-i18n="libOpenExplorer">Im Explorer öffnen</button>
@@ -503,11 +538,13 @@
 </dialog>
 
 <script src="target_dir.js"></script>
+<script src="tags.js"></script>
 <script src="explorer_link.js"></script>
 <script src="model_zip.js"></script>
 <script src="model_stl.js"></script>
 <script src="model_3mf.js"></script>
 <script src="model_view.js"></script>
 <script src="model.js"></script>
+<script src="home.js"></script>
 </body>
 </html>

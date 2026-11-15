@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>3D Model Auto-Downloader</title>
+<title>3D Model Downloader &amp; Organizer</title>
 <style>
   :root { color-scheme: dark; }
   body {
@@ -11,14 +11,17 @@
     background: #1e1e2e; color: #cdd6f4;
     margin: 0; padding: 0 0 4rem;
   }
-  a { color: #cba6f7; }
+  a { color: #0a84ff; }
 
-  .kopf { border-bottom: 1px solid #313244; background: #181825; }
+  .kopf {
+    border-bottom: 1px solid rgba(255, 255, 255, .07);
+    background: rgba(24, 24, 37, .72);
+    backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
   .kopf-inhalt {
     max-width: 52rem; margin: 0 auto; padding: .9rem 1.5rem;
-    display: flex; align-items: baseline; gap: .55rem; flex-wrap: wrap;
+    display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
   }
-  .kopf .logo { font-weight: 900; font-size: 15px; color: #22c55e; letter-spacing: -.02em; }
   .kopf .marke { font-weight: 600; font-size: 14px; }
   .kopf .trenner { color: #585b70; }
   .kopf .unterzeile { font-size: 13px; color: #a6adc8; }
@@ -31,7 +34,7 @@
   h2 { font-size: 15px; font-weight: 600; margin: 2.2rem 0 1rem; }
 
   .card {
-    background: #181825; border: 1px solid #313244;
+    background: #181825; border: 1px solid rgba(255, 255, 255, .07);
     border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem;
   }
   /* Der eine Handgriff, ohne den nichts geht - deutlich abgesetzt. */
@@ -59,16 +62,16 @@
 
   .fuss {
     margin-top: 2.5rem; padding-top: 1.25rem;
-    border-top: 1px solid #313244; font-size: 12px; color: #a6adc8;
+    border-top: 1px solid rgba(255, 255, 255, .07); font-size: 12px; color: #a6adc8;
   }
 </style>
+<link rel="stylesheet" href="modern.css">
 </head>
 <body>
 
 <header class="kopf">
   <div class="kopf-inhalt">
-    <span class="logo">3D</span>
-    <span class="marke" data-i18n="appName">3D Model Auto-Downloader</span>
+    <a class="home">3D</a>
     <span class="trenner">·</span>
     <span class="unterzeile" id="version"></span>
   </div>
@@ -129,5 +132,6 @@
 
 <script src="target_dir.js"></script>
 <script src="welcome.js"></script>
+<script src="home.js"></script>
 </body>
 </html>

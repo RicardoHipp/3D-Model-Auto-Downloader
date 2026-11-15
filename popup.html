@@ -21,7 +21,7 @@
 
     .kopf {
       background: #181825;
-      border-bottom: 1px solid #313244;
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
       padding: 11px 14px;
       display: flex;
       align-items: baseline;
@@ -44,17 +44,21 @@
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
       width: 100%; box-sizing: border-box; text-align: left;
       padding: 10px 12px; border-radius: 8px; cursor: pointer;
-      background: #313244; border: 1px solid #45475a; color: #cdd6f4;
+      background: #313244; border: 1px solid rgba(255, 255, 255, .12); color: #cdd6f4;
       transition: background .15s, border-color .15s;
     }
     .ziel .pfeil { font-size: 16px; color: #a6adc8; line-height: 1; }
-    .ziel:hover { background: #3b3d54; border-color: #cba6f7; }
-    .ziel.primaer { background: #1a3a2a; border-color: #2d5f42; color: #a6e3a1; }
-    .ziel.primaer .pfeil { color: #a6e3a1; }
-    .ziel.primaer:hover { background: #215040; border-color: #a6e3a1; }
+    .ziel { transition: transform .2s cubic-bezier(.2, .8, .2, 1), box-shadow .2s ease, background .2s ease, border-color .2s ease; }
+    .ziel:hover { background: #3b3d54; border-color: #0a84ff; transform: translateY(-1px); box-shadow: 0 6px 14px -6px rgba(10, 132, 255, .45); }
+    .ziel:active { transform: scale(.98); }
+    .ziel .pfeil { transition: transform .2s ease; }
+    .ziel:hover .pfeil { transform: translateX(3px); }
+    .ziel.primaer { background: #0a84ff; border-color: #0a84ff; color: #fff; }
+    .ziel.primaer .pfeil { color: rgba(255, 255, 255, .85); }
+    .ziel.primaer:hover { background: #2a95ff; border-color: #2a95ff; box-shadow: 0 6px 14px -6px rgba(10, 132, 255, .5); }
 
     .karte {
-      background: #181825; border: 1px solid #313244;
+      background: #181825; border: 1px solid rgba(255, 255, 255, .07);
       border-radius: 8px; padding: 11px 12px;
     }
     .reihe {
@@ -101,12 +105,13 @@
       padding: 9px 11px; color: #fde047;
     }
   </style>
+<link rel="stylesheet" href="modern.css">
 </head>
 <body>
 
 <div class="kopf">
   <span class="logo">3D</span>
-  <span class="marke" data-i18n="appName">3D Model Auto-Downloader</span>
+  <span class="marke" data-i18n="appName">3D Model Downloader &amp; Organizer</span>
 </div>
 
 <div class="inhalt">

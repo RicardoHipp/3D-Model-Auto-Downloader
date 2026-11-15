@@ -64,7 +64,7 @@ function explorerUrl(basis, unterordner) {
 // externe Protokolle von Erweiterungsseiten aus so nicht zuverlässig weiter.
 // Ein echter Klick auf einen Anker ist der Weg, den auch Webseiten nutzen.
 function explorerOeffnen(url) {
-  console.log('[3D Model Auto-Downloader] Explorer-Aufruf:', url);
+  console.log('[3D Model Downloader & Organizer] Explorer-Aufruf:', url);
   const a = document.createElement('a');
   a.href = url;
   a.style.display = 'none';

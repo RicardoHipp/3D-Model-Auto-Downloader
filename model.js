@@ -202,7 +202,7 @@ async function modellOeffnen() {
   const { titel, quelle, datum } = zerlegeOrdnername(
     geloescht ? ORDNER.slice(0, geloescht.index) : ORDNER);
 
-  document.title = titel + ' – 3D Model Auto-Downloader';
+  document.title = titel + ' – ' + t('appName');
   document.getElementById('titel').textContent = titel;
   const quelleEl = document.getElementById('quelle');
   if (quelle) {
@@ -220,6 +220,7 @@ async function modellOeffnen() {
     t('libFileCount', [String(dateien.length)]) + ' · ' + formatGroesse(gesamt);
 
   await zeigeHerkunft();
+  zeigeTags();
   zeichneListe();
 
   // Gleich etwas zeigen: die Beschreibung, wenn es eine info.txt gibt -
@@ -283,6 +284,60 @@ async function zeigeHerkunft() {
       adresseEl.hidden = false;
     }
   } catch { /* ohne info.txt bleibt die Zeile, wie sie ist */ }
+}
+
+// --- Eigene Tags ---------------------------------------------------------
+//
+// Stehen in der info.txt (siehe tags.js) und werden bei jeder Aenderung
+// sofort dorthin geschrieben. Der Zwischenspeicher der Bibliothek wird gleich
+// mitgezogen, damit sie beim Zurueckgehen schon den neuen Stand zeigt.
+// Im Papierkorb nicht - dort wird nichts mehr geordnet.
+let modellTags = [];
+let bekannteTags = [];
+
+function zeigeTags() {
+  if (IM_KORB) return;
+  const zeile = document.getElementById('tags');
+  const fehlerEl = document.getElementById('tagsFehler');
+  modellTags = tagsEinmalig(String(herkunft?.kopf['tags'] || '').split(','));
+  zeile.hidden = false;
+
+  const speichere = async (tags) => {
+    fehlerEl.hidden = true;
+    try {
+      const titel = herkunft?.kopf['titel'] || document.getElementById('titel').textContent;
+      const zeit = await schreibeTags(modellHandle, tags, titel);
+      modellTags = tags;
+      const eintrag = await bibHole(ORDNER);
+      if (eintrag) {
+        eintrag.tags = tags;
+        eintrag.infoZeit = zeit;
+        await bibSchreibe([eintrag]);
+      }
+    } catch (err) {
+      fehlerEl.textContent = t('libTagError', [err.message]);
+      fehlerEl.hidden = false;
+    }
+  };
+
+  const eingabe = tagEingabe(document.getElementById('tagsEingabe'), {
+    stand: () => modellTags.map((tag) => ({ tag, teilweise: false })),
+    vorschlaege: () => bekannteTags,
+    hinzu: (tag) => hatTag(modellTags, tag) ? null : speichere([...modellTags, tag]),
+    weg: (tag) => speichere(modellTags.filter((x) => tagSchluessel(x) !== tagSchluessel(tag))),
+    vorschlagOrt: document.getElementById('tagsVorschlaege')
+  });
+
+  // Vorschlaege: alle Tags, die die Bibliothek kennt.
+  bibAlle().then((alle) => {
+    const formen = new Map();
+    for (const m of alle) for (const tag of m.tags || []) {
+      if (!formen.has(tagSchluessel(tag))) formen.set(tagSchluessel(tag), tag);
+    }
+    bekannteTags = [...formen.values()].sort((a, b) => a.localeCompare(b, 'de'));
+    // Neu zeichnen fuer die Vorschlagsliste - nicht, waehrend jemand tippt.
+    if (!zeile.contains(document.activeElement)) eingabe.zeichne();
+  });
 }
 
 // --- Liste links --------------------------------------------------------
@@ -836,11 +891,42 @@ function zeigeTeile(datei, netze) {
 
   // Ein 3MF nennt seine Teile selbst. Ein STL ist nur ein Haufen Dreiecke -
   // dort muss erst gesucht werden, was zusammenhängt, und das kostet bei
-  // großen Dateien Sekunden. Deshalb erst auf Knopfdruck.
-  zerlegbar = !netze.teile && netze.length === 1 && netze[0].ecken.length > 0;
-  modusKnopf.hidden = aktuelleTeile.length < 2 && !zerlegbar;
+  // großen Dateien Sekunden. Das läuft nebenher in einem Worker; der Knopf
+  // erscheint erst, wenn dabei mehr als ein Körper herauskommt.
+  zerlegbar = false;
+  modusKnopf.hidden = aktuelleTeile.length < 2;
+  sucheTeile(!netze.teile && netze.length === 1 && netze[0].ecken.length > 0 ? netze[0].ecken : null);
 
   if (aktuelleTeile.length > 1) baueTeileListe();
+}
+
+// --- Einzelteile eines STL im Hintergrund suchen ---------------------------
+//
+// Ein Worker je Datei. Wird eine andere Datei gezeigt, bevor er fertig ist,
+// wird er beendet - sein Ergebnis gehört dann zu nichts mehr.
+let teileSuche = null;
+let gefundeneKoerper = null;
+
+function sucheTeile(ecken) {
+  teileSuche?.terminate();
+  teileSuche = null;
+  gefundeneKoerper = null;
+  if (!ecken) return;
+
+  const suche = teileSuche = new Worker('model_teile_worker.js');
+  const ende = () => { suche.terminate(); if (teileSuche === suche) teileSuche = null; };
+  suche.onmessage = ({ data }) => {
+    const aktuell = teileSuche === suche;
+    ende();
+    if (!aktuell || !data.netze) return;
+    gefundeneKoerper = data.netze;
+    gefundeneKoerper.teile = gefundeneKoerper.map((_, i) => ({ nummer: i, name: '' }));
+    zerlegbar = true;
+    modusKnopf.hidden = false;
+  };
+  suche.onerror = ende;
+  // Kopie, nicht übergeben: Die Ecken braucht der Betrachter weiter.
+  suche.postMessage(ecken);
 }
 
 // Augen-Symbol fuer Ein-/Ausblenden. Feste Zeichnung, kein fremder Inhalt.
@@ -931,33 +1017,17 @@ function sichtbareMasse() {
 document.getElementById('alleEin').addEventListener('click', () => setzeAlleSichtbar(true));
 document.getElementById('alleAus').addEventListener('click', () => setzeAlleSichtbar(false));
 
-// Sucht in einem STL die zusammenhängenden Körper. Läuft im Vordergrund
-// und blockiert dabei die Seite - deshalb vorher die Beschriftung ändern
-// und dem Browser Zeit lassen, sie auch zu zeichnen.
-async function zerlegeJetzt() {
-  modusKnopf.disabled = true;
-  modusKnopf.textContent = t('modelSplitting');
-  await new Promise((fertig) => requestAnimationFrame(() => requestAnimationFrame(fertig)));
-
-  try {
-    const koerper = zerlegeNetz(aktuelleNetze[0].ecken);
-    zerlegbar = false;
-    if (koerper.length < 2) {
-      teilInfo.hidden = false;
-      teilInfo.textContent = t('modelOneBody');
-      modusKnopf.hidden = true;
-      return false;
-    }
-    koerper.teile = koerper.map((_, i) => ({ nummer: i, name: '' }));
-    aktuelleNetze = koerper;
-    aktuelleTeile = koerper.teile;
-    betrachter.setzeNetze(koerper);
-    baueTeileListe();
-    return true;
-  } finally {
-    modusKnopf.disabled = false;
-    modusKnopf.textContent = t(teileModus ? 'modelSplitOff' : 'modelSplit');
-  }
+// Übernimmt die im Hintergrund gefundenen Körper eines STL (sucheTeile).
+function zerlegeJetzt() {
+  const koerper = gefundeneKoerper;
+  if (!koerper) return false;
+  zerlegbar = false;
+  gefundeneKoerper = null;
+  aktuelleNetze = koerper;
+  aktuelleTeile = koerper.teile;
+  betrachter.setzeNetze(koerper);
+  baueTeileListe();
+  return true;
 }
 
 // Nochmals auf dasselbe Teil heben die Auswahl wieder auf - so kommt man
@@ -1030,7 +1100,7 @@ async function speichereTeile(welche) {
 modusKnopf.addEventListener('click', async () => {
   // Beim ersten Mal muss ein STL erst zerlegt werden; danach liegt die
   // Liste vor und der Schalter wechselt nur noch hin und her.
-  if (!teileModus && zerlegbar && !await zerlegeJetzt()) return;
+  if (!teileModus && zerlegbar && !zerlegeJetzt()) return;
   setzeTeileModus(!teileModus);
 });
 
@@ -1253,6 +1323,7 @@ function zeigeDetails() {
   if (grossesBild) grossesBild.hidden = true;
   pdfAusblenden();
   for (const el of [mitteEl, lageEl, masseEl, feinheitEl, teileFach, modusKnopf, stepWarnungEl]) el.hidden = true;
+  sucheTeile(null);
   dateienEl.hidden = false;
   teileModus = false;
   zeigeBalken(false);
@@ -1403,6 +1474,7 @@ async function waehle(d) {
   feinheitEl.hidden = true;
   teileFach.hidden = true;
   modusKnopf.hidden = true;
+  sucheTeile(null);
   dateienEl.hidden = false;
   teileModus = false;
   pdfAusblenden();
@@ -1606,11 +1678,6 @@ async function reglerEinrichten() {
 
 // --- Knöpfe -------------------------------------------------------------
 
-document.getElementById('zurueck').addEventListener('click', (e) => {
-  e.preventDefault();
-  location.href = chrome.runtime.getURL('library.html');
-});
-
 const explorerEl = document.getElementById('explorer');
 explorerEl.addEventListener('click', async () => {
   const exp = await explorerEinstellungen();
@@ -1719,7 +1786,8 @@ async function freierName(ordner, wunsch) {
 }
 
 // Ordner lassen sich nicht verschieben, einzelne Dateien schon. Scheitert
-// move(), wird kopiert - Näheres in library.js, wo dasselbe passiert.
+// move(), wird kopiert. Dasselbe steht in library.js (mehrere markierte
+// Modelle auf einmal in den Papierkorb).
 async function verschiebe(vonEltern, name, nachEltern, neuerName) {
   const quelle = await vonEltern.getDirectoryHandle(name);
   const ziel = await nachEltern.getDirectoryHandle(neuerName, { create: true });

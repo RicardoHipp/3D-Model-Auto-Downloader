@@ -30,6 +30,7 @@
 !model_3mf.js
 !model_view.js
 !model_step_worker.js
+!model_teile_worker.js
 !vendor/
 !vendor/occt-import-js.js
 !vendor/occt-import-js.wasm
@@ -40,6 +41,9 @@
 !vendor/occt-import-js-quelle/
 !vendor/occt-import-js-quelle/*
 !target_dir.js
+!tags.js
+!home.js
+!modern.css
 !explorer_link.js
 !explorer_setup.js
 !jszip.min.js

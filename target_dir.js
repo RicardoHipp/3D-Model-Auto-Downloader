@@ -119,3 +119,23 @@ async function targetFileExists(relativePath) {
     return false;          // Ordner oder Datei gibt es nicht
   }
 }
+
+// Inhalt einer Textdatei im Zielordner, oder null, wenn es sie nicht gibt
+// oder sie nicht lesbar ist.
+async function readTargetFile(relativePath) {
+  try {
+    const handle = await getTargetDir();
+    if (!handle) return null;
+    if (await handle.queryPermission({ mode: 'read' }) !== 'granted') return null;
+
+    const parts = relativePath.split('/').filter(Boolean);
+    const fileName = parts.pop();
+    if (!fileName) return null;
+
+    let dir = handle;
+    for (const part of parts) dir = await dir.getDirectoryHandle(part);
+    return await (await (await dir.getFileHandle(fileName)).getFile()).text();
+  } catch {
+    return null;
+  }
+}

@@ -1,6 +1,6 @@
 {
   "appName": {
-    "message": "3D Model Auto-Downloader",
+    "message": "3D Model Downloader & Organizer",
     "description": "Extension name. Brand name, kept identical in every language."
   },
   "appDescription": {
@@ -226,7 +226,7 @@
     "description": "Library page."
   },
   "libSearch": {
-    "message": "Search by name …",
+    "message": "Search by name or tag …",
     "description": "Library page."
   },
   "libAllPlatforms": {
@@ -616,7 +616,7 @@
     "message": "Download failed"
   },
   "vbsHeader": {
-    "message": "Opens a folder in Windows Explorer and, when asked, reports its full\npath back.\nWindows runs this script when an address starting with stldl: is clicked.\nPart of the Chrome extension \"3D Model Auto-Downloader\".\n\nIf something goes wrong it writes open-folder.log next to itself – that\nfile says what actually arrived. When all goes well, nothing is written."
+    "message": "Opens a folder in Windows Explorer and, when asked, reports its full\npath back.\nWindows runs this script when an address starting with stldl: is clicked.\nPart of the Chrome extension \"3D Model Downloader & Organizer\".\n\nIf something goes wrong it writes open-folder.log next to itself – that\nfile says what actually arrived. When all goes well, nothing is written."
   },
   "vbsVersion": {
     "message": "Version of this script. It is the first line of every reply, so the\nextension can recognise an outdated script."
@@ -661,7 +661,7 @@
     "message": "Leave a sign of life in the opened folder. The extension looks for it a\nmoment later and knows from it that the script really ran – a protocol\ncall gives no feedback at all. The extension deletes the file right away."
   },
   "regRegister": {
-    "message": "Registers the \"stldl:\" scheme with Windows and links it to the script\nopen-folder.vbs. Part of the Chrome extension\n\"3D Model Auto-Downloader\"."
+    "message": "Registers the \"stldl:\" scheme with Windows and links it to the script\nopen-folder.vbs. Part of the Chrome extension\n\"3D Model Downloader & Organizer\"."
   },
   "regUndoHint": {
     "message": "To undo this, the settings of the extension offer the file\nstldl-protokoll-entfernen.reg."
@@ -688,10 +688,6 @@
   },
   "libTrashButton": {
     "message": "Trash",
-    "description": "Library page."
-  },
-  "libTrashBack": {
-    "message": "Back to my models",
     "description": "Library page."
   },
   "libTrashEmptyButton": {
@@ -765,10 +761,6 @@
         "example": "212"
       }
     }
-  },
-  "modelBack": {
-    "message": "← Back to overview",
-    "description": "Model page."
   },
   "modelPick": {
     "message": "Pick a file on the left.",
@@ -847,7 +839,7 @@
     "description": "Model page."
   },
   "vbsAskTitle": {
-    "message": "Set up 3D Model Auto-Downloader",
+    "message": "Set up 3D Model Downloader & Organizer",
     "description": "Options page."
   },
   "vbsAskText": {
@@ -1045,14 +1037,6 @@
         "example": "MakerWorld"
       }
     }
-  },
-  "modelSplitting": {
-    "message": "Splitting …",
-    "description": "Model page."
-  },
-  "modelOneBody": {
-    "message": "The file contains only one connected body.",
-    "description": "Model page."
   },
   "libCopyPath": {
     "message": "Copy path",
@@ -1335,5 +1319,189 @@
   "modelHidePart": {
     "message": "Hide part",
     "description": "Model page, parts view."
+  },
+  "libSyncing": {
+    "message": "Updating …",
+    "description": "Library and model page, tags."
+  },
+  "libTags": {
+    "message": "Tags",
+    "description": "Library and model page, tags."
+  },
+  "libTagsEdit": {
+    "message": "Edit tags",
+    "description": "Library and model page, tags."
+  },
+  "libTagsEditHint": {
+    "message": "Edit tags (right-click works too, Ctrl+click selects several models)",
+    "description": "Library and model page, tags."
+  },
+  "libTagsFor": {
+    "message": "For $N$ selected models",
+    "description": "Library and model page, tags.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libTagAdd": {
+    "message": "Add tag …",
+    "description": "Library and model page, tags."
+  },
+  "libTagRemove": {
+    "message": "Remove tag",
+    "description": "Library and model page, tags."
+  },
+  "libTagsPartial": {
+    "message": "Only on some of the selected models",
+    "description": "Library and model page, tags."
+  },
+  "libSelected": {
+    "message": "$N$ selected",
+    "description": "Library and model page, tags.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libSelectNone": {
+    "message": "Clear selection",
+    "description": "Library and model page, tags."
+  },
+  "libDone": {
+    "message": "Done",
+    "description": "Library and model page, tags."
+  },
+  "libTagError": {
+    "message": "Tags could not be saved: $GRUND$",
+    "description": "Library and model page, tags.",
+    "placeholders": {
+      "grund": {
+        "content": "$1",
+        "example": "NotAllowedError"
+      }
+    }
+  },
+  "libTagDragHint": {
+    "message": "Click to filter, drag onto a model to tag it",
+    "description": "Library and model page, tags."
+  },
+  "libTagNew": {
+    "message": "Add tag",
+    "description": "Library page, tags."
+  },
+  "libTagNewPlaceholder": {
+    "message": "New tag, Enter",
+    "description": "Library page, tags."
+  },
+  "libTagHelpTitle": {
+    "message": "How tags work",
+    "description": "Library page, tags."
+  },
+  "libHelpWhatH": {
+    "message": "What are tags?",
+    "description": "Library page, tags."
+  },
+  "libHelpWhat": {
+    "message": "Your own keywords for your models, e.g. \"garden\", \"gift\" or \"already printed\". A model can have as many as you like. Upper and lower case do not matter: \"Garden\" and \"garden\" are the same tag.",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignH": {
+    "message": "Adding tags to models",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignDrag": {
+    "message": "Drag: drag a tag from the bar at the top onto a model and drop it.",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignRight": {
+    "message": "Right-click a model (or the # at the top right of its picture when hovering) to open the tag window. Type a new tag and press Enter, or click an existing one below.",
+    "description": "Library page, tags."
+  },
+  "libHelpAssignPage": {
+    "message": "On a model's own page, the \"Tags\" line below the details works the same way.",
+    "description": "Library page, tags."
+  },
+  "libHelpNewH": {
+    "message": "Creating a new tag",
+    "description": "Library page, tags."
+  },
+  "libHelpNew": {
+    "message": "Click \"+ Add tag\" in the bar, type the name, press Enter. The tag appears dashed in the bar until it is on a model - just drag it onto the right models. If models are selected, they get the new tag straight away.",
+    "description": "Library page, tags."
+  },
+  "libHelpManyH": {
+    "message": "Several models at once",
+    "description": "Library page, tags."
+  },
+  "libHelpMany": {
+    "message": "Ctrl+click models to select them (blue frame). A tag dropped onto one of the selected models goes to all of them. \"Edit tags\" at the top, or right-clicking a selected model, edits them together; tags only some of them have are shown faded and dashed.",
+    "description": "Library page, tags."
+  },
+  "libHelpRemoveH": {
+    "message": "Removing a tag",
+    "description": "Library page, tags."
+  },
+  "libHelpRemove": {
+    "message": "Click the × on the tag in the tag window (right-click) or on the model page. Once a tag is on no model at all, it disappears from the bar.",
+    "description": "Library page, tags."
+  },
+  "libHelpFilterH": {
+    "message": "Filtering",
+    "description": "Library page, tags."
+  },
+  "libHelpFilter": {
+    "message": "Click a tag in the bar to show only models with that tag; click again to undo. With several tags selected, only models that have all of them remain. The number on a tag shows how many models carry it. The search box finds tags too.",
+    "description": "Library page, tags."
+  },
+  "libHelpStoreH": {
+    "message": "Where tags are stored",
+    "description": "Library page, tags."
+  },
+  "libHelpStore": {
+    "message": "In the info.txt file in the model's folder, as a line \"Tags: …\". So they move with the folder, survive reinstalling the extension and can also be edited with a text editor - the library notices the next time it opens.",
+    "description": "Library page, tags."
+  },
+  "libDeleteSelected": {
+    "message": "Move $N$ to trash",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libDeleteSelectedConfirm": {
+    "message": "Move $N$ selected models to the trash? You can restore them from there until you empty the trash.",
+    "description": "Library page.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "libRestoreSelected": {
+    "message": "Restore $N$",
+    "description": "Library page, trash.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "navHome": {
+    "message": "Home – My models",
+    "description": "Home button at the top left of every page."
+  },
+  "libSort": {
+    "message": "Sort order",
+    "description": "Library page."
   }
 }

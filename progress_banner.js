@@ -66,7 +66,7 @@
       <div class="box">
         <div class="head">
           <span class="logo">3D</span>
-          <span class="name">Model Auto-Downloader</span>
+          <span class="name">Model Downloader &amp; Organizer</span>
         </div>
         <div class="file"></div>
         <div class="track"><div class="bar"></div></div>

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "default_locale": "en",
   "name": "__MSG_appName__",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "__MSG_appDescription__",
   "homepage_url": "https://github.com/RicardoHipp/3D-Model-Auto-Downloader",
   "permissions": [
@@ -90,7 +90,9 @@
         "https://printables.com/*",
         "https://*.printables.com/*",
         "https://makerworld.com/*",
-        "https://*.makerworld.com/*"
+        "https://*.makerworld.com/*",
+        "https://cults3d.com/*",
+        "https://*.cults3d.com/*"
       ],
       "js": [
         "progress_banner.js"

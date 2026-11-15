@@ -17,7 +17,7 @@
   // Klick doch ausgeführt. Ohne diese Absicherung wäre ein Download verloren
   // statt nur umgeleitet – etwa wenn die Erweiterung gerade neu geladen wurde.
   const ACK_TIMEOUT_MS = 1500;
-  const LOG = '[3D Model Auto-Downloader]';
+  const LOG = '[3D Model Downloader & Organizer]';
 
   const origClick = HTMLAnchorElement.prototype.click;
 

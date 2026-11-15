@@ -360,7 +360,7 @@ function regInhalt() {
     ...kommentar('regRegister', '', ';'),
     '',
     '[HKEY_CURRENT_USER\\Software\\Classes\\stldl]',
-    '@="URL:3D Model Auto-Downloader"',
+    '@="URL:3D Model Downloader & Organizer"',
     '"URL Protocol"=""',
     '',
     '[HKEY_CURRENT_USER\\Software\\Classes\\stldl\\shell\\open\\command]',

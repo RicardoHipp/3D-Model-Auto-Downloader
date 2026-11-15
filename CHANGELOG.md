@@ -4,6 +4,88 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.1.0] – 2026-11-15
+
+### Geändert
+
+- **Neuer Name: „3D Model Downloader & Organizer".** Die Erweiterung lädt
+  längst nicht mehr nur herunter, sie ordnet und verwaltet auch. Der Name
+  ändert sich überall, wo er erscheint: in Chrome, im Store, auf allen
+  Seiten, in der Datenschutzerklärung und in der Einrichtung für
+  „Im Explorer öffnen". Wer die schon eingerichtet hat, muss nichts neu
+  machen.
+
+- **Neues Aussehen, angelehnt an Apple.** Systemschrift (Segoe UI Variable
+  unter Windows 11), eine Akzentfarbe (Blau) statt vieler, hauchdünne
+  Kanten, runde Ecken, durchscheinender Kopf mit Milchglas-Effekt,
+  plastischere Knöpfe, ruhige Rückmeldungen beim Darüberfahren und weiche,
+  leicht federnde Bewegungen. In der Werkzeugleiste der Übersicht sind
+  Suche, Plattform, Sortierung und Papierkorb gleich hohe Pillen; die
+  Sortierung ist jetzt ein Segment-Schalter. Wer in Windows Animationen
+  abgeschaltet hat, bekommt keine Bewegungen.
+
+- **Startseite links oben.** Jede Seite hat links oben „⌂ 3D Model
+  Downloader & Organizer › Seite"; ein Klick führt zur Übersicht. Die
+  Zurück-Knöpfe, die auf jeder Seite woanders saßen, sind weg.
+
+- **Kacheln der Übersicht.** Plattform und Datum stehen als Pillen oben auf
+  dem Vorschaubild, das Tag-Symbol rechts unten; darunter ist Platz für
+  Titel und Tags. Die Kacheln zoomen beim Öffnen kurz auf.
+
+- **Teile-Erkennung bei STL im Hintergrund.** „In Einzelteile zerlegen"
+  erscheint nur noch, wenn eine STL wirklich aus mehreren Körpern besteht;
+  gesucht wird gleich nach dem Öffnen in einem eigenen Faden, ohne die Seite
+  aufzuhalten.
+
+- **Bei erneutem Herunterladen wird eine vorhandene `info.txt` um die
+  Beschreibung ergänzt,** wenn darin noch keine steht. Eigene Notizen bleiben
+  unangetastet.
+
+### Hinzugefügt
+
+- **Eigene Tags.** Modelle lassen sich mit eigenen Stichwörtern versehen –
+  in der Übersicht per Rechtsklick oder über das # auf der Kachel, auf der
+  Modellseite in der Zeile „Tags", oder indem man einen Tag aus der
+  Tag-Leiste auf ein Modell zieht. Mit Strg+Klick markierte Modelle
+  bekommen einen Tag gemeinsam. Die Tag-Leiste filtert (mehrere Tags: das
+  Modell muss alle haben), die Suche findet Tags ebenfalls. Groß- und
+  Kleinschreibung zählen nicht. Gespeichert werden die Tags als Zeile
+  „Tags:" in der `info.txt` des Modells – sie wandern mit dem Ordner und
+  lassen sich auch mit dem Editor ändern. Eine Anleitung steckt hinter dem
+  „?" in der Tag-Leiste.
+
+- **Schnellere Übersicht.** Die Übersicht merkt sich Titel, Tags und ein
+  verkleinertes Vorschaubild je Modell und zeigt sie sofort; der Abgleich
+  mit den Ordnern läuft danach im Hintergrund (rechts oben „Wird
+  aktualisiert …"). Neue, gelöschte und von Hand geänderte Modelle werden
+  dabei erkannt.
+
+- **Mehrere Modelle auf einmal** mit Strg+Klick markieren und in den
+  Papierkorb verschieben – oder im Papierkorb markieren und wiederherstellen.
+
+- **STEP-Dateien ansehen.** Die Modellseite zeigt STEP/STP-Dateien in 3D,
+  mit wählbarer Feinheit und Fortschrittsanzeige. Dafür liegt OpenCascade
+  (occt-import-js, LGPL-2.1) bei, selbst gebaut und mit einer Reparatur für
+  fehlerhafte Kreiskanten; beschädigte Dateien werden mit einem Hinweis
+  angezeigt. Quelltext und Änderungen stehen unter
+  `vendor/occt-import-js-quelle`.
+
+- **PDF-Ansicht** auf der Modellseite.
+
+- **Beschreibung des Modells** von der Website in der `info.txt` und in einem
+  eigenen Bereich „Beschreibung" auf der Modellseite, mit Vorschaubild.
+
+- **Dateiliste als Ordnerbaum** auf der Modellseite; „Im Explorer öffnen"
+  öffnet den Ordner der gerade gezeigten Datei.
+
+- **Teile ein- und ausblenden** in der Teileansicht, einzeln oder alle auf
+  einmal. Die Knöpfe bleiben auch bei langen Listen sichtbar.
+
+- **Fortschrittsanzeige auch auf Cults3D.**
+
+- **Lizenzhinweise** für Emscripten, Node.js und musl sowie die Ausnahme von
+  Open CASCADE zur LGPL in `LIZENZEN-DRITTER.txt`.
+
 ## [1.0.9] – 2026-11-14
 
 ### Hinzugefügt
@@ -356,6 +438,9 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ZIP-Dateien von MakerWorld, Printables und Thingiverse in nach Modellname und
   Plattform benannte Unterordner. ZIP-Archive werden im Arbeitsspeicher entpackt.
 
+[1.1.0]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.1.0
+[1.0.9]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.9
+[1.0.8]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.8
 [1.0.7]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.7
 [1.0.6]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.6
 [1.0.5]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.5
