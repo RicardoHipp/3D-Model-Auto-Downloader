@@ -4,7 +4,7 @@
     "description": "Extension name. Brand name, kept identical in every language."
   },
   "appDescription": {
-    "message": "Automatically saves STL, 3MF and ZIP files from MakerWorld, Printables, Thingiverse and Cults3D into sorted subfolders.",
+    "message": "Downloads 3D models into their own folders, organizes them with tags, previews STL, 3MF and STEP in 3D, converts STEP to STL.",
     "description": "Short description shown in the Chrome Web Store. Limit: 132 characters."
   },
   "statusLabel": {
@@ -1503,5 +1503,13 @@
   "libSort": {
     "message": "Sort order",
     "description": "Library page."
+  },
+  "modelSaveAsStl": {
+    "message": "Save as STL",
+    "description": "Model page."
+  },
+  "modelSaveAsStlHint": {
+    "message": "Saves the whole model as one STL file next to the original – for STEP at the detail level currently set.",
+    "description": "Model page."
   }
 }

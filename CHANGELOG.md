@@ -4,6 +4,30 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.1.1] – 2026-11-15
+
+### Hinzugefügt
+
+- **„Als STL speichern" für STEP und 3MF.** Auf der Modellseite steht über
+  der 3D-Ansicht ein Knopf, der das ganze Modell als eine STL-Datei neben
+  das Original schreibt – mittig und auf Z=0 gestellt, bei STEP in der
+  eingestellten Feinheit. Damit lassen sich auch STEP-Dateien aus einem
+  einzigen Körper umwandeln, nicht nur Baugruppen. Vorhandene Dateien
+  werden nie überschrieben; gibt es den Namen schon, hängt eine Nummer an.
+
+### Geändert
+
+- **Knöpfe überall als Pillen,** wie in der Werkzeugleiste der Übersicht –
+  auf der Modellseite, in Fenstern, Einstellungen und Willkommensseite.
+- **Kurzbeschreibung im Store** nennt jetzt Tags, die 3D-Vorschau und das
+  Umwandeln von STEP in STL.
+
+### Behoben
+
+- Der ausgewählte Eintrag „Beschreibung" in der Dateiliste hatte unten
+  keinen blauen Rand.
+- Beim Öffnen eines Modells blitzte rechts kurz ein Rollbalken auf.
+
 ## [1.1.0] – 2026-11-15
 
 ### Geändert
@@ -438,6 +462,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ZIP-Dateien von MakerWorld, Printables und Thingiverse in nach Modellname und
   Plattform benannte Unterordner. ZIP-Archive werden im Arbeitsspeicher entpackt.
 
+[1.1.1]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.1.1
 [1.1.0]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.1.0
 [1.0.9]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.9
 [1.0.8]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.8

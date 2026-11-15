@@ -103,7 +103,9 @@
 
   main { flex: 1; display: flex; min-height: 0; }
   /* Beim Oeffnen zoomt der Inhalt kurz auf (modern.css); der Kopf steht. */
-  main { animation: einzoomen .5s cubic-bezier(.34, 1.3, .64, 1) backwards; transform-origin: 50% 0; }
+  /* Ohne Nachschwingen: Wuerde der Inhalt dabei kurz groesser als das
+     Fenster, blitzte rechts der Rollbalken auf. */
+  main { animation: einzoomen .45s cubic-bezier(.2, .8, .2, 1) backwards; transform-origin: 50% 0; }
 
   /* Linke Spalte: jede Datei mit Vorschaubild */
   .dateien {
@@ -199,7 +201,13 @@
   }
   .datei .groesse { font-size: 11px; color: #a6adc8; }
   /* Eintrag "Beschreibung" ganz oben - etwas abgesetzt von den Dateien. */
-  .datei.details { border-bottom: 1px solid rgba(255, 255, 255, .07); border-radius: 8px 8px 0 0; margin-bottom: .55rem; }
+  /* Trennlinie unter "Beschreibung" als eigene Linie, nicht als Rand des
+     Eintrags - sonst fehlte dem ausgewaehlten Eintrag unten der blaue Rand. */
+  .datei.details { position: relative; margin-bottom: .75rem; }
+  .datei.details::after {
+    content: ''; position: absolute; left: .3rem; right: .3rem; bottom: calc(-.4rem - 1px);
+    height: 1px; background: rgba(255, 255, 255, .07); pointer-events: none;
+  }
   .datei.details .bild { font-size: 24px; color: #0a84ff; font-weight: 700; }
 
   /* Beschreibung auf der Buehne: ruhig gesetzt, gut lesbar. */
@@ -293,7 +301,7 @@
   }
   .stepWarnung[hidden] { display: none; }
   .eckKnopf {
-    font-size: 13px; padding: .5rem .9rem; border-radius: 8px;
+    font-size: 13px; padding: .5rem 1rem; border-radius: 999px;
     background: #1e1e2e; color: #cdd6f4; border: 1px solid rgba(255, 255, 255, .12);
     cursor: pointer;
   }
@@ -303,6 +311,7 @@
   }
   .eckKnopf[hidden] { display: none; }
   /* Schalter fuer die Einzelteile: oben mittig ueber dem Modell. */
+  .obenMitte { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
   .obenMitte .eckKnopf { white-space: nowrap; }
   /* Feinheit einer STEP-Datei: Regler mit Stufe und Dreieckszahl daneben,
      damit der Unterschied auch in Zahlen sichtbar ist. */
@@ -337,6 +346,9 @@
     background: #181825e8; border: 1px solid rgba(255, 255, 255, .07); border-radius: 8px;
     font-size: 12px; backdrop-filter: blur(3px);
   }
+  /* Zugeklappt eine Pille wie die Knoepfe daneben, aufgeklappt ein Feld. */
+  .regler:not([open]) { border-radius: 999px; }
+  .regler[open] { border-radius: 14px; }
   .regler summary {
     cursor: pointer; padding: .5rem .7rem; color: #cdd6f4;
     font-weight: 600; list-style: none;
@@ -490,6 +502,7 @@
     <div class="obenMitte">
       <button class="eckKnopf" id="teileModus" hidden aria-pressed="false"
               data-i18n="modelSplit">Einzelteile aus Datei exportieren</button>
+      <button class="eckKnopf" id="alsStl" hidden data-i18n="modelSaveAsStl">Als STL speichern</button>
     </div>
     <div class="rechts">
     <details class="regler" id="regler" hidden>

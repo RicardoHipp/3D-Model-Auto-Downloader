@@ -825,6 +825,7 @@ const TEILE_ORDNER = 'Einzelteile';
 
 const teileFach  = document.getElementById('teileFach');
 const modusKnopf = document.getElementById('teileModus');
+const stlKnopf   = document.getElementById('alsStl');
 const teileListe = document.getElementById('teileListe');
 const teilKnopf  = document.getElementById('teilSpeichern');
 const alleKnopf  = document.getElementById('alleSpeichern');
@@ -895,6 +896,7 @@ function zeigeTeile(datei, netze) {
   // erscheint erst, wenn dabei mehr als ein Körper herauskommt.
   zerlegbar = false;
   modusKnopf.hidden = aktuelleTeile.length < 2;
+  stlKnopf.hidden = !STL_UMWANDELBAR.includes(endungVon(datei.name));
   sucheTeile(!netze.teile && netze.length === 1 && netze[0].ecken.length > 0 ? netze[0].ecken : null);
 
   if (aktuelleTeile.length > 1) baueTeileListe();
@@ -1096,6 +1098,48 @@ async function speichereTeile(welche) {
     alleKnopf.disabled = false;
   }
 }
+
+// --- Ganzes Modell als STL --------------------------------------------------
+//
+// STEP aus CAD-Programmen und 3MF aus dem Slicer als eine STL-Datei, wie sie
+// jeder Slicer liest. Geschrieben wird das, was gerade zu sehen ist - bei STEP
+// also in der eingestellten Feinheit -, mittig und auf Z=0 gestellt. Die
+// Datei kommt neben das Original, mit gleichem Namen; gibt es den schon,
+// haengt eine Nummer an. Ueberschrieben wird nie etwas.
+const STL_UMWANDELBAR = ['.step', '.stp', '.3mf'];
+
+async function freierDateiname(ordner, basis, endung) {
+  for (let n = 1; ; n++) {
+    const name = basis + (n > 1 ? ` (${n})` : '') + endung;
+    try { await ordner.getFileHandle(name); } catch { return name; }
+  }
+}
+
+stlKnopf.title = t('modelSaveAsStlHint');
+stlKnopf.addEventListener('click', async () => {
+  const datei = aktuelleDatei;
+  if (!datei || !aktuelleNetze.length) return;
+  const vorher = stlKnopf.textContent;
+  stlKnopf.disabled = true;
+  stlKnopf.textContent = t('modelSaving');
+  let meldung;
+  try {
+    const ordner = datei.ordner || modellHandle;
+    const name = await freierDateiname(ordner, datei.name.replace(/\.[^.]+$/, ''), '.stl');
+    await schreibeDatei(ordner, name, schreibeStl(aktuelleNetze));
+    meldung = '✓ ' + t('modelSavedOne', [name]);
+    // Die neue Datei soll gleich in der Liste stehen.
+    dateien = (await sammle(modellHandle)).sort((a, b) => a.pfad.localeCompare(b.pfad));
+    zeichneListe();
+  } catch (err) {
+    meldung = t('libError', [err.message]);
+  }
+  stlKnopf.textContent = meldung;
+  setTimeout(() => {
+    stlKnopf.textContent = vorher;
+    stlKnopf.disabled = false;
+  }, 3000);
+});
 
 modusKnopf.addEventListener('click', async () => {
   // Beim ersten Mal muss ein STL erst zerlegt werden; danach liegt die
@@ -1322,7 +1366,7 @@ function zeigeDetails() {
   if (leinwand) leinwand.hidden = true;
   if (grossesBild) grossesBild.hidden = true;
   pdfAusblenden();
-  for (const el of [mitteEl, lageEl, masseEl, feinheitEl, teileFach, modusKnopf, stepWarnungEl]) el.hidden = true;
+  for (const el of [mitteEl, lageEl, masseEl, feinheitEl, teileFach, modusKnopf, stlKnopf, stepWarnungEl]) el.hidden = true;
   sucheTeile(null);
   dateienEl.hidden = false;
   teileModus = false;
@@ -1474,6 +1518,7 @@ async function waehle(d) {
   feinheitEl.hidden = true;
   teileFach.hidden = true;
   modusKnopf.hidden = true;
+  stlKnopf.hidden = true;
   sucheTeile(null);
   dateienEl.hidden = false;
   teileModus = false;

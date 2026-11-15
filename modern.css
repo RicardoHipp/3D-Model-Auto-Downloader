@@ -27,7 +27,8 @@ body {
   /* Leichter Verlauf ueber der Grundfarbe der Seite, feine helle Kante oben. */
   background-image: linear-gradient(rgba(255, 255, 255, .07), rgba(255, 255, 255, 0));
   border: 1px solid rgba(255, 255, 255, .07);
-  border-radius: 10px;
+  /* Pille, wie in der Werkzeugleiste der Uebersicht - ueberall gleich. */
+  border-radius: 999px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 1px 3px rgba(0, 0, 0, .35);
   transition: transform .2s cubic-bezier(.34, 1.3, .64, 1), box-shadow .2s ease,
               filter .2s ease, background-color .2s ease;
