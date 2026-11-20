@@ -971,7 +971,7 @@
     "description": "Model page."
   },
   "modelSavePart": {
-    "message": "Part as STL",
+    "message": "Save part",
     "description": "Model page."
   },
   "modelSaveAll": {
@@ -1504,12 +1504,36 @@
     "message": "Sort order",
     "description": "Library page."
   },
+  "modelRender": {
+    "message": "Render",
+    "description": "Model page."
+  },
+  "modelRenderHint": {
+    "message": "Smooth shading with studio lighting instead of flat facets. The model is prepared briefly the first time.",
+    "description": "Model page."
+  },
+  "modelSaveAs3mf": {
+    "message": "Save as 3MF",
+    "description": "Model page."
+  },
+  "modelFormat": {
+    "message": "File format for saving",
+    "description": "Model page."
+  },
+  "modelStlNoColours": {
+    "message": "STL has no colours – only the shape is saved.",
+    "description": "Model page."
+  },
   "modelSaveAsStl": {
     "message": "Save as STL",
     "description": "Model page."
   },
   "modelSaveAsStlHint": {
-    "message": "Saves the whole model as one STL file next to the original – for STEP at the detail level currently set.",
+    "message": "Saves the whole model as one file next to the original – for STEP at the detail level currently set. 3MF keeps the colours, STL only the shape.",
     "description": "Model page."
+  },
+  "libTagsClear": {
+    "message": "Show all",
+    "description": "Library page, tags: clear the tag filter."
   }
 }

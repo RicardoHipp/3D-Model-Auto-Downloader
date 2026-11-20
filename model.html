@@ -184,6 +184,22 @@
   .teilKnoepfe button { flex: 1; font-size: 11px; padding: .4rem .3rem; }
   .note { font-size: 11px; color: #a6adc8; margin: .5rem .3rem 0; }
   .note[hidden] { display: none; }
+  /* Dateiformat beim Speichern: zwei kleine Pillen, die gewaehlte blau. */
+  .formatWahl { display: flex; gap: .25rem; margin: .5rem .3rem 0; }
+  .formatWahl .format {
+    flex: 1; font-size: 11px; padding: .3rem .5rem; border-radius: 999px;
+    background: #1e1e2e; color: #a6adc8; border: 1px solid rgba(255, 255, 255, .12); cursor: pointer;
+  }
+  .formatWahl .format[aria-pressed="true"] { border-color: #0a84ff; color: #0a84ff; background: #2a2a40; }
+  .speichernOben { display: inline-flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+  .speichernOben[hidden] { display: none; }
+  .speichernOben .formatWahl { margin: 0; }
+  .speichernOben .formatWahl .format { flex: none; padding: .45rem .7rem; font-size: 12px; }
+  .formatHinweis {
+    font-size: 12px; color: #f9e2af; background: #1e1e2ecc; border: 1px solid #4a3d0a;
+    border-radius: 8px; padding: .3rem .6rem;
+  }
+  .formatHinweis[hidden] { display: none; }
   .datei[aria-current="true"] { background: #252539; border-color: #0a84ff; }
   .datei .bild {
     width: 52px; height: 52px; flex-shrink: 0; border-radius: 6px;
@@ -253,6 +269,10 @@
   .buehne img.gross {
     width: 100%; height: 100%; object-fit: contain; display: block;
   }
+  /* Muss nach der Regel darueber stehen: Die ist gleich spezifisch und
+     setzt display - sonst bliebe das grosse Bild sichtbar, wenn danach ein
+     Modell gezeigt wird, und das Modell rutschte darunter. */
+  .buehne img.gross[hidden] { display: none; }
   /* PDF in Chromes eigenem Betrachter, ueber die ganze Buehne. */
   .buehne iframe.pdf {
     position: absolute; inset: 0; width: 100%; height: 100%;
@@ -310,6 +330,8 @@
     background: #2a2a40; border-color: #0a84ff; color: #0a84ff;
   }
   .eckKnopf[hidden] { display: none; }
+  /* Rendern: waehrend die weichen Netze entstehen, gedaempft */
+  .eckKnopf.rechnet { opacity: .6; cursor: progress; }
   /* Schalter fuer die Einzelteile: oben mittig ueber dem Modell. */
   .obenMitte { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
   .obenMitte .eckKnopf { white-space: nowrap; }
@@ -471,8 +493,13 @@
         <button id="alleAus" data-i18n="modelHideAll">Alle ausblenden</button>
       </div>
       <div id="teileListe"></div>
+      <div class="formatWahl" role="group">
+        <button class="format" data-format="3mf" aria-pressed="true">3MF</button>
+        <button class="format" data-format="stl" aria-pressed="false">STL</button>
+      </div>
+      <p class="note" id="stlHinweis" hidden data-i18n="modelStlNoColours">STL enthält keine Farben.</p>
       <div class="teilKnoepfe">
-        <button id="teilSpeichern" disabled data-i18n="modelSavePart">Teil als STL</button>
+        <button id="teilSpeichern" disabled data-i18n="modelSavePart">Teil speichern</button>
         <button id="alleSpeichern" data-i18n="modelSaveAll">Alle Teile</button>
       </div>
       <p class="note" id="teilInfo" hidden></p>
@@ -500,9 +527,18 @@
     </div>
     <!-- Oben in der Mitte, zwischen Feinheit links und Darstellung rechts -->
     <div class="obenMitte">
+      <button class="eckKnopf" id="rendern" hidden aria-pressed="false"
+              data-i18n="modelRender">Rendern</button>
       <button class="eckKnopf" id="teileModus" hidden aria-pressed="false"
               data-i18n="modelSplit">Einzelteile aus Datei exportieren</button>
-      <button class="eckKnopf" id="alsStl" hidden data-i18n="modelSaveAsStl">Als STL speichern</button>
+      <span class="speichernOben" id="speichernOben" hidden>
+        <button class="eckKnopf" id="alsStl" data-i18n="modelSaveAs3mf">Als 3MF speichern</button>
+        <span class="formatWahl" role="group">
+          <button class="format" data-format="3mf" aria-pressed="true">3MF</button>
+          <button class="format" data-format="stl" aria-pressed="false">STL</button>
+        </span>
+        <span class="formatHinweis" id="stlHinweisOben" hidden data-i18n="modelStlNoColours">STL enthält keine Farben.</span>
+      </span>
     </div>
     <div class="rechts">
     <details class="regler" id="regler" hidden>
@@ -555,7 +591,10 @@
 <script src="explorer_link.js"></script>
 <script src="model_zip.js"></script>
 <script src="model_stl.js"></script>
+<script src="model_3mf_schreiben.js"></script>
 <script src="model_3mf.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="model_drei.js"></script>
 <script src="model_view.js"></script>
 <script src="model.js"></script>
 <script src="home.js"></script>

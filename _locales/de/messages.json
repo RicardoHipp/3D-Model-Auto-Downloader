@@ -971,7 +971,7 @@
     "description": "Model page."
   },
   "modelSavePart": {
-    "message": "Teil als STL",
+    "message": "Teil speichern",
     "description": "Model page."
   },
   "modelSaveAll": {
@@ -1504,12 +1504,36 @@
     "message": "Sortierung",
     "description": "Library page."
   },
+  "modelRender": {
+    "message": "Rendern",
+    "description": "Model page."
+  },
+  "modelRenderHint": {
+    "message": "Weich schattiert mit Studiolicht statt flacher Facetten. Beim ersten Einschalten wird das Modell kurz aufbereitet.",
+    "description": "Model page."
+  },
+  "modelSaveAs3mf": {
+    "message": "Als 3MF speichern",
+    "description": "Model page."
+  },
+  "modelFormat": {
+    "message": "Dateiformat beim Speichern",
+    "description": "Model page."
+  },
+  "modelStlNoColours": {
+    "message": "STL enthält keine Farben – gespeichert wird nur die Form.",
+    "description": "Model page."
+  },
   "modelSaveAsStl": {
     "message": "Als STL speichern",
     "description": "Model page."
   },
   "modelSaveAsStlHint": {
-    "message": "Speichert das ganze Modell als eine STL-Datei neben die Originaldatei – bei STEP in der eingestellten Feinheit.",
+    "message": "Speichert das ganze Modell als eine Datei neben die Originaldatei – bei STEP in der eingestellten Feinheit. 3MF behält die Farben, STL nur die Form.",
     "description": "Model page."
+  },
+  "libTagsClear": {
+    "message": "Alle anzeigen",
+    "description": "Library page, tags: clear the tag filter."
   }
 }

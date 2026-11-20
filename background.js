@@ -600,6 +600,7 @@ async function downloadImage(imageUrl, folderName) {
     const pathname = new URL(imageUrl).pathname.toLowerCase();
     if (pathname.endsWith('.png')) ext = 'png';
     else if (pathname.endsWith('.webp')) ext = 'webp';
+    else if (pathname.endsWith('.gif')) ext = 'gif';
   } catch {}
   if (await tryWriteToTarget(imageUrl, `${folderName}/preview.${ext}`)) {
     handledUrls.delete(imageUrl);
@@ -912,24 +913,36 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     if (!hasThingiTab) return;
   }
 
-  // 4. Dateityp prüfen
-  const filenameLower = (downloadItem.filename || '').toLowerCase();
-  const urlLower = urlStr.toLowerCase();
-  const isZip  = filenameLower.endsWith('.zip')   || urlLower.includes('.zip')
-    || downloadItem.mime === 'application/zip'
-    || downloadItem.mime === 'application/x-zip-compressed'
-    || downloadItem.mime === 'application/x-zip';
-  const isStl  = filenameLower.endsWith('.stl')   || urlLower.includes('.stl');
-  const is3mf  = filenameLower.endsWith('.3mf')   || urlLower.includes('.3mf');
-  const isGcode = filenameLower.endsWith('.gcode') || urlLower.includes('.gcode');
-  const isPdf  = filenameLower.endsWith('.pdf')   || urlLower.includes('.pdf');
-  if (!isZip && !isStl && !is3mf && !isGcode && !isPdf) return;
-
   // Cults: Abrufen laesst sich nur die signierte Adresse, auf die der Link
   // weiterleitet (siehe unten bei "Download abwickeln"). Kennt Chrome sie
   // noch nicht, bleibt der Download, wie er ist - besser im Download-Ordner
   // als abgebrochen und dann an der Sperre gescheitert.
-  if (isCults && !/^https:\/\/download\.cults3d\.com\//.test(downloadItem.finalUrl || '')) return;
+  if (DEBUG && isCults) console.log('[DL] Cults:', { url: urlStr, finalUrl: downloadItem.finalUrl, mime: downloadItem.mime, filename: downloadItem.filename });
+  // Der Host hiess frueher download.cults3d.com, inzwischen
+  // downloader.cults3d.com - daher beide (und kuenftige Varianten) zulassen.
+  if (isCults && !/^https:\/\/download[a-z0-9-]*\.cults3d\.com\//.test(downloadItem.finalUrl || '')) return;
+  // Die Adresse, von der wir die Datei selbst holen. Bei Cults ist das die
+  // signierte Weiterleitung; nur sie traegt auch die Dateiendung - der Link
+  // auf der Bestellseite (/downloads/<nr>?creation=...) hat keine.
+  const abrufUrl = isCults ? downloadItem.finalUrl : urlStr;
+
+  // 4. Dateityp prüfen
+  const filenameLower = (downloadItem.filename || '').toLowerCase();
+  const urlLower = (() => { try { return new URL(abrufUrl).pathname.toLowerCase(); } catch { return abrufUrl.toLowerCase(); } })();
+  const pfadOderName = (endung) => filenameLower.endsWith(endung) || urlLower.includes(endung);
+  const istCultsAlles = isCults && (() => { try { return !new URL(urlStr).searchParams.has('blueprint'); } catch { return false; } })();
+  const isStl  = pfadOderName('.stl');
+  const is3mf  = pfadOderName('.3mf');
+  const isGcode = pfadOderName('.gcode');
+  const isPdf  = pfadOderName('.pdf');
+  const isZip  = pfadOderName('.zip')
+    || downloadItem.mime === 'application/zip'
+    || downloadItem.mime === 'application/x-zip-compressed'
+    || downloadItem.mime === 'application/x-zip'
+    // "Download all" liefert bei Cults immer eine ZIP, auch wenn weder Name
+    // noch Adresse noch MIME-Typ (oft octet-stream) das schon verraten.
+    || (istCultsAlles && !isStl && !is3mf && !isGcode && !isPdf);
+  if (!isZip && !isStl && !is3mf && !isGcode && !isPdf) return;
 
   // Fehlt der Zielordner, wird der Download abgebrochen statt im
   // Downloads-Ordner abgelegt. Hier hat Chrome ihn schon begonnen - also
@@ -999,10 +1012,13 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
           // Link selbst. Es ist ein 113-Pixel-Daumennagel von images.cults3d.com
           // - dessen Adresse traegt aber das Original von fbi.cults3d.com am
           // Ende mit, und das nehmen wir.
+          // Ist das Titelbild ein GIF, zeigt Cults statt <img> ein <video>
+          // (MP4 von videos.cults3d.com) - auch dessen Adresse traegt das
+          // Original am Ende.
           let bild = null;
           for (let k = mitText, stufe = 0; k && !bild && stufe < 6; stufe++) {
             k = k.parentElement;
-            bild = k?.querySelector('img') || null;
+            bild = k?.querySelector('img, video') || null;
           }
           let imgUrl = bild?.currentSrc || bild?.src || null;
           const original = imgUrl ? imgUrl.lastIndexOf('https://') : -1;
@@ -1067,7 +1083,7 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     // Cookies braucht - und die kennt Chrome hier schon als finalUrl.
     // Fehlt sie, lassen wir den Download lieber normal laufen, statt ihn
     // abzubrechen und dann an der Sperre zu scheitern.
-    const zipUrl = isCults ? downloadItem.finalUrl : downloadItem.url;
+    const zipUrl = abrufUrl;
     chrome.downloads.cancel(downloadItem.id);
     chrome.downloads.erase({ id: downloadItem.id });
     if (downloadQueue.some(item => item.url === zipUrl)) return;
@@ -1079,27 +1095,27 @@ chrome.downloads.onCreated.addListener(async (downloadItem) => {
     chrome.downloads.cancel(downloadItem.id);
     chrome.downloads.erase({ id: downloadItem.id });
     const nameFromFile = sanitizePath(downloadItem.filename.split(/[\\/]/).pop());
-    const rawFromUrl   = (() => { try { return decodeURIComponent(downloadItem.url.split('/').pop().split('?')[0]); } catch { return downloadItem.url.split('/').pop().split('?')[0]; } })();
+    const rawFromUrl   = (() => { try { return decodeURIComponent(abrufUrl.split('/').pop().split('?')[0]); } catch { return abrufUrl.split('/').pop().split('?')[0]; } })();
     const nameFromUrl  = sanitizePath(rawFromUrl);
     const ext = nameFromUrl.match(/\.[^.]+$/)?.[0] || '';
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nameFromUrl.replace(/\.[^.]+$/, ''));
     const cleanFileName = nameFromFile
       || (isUuid && modelName !== 'Model' ? modelName.replace(/[<>:"/\\|?*]/g, '_').trim() + ext : nameFromUrl)
       || 'file.stl';
-    handledUrls.add(downloadItem.url);
+    handledUrls.add(abrufUrl);
     // Fortschrittsband auf der Seite, wie bei den abgefangenen Downloads.
     meldeFortschritt(matchingTab?.id, { file: cleanFileName, state: 'laden' });
-    if (await tryWriteToTarget(downloadItem.url, `${finalFolderName}/${cleanFileName}`)) {
-      handledUrls.delete(downloadItem.url);
+    if (await tryWriteToTarget(abrufUrl, `${finalFolderName}/${cleanFileName}`)) {
+      handledUrls.delete(abrufUrl);
       meldeFortschritt(matchingTab?.id, { file: cleanFileName, state: 'fertig' });
     } else {
       chrome.downloads.download({
-        url: downloadItem.url,
+        url: abrufUrl,
         filename: `STL_Downloads/${finalFolderName}/${cleanFileName}`,
         conflictAction: 'uniquify',
         saveAs: false
       }, (downloadId) => {
-        handledUrls.delete(downloadItem.url);
+        handledUrls.delete(abrufUrl);
         begleiteDownload(downloadId, matchingTab?.id, cleanFileName);
       });
     }

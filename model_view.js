@@ -51,6 +51,16 @@ void main() {
   ergebnis = vec4(pow(licht, vec3(1.0 / gamma)), 1.0);
 }`;
 
+// --- Ansicht "Rendern" ----------------------------------------------------
+//
+// Weich schattiert mit three.js - siehe model_drei.js. Hier bleibt nur der
+// Bildwinkel: Gerendert wird schmaler, wie mit einem Fotoobjektiv, statt mit
+// den 0,9 (gut 50 Grad) der flachen Ansicht.
+const RENDER_SICHT = 35 * Math.PI / 180;
+const FLACH_SICHT = 0.9;
+// Ab hier gilt eine Kante als Kante und wird nicht geglaettet.
+const KNICKWINKEL = 35 * Math.PI / 180;
+
 // Zum Anklicken: Dieselbe Szene wird noch einmal gezeichnet, jedes Netz in
 // einer eigenen Farbe, die seine Nummer verschlüsselt. Danach wird genau
 // das eine Pixel unter dem Mauszeiger ausgelesen. Das trifft auch dann das
@@ -213,6 +223,16 @@ class Betrachter {
     this.kennProgramm = null;
     this.kennRahmen = null;
 
+    // Ansicht "Rendern": weich schattiert mit three.js (model_drei.js). Die
+    // Netze dafuer entstehen erst beim Einschalten, im Hintergrund; bis sie
+    // da sind, bleibt es flach. beiRendern meldet, ob gerade gerechnet wird.
+    this.rendern = false;
+    this.drei = null;
+    this.dreiLauf = 0;
+    this.dreiArbeiter = null;
+    this.beiRendern = null;
+    this.rendernRechnet = false;
+
     // Kameralage: Winkel um die Hochachse, Höhenwinkel, Abstand.
     // Hochachse ist Z - so legen es STL und 3MF im 3D-Druck ab. Mit der in
     // der Grafik üblichen Y-Achse läge jedes Modell auf der Seite.
@@ -250,6 +270,7 @@ class Betrachter {
       if (n.indexPuffer) gl.deleteBuffer(n.indexPuffer);
       gl.deleteVertexArray(n.vao);
     }
+    this.drei?.leeren();
 
     const farbtafel = netze.farbtafel || [];
     const bereicheJeNetz = netze.map((n) => farbBereiche(n, farbtafel));
@@ -289,14 +310,72 @@ class Betrachter {
         teil,
         // Abschnitte gleicher Farbe im Indexpuffer, oder null.
         bereiche: bunt ? bunt.liste : null,
-        anzahl: indexPuffer ? indizes.length : ecken.length / 3
+        anzahl: indexPuffer ? indizes.length : ecken.length / 3,
+        // Woraus die weiche Fassung entsteht - in derselben Reihenfolge der
+        // Dreiecke, damit die Farbabschnitte auch dort stimmen.
+        quelle: { ecken, indizes: indexPuffer ? indizes : null },
+        weich: false
       };
     });
 
     this.hervor = null;
     this.ausgeblendet = new Set();
     this.passeEin(netze);
+    if (this.rendern) this.aufbereiten();
+    else this.dreiLauf++;
     this.zeichne();
+  }
+
+  // --- Rendern: ein- und ausschalten, weiche Netze bauen -------------------
+
+  setzeRendern(an) {
+    // Die Vorschaubilder bleiben flach.
+    this.rendern = !!an && !this.festeGroesse;
+    if (this.rendern && this.netze.length && !this.netze.every((n) => n.weich)) this.aufbereiten();
+    this.zeichne();
+  }
+
+  meldeRechnen(laeuft) {
+    this.rendernRechnet = laeuft;
+    this.beiRendern?.(laeuft);
+  }
+
+  // Schickt die Netze nacheinander an den Arbeiter (three.js,
+  // toCreasedNormals) und reicht die Ergebnisse an die three.js-Buehne.
+  // Wechselt inzwischen das Modell, verfallen die Antworten (Laufnummer).
+  async aufbereiten() {
+    const lauf = ++this.dreiLauf;
+    const netze = this.netze;
+    this.meldeRechnen(true);
+    try {
+      if (!this.drei) {
+        this.drei = new DreiBuehne(this.leinwand);
+        this.drei.einpassen(this.mitte, this.groesse, this.radius);
+      }
+      if (!this.dreiArbeiter) this.dreiArbeiter = new Worker('model_drei_worker.js');
+      const arbeiter = this.dreiArbeiter;
+      for (let i = 0; i < netze.length; i++) {
+        const n = netze[i];
+        if (n.weich) continue;
+        const antwort = await new Promise((fertig) => {
+          arbeiter.onmessage = ({ data }) => fertig(data);
+          arbeiter.onerror = (e) => fertig({ fehler: e.message || 'Fehler' });
+          arbeiter.postMessage({ nummer: i, ecken: n.quelle.ecken, indizes: n.quelle.indizes,
+                                 winkel: KNICKWINKEL });
+        });
+        if (lauf !== this.dreiLauf) return;
+        if (antwort.fehler) throw new Error(antwort.fehler);
+        this.drei.setzeNetz(i, antwort, n.bereiche, n.teil);
+        n.weich = true;
+        // Erst zeichnen, wenn alle fertig sind - ein halb weiches Modell
+        // saehe aus wie ein Fehler.
+      }
+      this.zeichne();
+    } catch (fehler) {
+      console.warn('Rendern nicht moeglich:', fehler);
+    } finally {
+      if (lauf === this.dreiLauf) this.meldeRechnen(false);
+    }
   }
 
   // Kamera so setzen, dass das Modell ganz im Bild ist.
@@ -318,6 +397,7 @@ class Betrachter {
     this.radius = Math.max(Math.hypot(...this.groesse) / 2, 0.001);
     this.abstand = this.radius * 2.6;
     this.schub = [0, 0, 0];
+    this.drei?.einpassen(this.mitte, this.groesse, this.radius);
   }
 
   zeichne() {
@@ -342,18 +422,44 @@ class Betrachter {
       this.mitte[1] + this.schub[1],
       this.mitte[2] + this.schub[2]
     ];
+    // Gerendert wird mit schmalerem Bildwinkel. Damit das Modell gleich gross
+    // bleibt, rueckt die Kamera im selben Verhaeltnis weiter weg - der
+    // Zoom (abstand) bleibt fuer beide Ansichten derselbe.
+    const gerendert = this.rendern && !!this.drei && this.netze.every((n) => n.weich);
+    const winkel = gerendert ? RENDER_SICHT : FLACH_SICHT;
+    const abstand = this.abstand * Math.tan(FLACH_SICHT / 2) / Math.tan(winkel / 2);
     const auge = [
-      ziel[0] + this.abstand * Math.cos(this.hoehe) * Math.sin(this.drehung),
-      ziel[1] + this.abstand * Math.cos(this.hoehe) * Math.cos(this.drehung),
-      ziel[2] + this.abstand * Math.sin(this.hoehe)
+      ziel[0] + abstand * Math.cos(this.hoehe) * Math.sin(this.drehung),
+      ziel[1] + abstand * Math.cos(this.hoehe) * Math.cos(this.drehung),
+      ziel[2] + abstand * Math.sin(this.hoehe)
     ];
 
-    const sicht = blickVon(auge, ziel, [0, 0, 1]);
-    const proj = perspektive(0.9, breite / hoehe, Math.max(r * 0.01, 0.01), this.abstand + r * 4);
+    // Hochachse der Kamera, nicht die der Welt: So darf der Hoehenwinkel
+    // ueber die Pole hinaus - das Modell laesst sich auch hoch und runter
+    // endlos drehen, ohne dass das Bild am Pol umklappt.
+    const oben = [
+      -Math.sin(this.drehung) * Math.sin(this.hoehe),
+      -Math.cos(this.drehung) * Math.sin(this.hoehe),
+      Math.cos(this.hoehe)
+    ];
+    const sicht = blickVon(auge, ziel, oben);
+    const proj = perspektive(winkel, breite / hoehe, Math.max(r * 0.01, 0.01), abstand + r * 4);
     const mvp = malMatrix(proj, sicht);
     // Das Kennungsbild zeichnet dieselbe Ansicht; es borgt sich die Matrix,
     // statt sie noch einmal auszurechnen.
     this.letzteMvp = mvp;
+
+    this.drei?.zeigen(gerendert);
+    if (gerendert) {
+      this.drei.zeichne({
+        breite, hoehe, auge, ziel, oben,
+        nah: Math.max(r * 0.01, 0.01), fern: abstand + r * 4,
+        hintergrund: this.hintergrund, farbe: this.farbe,
+        blass: this.farbe.map((w) => w * 0.3 + 0.04),
+        hervor: this.hervor, ausgeblendet: this.ausgeblendet, dateiFarben: this.dateiFarben
+      });
+      return;
+    }
 
     gl.useProgram(this.programm);
     gl.uniformMatrix4fv(this.orte.mvp, false, mvp);
@@ -523,9 +629,16 @@ class Betrachter {
         // Plus, nicht minus: Die Maus fasst das Modell an und zieht es mit.
         // Nach rechts ziehen dreht es nach rechts - die Kamera wandert dabei
         // nach links. Andersherum fühlt es sich verkehrt an.
-        this.drehung += dx * 0.008;
-        // Knapp vor den Polen abfangen: Genau senkrecht kippt das Bild.
-        this.hoehe = Math.max(-1.5, Math.min(1.5, this.hoehe + dy * 0.008));
+        // Steht das Modell kopf (ueber einen Pol hinaus gedreht), laeuft die
+        // Drehung um die Hochachse fuer das Auge andersherum - dann das
+        // Vorzeichen umkehren, damit die Maus das Modell weiter "anfasst".
+        const kopf = Math.cos(this.hoehe) < 0 ? -1 : 1;
+        this.drehung += dx * 0.008 * kopf;
+        // Ohne Anschlag: hoch und runter so weit wie links und rechts. Der
+        // Winkel bleibt zwischen -pi und pi, damit er nicht endlos waechst.
+        this.hoehe += dy * 0.008;
+        if (this.hoehe > Math.PI) this.hoehe -= 2 * Math.PI;
+        if (this.hoehe < -Math.PI) this.hoehe += 2 * Math.PI;
       } else {
         // Schieben in der Bildebene: entlang der Rechts- und Hochachse der
         // Kamera, nicht entlang der Weltachsen - sonst wandert das Modell
@@ -603,6 +716,8 @@ async function erzeugeVorschau(netze, groesse = 512, darstellung = null) {
   // Dieselben Licht- und Farbwerte wie die große Ansicht, sonst passen die
   // Bilder links nicht zu dem, was rechts steht.
   if (darstellung) Object.assign(bildMaler, darstellung);
+  // Die Bilder links bleiben flach - "Rendern" gilt nur fuer die grosse Ansicht.
+  bildMaler.rendern = false;
 
   bildMaler.setzeNetze(netze);
   // Von vorn und etwas von oben - derselbe Blick wie beim Öffnen.

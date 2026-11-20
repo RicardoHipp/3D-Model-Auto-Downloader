@@ -39,7 +39,7 @@ let imPapierkorb = false;
 // können – sonst wächst der Speicherverbrauch mit jedem Filterwechsel.
 let bildUrls = [];
 
-const BILD_NAMEN = ['preview.jpg', 'preview.png', 'preview.webp', 'preview.jpeg'];
+const BILD_NAMEN = ['preview.jpg', 'preview.png', 'preview.webp', 'preview.jpeg', 'preview.gif'];
 
 // Geloeschte Modelle wandern hierhin, statt von der Platte zu verschwinden.
 // Der Name ist fest und nicht uebersetzt: Er steht auf der Platte und duerfte
@@ -416,7 +416,9 @@ function zeichne() {
     karte.querySelector('.name').textContent = m.titel;
     const q = karte.querySelector('.quelle');
     q.textContent = m.quelle || '–';
-    q.classList.add(m.quelle);
+    // Ordner ohne erkennbares Schema haben keine Quelle; ein leerer oder
+    // Leerzeichen enthaltender Token liesse classList.add() werfen.
+    if (m.quelle && !/\s/.test(m.quelle)) q.classList.add(m.quelle);
     karte.querySelector('.datum').textContent = imPapierkorb && m.geloescht
       ? t('libDeletedOn', [formatDatum(m.geloescht)])
       : formatDatum(m.datum);
@@ -570,11 +572,23 @@ function zeichneTagLeiste() {
     });
     knopf.addEventListener('click', () => {
       if (gewaehlteTags.has(s)) gewaehlteTags.delete(s); else gewaehlteTags.add(s);
-      knopf.setAttribute('aria-pressed', String(gewaehlteTags.has(s)));
+      zeichneTagLeiste();
       zeichne();
     });
     if (!z.anzahl) knopf.classList.add('neu');
     tagLeisteEl.appendChild(knopf);
+  }
+  // Ist nach Tags gefiltert: mit einem Klick wieder alle Modelle zeigen.
+  if (gewaehlteTags.size) {
+    const alle = document.createElement('button');
+    alle.className = 'tagAlle';
+    alle.textContent = '× ' + t('libTagsClear');
+    alle.addEventListener('click', () => {
+      gewaehlteTags.clear();
+      zeichneTagLeiste();
+      zeichne();
+    });
+    tagLeisteEl.appendChild(alle);
   }
   tagLeisteEl.append(neuerTagKnopf(), hilfeKnopf());
 }

@@ -31,12 +31,16 @@
 !model_zip.js
 !model_stl.js
 !model_3mf.js
+!model_3mf_schreiben.js
 !model_view.js
 !model_step_worker.js
 !model_teile_worker.js
+!model_drei.js
+!model_drei_worker.js
 !vendor/
 !vendor/occt-import-js.js
 !vendor/occt-import-js.wasm
+!vendor/three.min.js
 !vendor/occt-import-js-mt.js
 !vendor/occt-import-js-mt.wasm
 !vendor/LICENSE-occt-import-js.txt

@@ -204,6 +204,12 @@
   .tagLeiste .tag[draggable="true"] { cursor: grab; }
   /* Neu angelegt, noch an keinem Modell. */
   .tagLeiste .tag.neu { border-style: dashed; }
+  /* Filter aufheben: nur da, wenn nach Tags gefiltert wird. */
+  .tagAlle {
+    font: inherit; font-size: 12px; padding: 2px 11px; border-radius: 999px; cursor: pointer;
+    background: rgba(10, 132, 255, .15); color: #64b5ff; border: 1px solid rgba(10, 132, 255, .35);
+  }
+  .tagAlle:hover { opacity: 1; background: rgba(10, 132, 255, .25); }
   .tagNeu, .tagHilfe {
     font: inherit; font-size: 12px; padding: 2px 10px; border-radius: 10px;
     background: none; color: #a6adc8; border: 1px dashed rgba(255, 255, 255, .12);

@@ -4,6 +4,56 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.2.0] – 2026-11-20
+
+### Hinzugefügt
+
+- **Als 3MF speichern – mit Farben.** Einzelteile und das ganze Modell
+  lassen sich jetzt wahlweise als 3MF oder STL speichern (Umschalter
+  „3MF | STL“ im Teile-Fach und oben neben dem Speichern-Knopf; die Wahl
+  bleibt gespeichert). 3MF behält die Farben: als Farbpalette nach
+  3MF-Norm, als Bemalung für Bambu Studio/OrcaSlicer (paint_color) und
+  PrusaSlicer (mmu_segmentation) sowie mit dem Filament je Teil. Fein
+  bemalte Dreiecke gehen unverändert hinaus, das Netz bekommt keine
+  zusätzlichen Ecken. Bei STL weist ein Hinweis darauf hin, dass keine
+  Farben enthalten sind. Die Farbtöne der Filamente selbst stellt man im
+  Slicer ein.
+- **„Rendern“ in der 3D-Ansicht.** Ein Knopf schaltet zwischen der flachen
+  Ansicht (jede Facette sichtbar) und einer weich schattierten Darstellung
+  mit Studiolicht um – mit three.js: weiche Normalen mit scharfen Kanten
+  ab 35°, Umgebungslicht, drei Lichter, die mit der Kamera mitdrehen,
+  mattes Kunststoffmaterial, ACES-Tonemapping und Bodenschatten. Das
+  Aufbereiten läuft im Hintergrund; jede neu geöffnete Datei startet flach.
+  Vorschaubilder bleiben flach.
+- **Farben aus 3MF-Dateien anderer Programme.** Neben Bambu Studio/Orca
+  werden jetzt auch die Farben nach 3MF-Norm (basematerials, colorgroup)
+  und die Filamentfarben von PrusaSlicer gelesen.
+- **Tag-Filter mit einem Klick aufheben:** Knopf „Alle anzeigen“ in der
+  Tag-Leiste, sobald nach Tags gefiltert wird.
+- **GIF als Vorschaubild,** auch bei Cults3D (dort zeigt die Seite statt
+  eines Bildes ein Video).
+
+### Geändert
+
+- **Modell endlos drehen,** auch hoch und runter über die Pole hinweg,
+  ohne dass das Bild umklappt.
+- „Teil als STL“ heißt jetzt „Teil speichern“.
+- three.js (MIT) liegt lokal in der Erweiterung; Lizenz in
+  LIZENZEN-DRITTER.txt.
+
+### Behoben
+
+- **Große 3MF-Dateien** (Hauptmodell über rund 512 MB Text) ließen sich
+  nicht öffnen – das Hauptmodell wird jetzt als Strom gelesen.
+- **Cults3D:** Downloads über den neuen Host downloader.cults3d.com wurden
+  nicht mehr abgefangen; „Download all“ wird als ZIP erkannt, auch wenn
+  Name, Adresse und MIME-Typ es nicht verraten; Dateiname und Endung
+  kommen aus der signierten Adresse.
+- Nach einem großen Bild blieb dieses sichtbar, wenn danach ein Modell
+  gezeigt wurde.
+- Übersicht: Ordner ohne erkennbare Quelle ließen die Liste mit einem
+  Fehler abbrechen.
+
 ## [1.1.1] – 2026-11-15
 
 ### Hinzugefügt
@@ -462,6 +512,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ZIP-Dateien von MakerWorld, Printables und Thingiverse in nach Modellname und
   Plattform benannte Unterordner. ZIP-Archive werden im Arbeitsspeicher entpackt.
 
+[1.2.0]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.2.0
 [1.1.1]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.1.1
 [1.1.0]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.1.0
 [1.0.9]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.0.9

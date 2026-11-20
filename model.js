@@ -185,8 +185,9 @@ async function sammle(handle, pfad = '') {
 
 async function modellOeffnen() {
   try {
-    const { ansicht } = await chrome.storage.local.get('ansicht');
+    const { ansicht, exportFormat: format } = await chrome.storage.local.get(['ansicht', 'exportFormat']);
     if (ansicht) darstellung = ansicht;
+    if (format === 'stl' || format === '3mf') { exportFormat = format; zeigeFormat(); }
   } catch { /* dann die Voreinstellung aus dem Renderer */ }
 
   const { state } = await targetDirStatus();
@@ -826,6 +827,7 @@ const TEILE_ORDNER = 'Einzelteile';
 const teileFach  = document.getElementById('teileFach');
 const modusKnopf = document.getElementById('teileModus');
 const stlKnopf   = document.getElementById('alsStl');
+const speichernOben = document.getElementById('speichernOben');
 const teileListe = document.getElementById('teileListe');
 const teilKnopf  = document.getElementById('teilSpeichern');
 const alleKnopf  = document.getElementById('alleSpeichern');
@@ -896,7 +898,7 @@ function zeigeTeile(datei, netze) {
   // erscheint erst, wenn dabei mehr als ein Körper herauskommt.
   zerlegbar = false;
   modusKnopf.hidden = aktuelleTeile.length < 2;
-  stlKnopf.hidden = !STL_UMWANDELBAR.includes(endungVon(datei.name));
+  speichernOben.hidden = !STL_UMWANDELBAR.includes(endungVon(datei.name));
   sucheTeile(!netze.teile && netze.length === 1 && netze[0].ecken.length > 0 ? netze[0].ecken : null);
 
   if (aktuelleTeile.length > 1) baueTeileListe();
@@ -1055,11 +1057,46 @@ function waehleTeil(nr) {
     : masseVon(netzeVonTeil(gewaehltesTeil)));
 }
 
-function stlName(teil) {
+function teilDateiName(teil) {
   const basis = aktuelleDatei.name.replace(/\.[^.]+$/, '');
   const nr = String(teil.nummer + 1).padStart(2, '0');
   const name = (teil.name || '').replace(/[<>:"/\\|?*]/g, '_').trim();
-  return basis + '_' + nr + (name ? '_' + name : '') + '.stl';
+  return basis + '_' + nr + (name ? '_' + name : '') + '.' + exportFormat;
+}
+
+// --- Dateiformat beim Speichern ----------------------------------------------
+//
+// 3MF behaelt die Farben (siehe model_3mf_schreiben.js), STL nur die Form.
+// Eine Wahl fuer beide Stellen - Teile links und ganzes Modell oben -, sie
+// bleibt gespeichert.
+let exportFormat = '3mf';
+const stlHinweis = document.getElementById('stlHinweis');
+const stlHinweisOben = document.getElementById('stlHinweisOben');
+
+function zeigeFormat() {
+  for (const k of document.querySelectorAll('.formatWahl .format')) {
+    k.setAttribute('aria-pressed', String(k.dataset.format === exportFormat));
+  }
+  const stl = exportFormat === 'stl';
+  stlHinweis.hidden = !stl;
+  stlHinweisOben.hidden = !stl;
+  if (!stlKnopf.disabled) stlKnopf.textContent = t(stl ? 'modelSaveAsStl' : 'modelSaveAs3mf');
+}
+
+for (const g of document.querySelectorAll('.formatWahl')) g.title = t('modelFormat');
+for (const k of document.querySelectorAll('.formatWahl .format')) {
+  k.addEventListener('click', () => {
+    exportFormat = k.dataset.format;
+    zeigeFormat();
+    chrome.storage.local.set({ exportFormat }).catch(() => {});
+  });
+}
+
+// Was in die Datei kommt. Die Farbtafel haengt am ganzen Modell, nicht an
+// den einzelnen Netzen eines Teils.
+function dateiInhalt(netze, teile) {
+  if (exportFormat === 'stl') return schreibeStl(netze);
+  return schreibe3mf(netze, aktuelleNetze.farbtafel || [], teile);
 }
 
 async function schreibeDatei(ordner, name, puffer) {
@@ -1080,12 +1117,12 @@ async function speichereTeile(welche) {
     const ziel = await modellHandle.getDirectoryHandle(TEILE_ORDNER, { create: true });
 
     for (const teil of welche) {
-      await schreibeDatei(ziel, stlName(teil), schreibeStl(netzeVonTeil(teil.nummer)));
+      await schreibeDatei(ziel, teilDateiName(teil), await dateiInhalt(netzeVonTeil(teil.nummer), [teil]));
     }
 
     teilInfo.textContent = welche.length > 1
       ? t('modelSavedMany', [String(welche.length), TEILE_ORDNER])
-      : t('modelSavedOne', [TEILE_ORDNER + '\\' + stlName(welche[0])]);
+      : t('modelSavedOne', [TEILE_ORDNER + '\\' + teilDateiName(welche[0])]);
 
     // Die neuen Dateien sollen gleich in der Liste stehen - ihr Ordner offen.
     dateien = (await sammle(modellHandle)).sort((a, b) => a.pfad.localeCompare(b.pfad));
@@ -1116,17 +1153,17 @@ async function freierDateiname(ordner, basis, endung) {
 }
 
 stlKnopf.title = t('modelSaveAsStlHint');
+zeigeFormat();
 stlKnopf.addEventListener('click', async () => {
   const datei = aktuelleDatei;
   if (!datei || !aktuelleNetze.length) return;
-  const vorher = stlKnopf.textContent;
   stlKnopf.disabled = true;
   stlKnopf.textContent = t('modelSaving');
   let meldung;
   try {
     const ordner = datei.ordner || modellHandle;
-    const name = await freierDateiname(ordner, datei.name.replace(/\.[^.]+$/, ''), '.stl');
-    await schreibeDatei(ordner, name, schreibeStl(aktuelleNetze));
+    const name = await freierDateiname(ordner, datei.name.replace(/\.[^.]+$/, ''), '.' + exportFormat);
+    await schreibeDatei(ordner, name, await dateiInhalt(aktuelleNetze, aktuelleTeile));
     meldung = '✓ ' + t('modelSavedOne', [name]);
     // Die neue Datei soll gleich in der Liste stehen.
     dateien = (await sammle(modellHandle)).sort((a, b) => a.pfad.localeCompare(b.pfad));
@@ -1136,8 +1173,8 @@ stlKnopf.addEventListener('click', async () => {
   }
   stlKnopf.textContent = meldung;
   setTimeout(() => {
-    stlKnopf.textContent = vorher;
     stlKnopf.disabled = false;
+    zeigeFormat();
   }, 3000);
 });
 
@@ -1366,7 +1403,7 @@ function zeigeDetails() {
   if (leinwand) leinwand.hidden = true;
   if (grossesBild) grossesBild.hidden = true;
   pdfAusblenden();
-  for (const el of [mitteEl, lageEl, masseEl, feinheitEl, teileFach, modusKnopf, stlKnopf, stepWarnungEl]) el.hidden = true;
+  for (const el of [mitteEl, lageEl, masseEl, feinheitEl, teileFach, modusKnopf, speichernOben, stepWarnungEl, renderKnopf]) el.hidden = true;
   sucheTeile(null);
   dateienEl.hidden = false;
   teileModus = false;
@@ -1450,7 +1487,7 @@ function zeigeDetails() {
 // Das Vorschaubild, das die Erweiterung beim Herunterladen ablegt
 // (preview.jpg o. ae.), sonst das erste Bild im Ordner.
 function vorschauDatei() {
-  const namen = ['preview.jpg', 'preview.png', 'preview.webp', 'preview.jpeg'];
+  const namen = ['preview.jpg', 'preview.png', 'preview.webp', 'preview.jpeg', 'preview.gif'];
   return dateien.find((d) => namen.includes(d.pfad.toLowerCase()))
     || dateien.find((d) => BILD_ENDUNGEN.includes(endungVon(d.name)));
 }
@@ -1513,12 +1550,13 @@ async function waehle(d) {
   const endung = endungVon(d.name);
   mitteEl.hidden = true;
   lageEl.hidden = true;
+  renderKnopf.hidden = true;
   masseEl.hidden = true;
   stepWarnungEl.hidden = true;
   feinheitEl.hidden = true;
   teileFach.hidden = true;
   modusKnopf.hidden = true;
-  stlKnopf.hidden = true;
+  speichernOben.hidden = true;
   sucheTeile(null);
   dateienEl.hidden = false;
   teileModus = false;
@@ -1599,6 +1637,10 @@ async function waehle(d) {
       mitteEl.hidden = true;
       leinwand.hidden = false;
     }
+    // Jede neu angeklickte Datei beginnt flach - "Rendern" schaltet man
+    // fuer die Datei ein, die man gerade ansieht.
+    betrachter.rendern = false;
+    zeigeRendern();
     betrachter.setzeNetze(netze);
     // Ein Klick ins Bild holt die Teileliste gleich mit hervor - sonst
     // leuchtet etwas auf, und man sähe nicht, was es ist.
@@ -1607,6 +1649,7 @@ async function waehle(d) {
       waehleTeil(nr);
     };
     lageEl.hidden = false;
+    renderKnopf.hidden = false;
     zeigeMasse(betrachter.groesse);
     zeigeTeile(d, netze);
     zeigeFarbSchalter();
@@ -1685,6 +1728,8 @@ async function reglerEinrichten() {
   for (const [, feld] of FARBREGLER) standard[feld] = [...betrachter[feld]];
 
   Object.assign(betrachter, darstellung);
+  zeigeRendern();
+  betrachter.beiRendern = (laeuft) => renderKnopf.classList.toggle('rechnet', laeuft);
 
   for (const [id, feld, faktor, stellen, anzeige, einheit] of REGLER) {
     document.getElementById(id).addEventListener('input', (e) => {
@@ -1720,6 +1765,25 @@ async function reglerEinrichten() {
   betrachter.zeichne();
   document.getElementById('regler').hidden = false;
 }
+
+// --- Rendern -------------------------------------------------------------
+//
+// Schaltet die grosse Ansicht zwischen flach (jede Facette sichtbar, gut zum
+// Pruefen) und weich schattiert mit Studiolicht um. Gemerkt wird die Wahl
+// nicht: Jede neu angeklickte Datei beginnt flach.
+const renderKnopf = document.getElementById('rendern');
+renderKnopf.title = t('modelRenderHint');
+
+function zeigeRendern() {
+  renderKnopf.setAttribute('aria-pressed', String(!!betrachter?.rendern));
+}
+
+renderKnopf.addEventListener('click', () => {
+  if (!betrachter) return;
+  betrachter.setzeRendern(!betrachter.rendern);
+  zeigeRendern();
+  reglerSichern();
+});
 
 // --- Knöpfe -------------------------------------------------------------
 
