@@ -53,11 +53,15 @@ void main() {
 
 // --- Ansicht "Rendern" ----------------------------------------------------
 //
-// Weich schattiert mit three.js - siehe model_drei.js. Hier bleibt nur der
-// Bildwinkel: Gerendert wird schmaler, wie mit einem Fotoobjektiv, statt mit
-// den 0,9 (gut 50 Grad) der flachen Ansicht.
-const RENDER_SICHT = 35 * Math.PI / 180;
-const FLACH_SICHT = 0.9;
+// Weich schattiert mit three.js - siehe model_drei.js.
+//
+// Bildwinkel: 35 Grad wie ein Fotoobjektiv, fuer beide Ansichten gleich -
+// sonst springt beim Umschalten die Perspektive. Frueher zeichnete die
+// flache Ansicht mit 0,9 (gut 50 Grad); der Zoom ("abstand") ist noch in
+// diesem Mass gespeichert, die Kamera rueckt entsprechend weiter weg, damit
+// das Modell gleich gross im Bild bleibt.
+const SICHT = 35 * Math.PI / 180;
+const ALTE_SICHT = 0.9;
 // Ab hier gilt eine Kante als Kante und wird nicht geglaettet.
 const KNICKWINKEL = 35 * Math.PI / 180;
 
@@ -422,12 +426,9 @@ class Betrachter {
       this.mitte[1] + this.schub[1],
       this.mitte[2] + this.schub[2]
     ];
-    // Gerendert wird mit schmalerem Bildwinkel. Damit das Modell gleich gross
-    // bleibt, rueckt die Kamera im selben Verhaeltnis weiter weg - der
-    // Zoom (abstand) bleibt fuer beide Ansichten derselbe.
     const gerendert = this.rendern && !!this.drei && this.netze.every((n) => n.weich);
-    const winkel = gerendert ? RENDER_SICHT : FLACH_SICHT;
-    const abstand = this.abstand * Math.tan(FLACH_SICHT / 2) / Math.tan(winkel / 2);
+    const winkel = SICHT;
+    const abstand = this.abstand * Math.tan(ALTE_SICHT / 2) / Math.tan(SICHT / 2);
     const auge = [
       ziel[0] + abstand * Math.cos(this.hoehe) * Math.sin(this.drehung),
       ziel[1] + abstand * Math.cos(this.hoehe) * Math.cos(this.drehung),

@@ -1050,6 +1050,20 @@
     "message": "Colours from file",
     "description": "Model page."
   },
+  "modelLoading": {
+    "message": "Loading “$NAME$” ($GROESSE$) …",
+    "description": "Model page: shown while a model file is being read.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Deckel 4-5.stl"
+      },
+      "groesse": {
+        "content": "$2",
+        "example": "2.1 MB"
+      }
+    }
+  },
   "modelStepLoading": {
     "message": "Reading STEP file ($GROESSE$) …\nLarge files take a while, up to a minute or more.",
     "description": "Model page.",

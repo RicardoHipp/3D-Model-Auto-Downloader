@@ -29,6 +29,7 @@
 !model.html
 !model.js
 !model_zip.js
+!model_bildspeicher.js
 !model_stl.js
 !model_3mf.js
 !model_3mf_schreiben.js

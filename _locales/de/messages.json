@@ -1050,6 +1050,20 @@
     "message": "Farben der Datei",
     "description": "Model page."
   },
+  "modelLoading": {
+    "message": "„$NAME$“ wird geladen ($GROESSE$) …",
+    "description": "Model page: shown while a model file is being read.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Deckel 4-5.stl"
+      },
+      "groesse": {
+        "content": "$2",
+        "example": "2.1 MB"
+      }
+    }
+  },
   "modelStepLoading": {
     "message": "STEP-Datei wird gelesen ($GROESSE$) …\nGroße Dateien brauchen eine Weile, bis zu einer Minute und mehr.",
     "description": "Model page.",

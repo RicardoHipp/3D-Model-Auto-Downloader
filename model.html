@@ -300,7 +300,8 @@
     display: flex; flex-wrap: wrap; align-items: flex-start; gap: .6rem;
     pointer-events: none;          /* dazwischen bleibt das Modell bedienbar */
   }
-  .obenLeiste .feinheit, .obenLeiste .eckKnopf, .obenLeiste .regler { pointer-events: auto; }
+  .obenLeiste .feinheit, .obenLeiste .eckKnopf, .obenLeiste .regler,
+  .obenLeiste .format { pointer-events: auto; }
   /* Links und rechts gleich dehnbar, die Mitte nach Inhalt: So steht der
      Schalter genau mittig. min-width sorgt dafuer, dass umgebrochen wird,
      bevor etwas gequetscht wird. */
@@ -330,8 +331,17 @@
     background: #2a2a40; border-color: #0a84ff; color: #0a84ff;
   }
   .eckKnopf[hidden] { display: none; }
-  /* Rendern: waehrend die weichen Netze entstehen, gedaempft */
-  .eckKnopf.rechnet { opacity: .6; cursor: progress; }
+  /* Rendern: Solange die weichen Netze entstehen, dreht sich vor dem Text
+     ein kleiner Kreis. Gedreht wird per transform - das laeuft auch weiter,
+     wenn die Seite gerade mit dem Modell beschaeftigt ist. */
+  .eckKnopf.rechnet { cursor: progress; border-color: #0a84ff; }
+  .eckKnopf.rechnet::before {
+    content: ''; display: inline-block; width: .8em; height: .8em;
+    margin-right: .45em; vertical-align: -.1em;
+    border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+    animation: rendernDreht .8s linear infinite;
+  }
+  @keyframes rendernDreht { to { transform: rotate(360deg); } }
   /* Schalter fuer die Einzelteile: oben mittig ueber dem Modell. */
   .obenMitte { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
   .obenMitte .eckKnopf { white-space: nowrap; }
@@ -590,6 +600,7 @@
 <script src="tags.js"></script>
 <script src="explorer_link.js"></script>
 <script src="model_zip.js"></script>
+<script src="model_bildspeicher.js"></script>
 <script src="model_stl.js"></script>
 <script src="model_3mf_schreiben.js"></script>
 <script src="model_3mf.js"></script>

@@ -435,6 +435,41 @@ function oeffneOrdnerVon(d) {
   }
 }
 
+// --- Datei aus der Liste herausziehen ---------------------------------------
+//
+// Chrome laesst eine Datei aus der Seite auf den Desktop oder in einen
+// Explorer-Ordner ziehen, wenn beim Ziehen "DownloadURL" gesetzt ist
+// ("Typ:Name:Adresse"). Das muss im dragstart sofort geschehen - die Datei
+// selbst zu holen geht aber nur asynchron. Deshalb schon beim Darueberfahren
+// eine Blob-Adresse anlegen; ein File aus dem Ordner-Handle wird dabei nicht
+// in den Speicher kopiert, er verweist nur auf die Datei auf der Platte.
+//
+// Direkt in einen Slicer geht es nicht: Chrome reicht eine "virtuelle"
+// Datei weiter, die erst beim Ablegen entsteht. Der Explorer kann damit
+// umgehen, OrcaSlicer nimmt nur echte Dateipfade an (wxFileDropTarget) -
+// und die darf eine Seite nicht mitgeben. Ausprobiert, auch mit file:///.
+const ziehAdressen = new Map();
+
+function ziehbar(knopf, d) {
+  knopf.draggable = true;
+  const vorbereiten = async () => {
+    if (ziehAdressen.has(d.pfad) || !d.handle) return;
+    ziehAdressen.set(d.pfad, null);
+    try {
+      ziehAdressen.set(d.pfad, URL.createObjectURL(await d.handle.getFile()));
+    } catch {
+      ziehAdressen.delete(d.pfad);
+    }
+  };
+  knopf.addEventListener('pointerenter', vorbereiten);
+  knopf.addEventListener('dragstart', (e) => {
+    const adresse = ziehAdressen.get(d.pfad);
+    if (!adresse) { e.preventDefault(); vorbereiten(); return; }
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('DownloadURL', `application/octet-stream:${d.name}:${adresse}`);
+  });
+}
+
 function dateiEintrag(d) {
   const knopf = document.createElement('button');
   knopf.className = 'datei';
@@ -461,6 +496,7 @@ function dateiEintrag(d) {
 
   knopf.append(bild, text);
   knopf.addEventListener('click', () => waehle(d));
+  ziehbar(knopf, d);
 
   d.knopf = knopf;
   d.bildFach = bild;
@@ -512,10 +548,33 @@ async function naechstesBild() {
   arbeitet = false;
 }
 
+// Schluessel fuer den Bildspeicher (model_bildspeicher.js): welche Datei,
+// in welchem Stand. Gezeichnete Bilder haengen ausserdem an den Farb- und
+// Lichtreglern - aendern die sich, gilt ein neuer Schluessel.
+function bildSchluessel(d, datei, art) {
+  const ort = (IM_KORB ? PAPIERKORB + '/' : '') + ORDNER + '/' + d.pfad;
+  const zusatz = art === 'gezeichnet' ? '|' + kurzHash(JSON.stringify(darstellung)) : '';
+  return `${ort}|${datei.size}|${datei.lastModified}|${art}${zusatz}`;
+}
+
+function kurzHash(text) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return (h >>> 0).toString(36);
+}
+
 async function kleinesBild(d) {
   const endung = endungVon(d.name);
   if (BILD_ENDUNGEN.includes(endung)) {
     return URL.createObjectURL(await d.handle.getFile());
+  }
+
+  const datei = await d.handle.getFile();
+  const paketSchluessel = bildSchluessel(d, datei, 'paket');
+  const zeichenSchluessel = bildSchluessel(d, datei, 'gezeichnet');
+  for (const schluessel of endung === '.3mf' ? [paketSchluessel, zeichenSchluessel] : [zeichenSchluessel]) {
+    const gemerkt = await bildAusSpeicher(schluessel);
+    if (gemerkt) return URL.createObjectURL(gemerkt);
   }
 
   // Ein 3MF trägt ein fertiges Vorschaubild im Paket - deshalb zeigt auch
@@ -524,9 +583,12 @@ async function kleinesBild(d) {
   // braucht: Die Eisbär-Datei bringt 534 MB XML mit.
   if (endung === '.3mf') {
     try {
-      const zip = liesZip(await (await d.handle.getFile()).arrayBuffer());
+      const zip = liesZip(await datei.arrayBuffer());
       const bild = await bild3mf(zip);
-      if (bild) return URL.createObjectURL(bild.blob);
+      if (bild) {
+        bildInSpeicher(paketSchluessel, bild.blob);
+        return URL.createObjectURL(bild.blob);
+      }
     } catch { /* kein Bild im Paket - dann eben zeichnen */ }
   }
 
@@ -536,6 +598,7 @@ async function kleinesBild(d) {
   if (!netze?.length) return null;
   // Braucht den Betrachter - er bringt Renderer und Umgebung mit.
   const blob = await erzeugeVorschau(netze, 128, darstellung);
+  bildInSpeicher(zeichenSchluessel, blob);
   return URL.createObjectURL(blob);
 }
 
@@ -1622,6 +1685,21 @@ async function waehle(d) {
     mitteEl.hidden = false;
   }
   const groesseText = formatGroesse(d.groesse);
+  // Alle anderen Dateien: das alte Modell gleich wegnehmen und sagen, was
+  // kommt - sonst stuende beim Hin- und Herklicken noch die vorige Datei da,
+  // und bei aehnlichen Modellen verwechselt man das. Sofort, nicht nach
+  // einer Wartezeit: Das Lesen blockiert die Seite, ein Zeitgeber kaeme erst
+  // danach dran. Deshalb auch zwei Bilder warten, damit der Hinweis wirklich
+  // zu sehen ist, bevor das Lesen beginnt. Liegt das Modell schon im
+  // Speicher, kommt es sofort - dann kein Hinweis, sonst flackert es.
+  const ladeHinweis = !stepWartet && !netzSpeicher.has(speicherSchluessel(d));
+  if (ladeHinweis) {
+    leinwand.hidden = true;
+    mitteEl.textContent = t('modelLoading', [d.name, groesseText]);
+    mitteEl.hidden = false;
+    await new Promise((weiter) => requestAnimationFrame(() => requestAnimationFrame(weiter)));
+    if (meineWahl !== wahlNummer) return;
+  }
   const melde = (abschnitt, anteil, zaehler) => {
     if (meineWahl !== wahlNummer) return;
     zeigeStand(stepGesamt(abschnitt, anteil, false));
@@ -1633,7 +1711,7 @@ async function waehle(d) {
     const netze = await netzeVon(d, false, stepWartet ? melde : null);
     if (meineWahl !== wahlNummer) return;
     if (!netze.length) throw new Error('leer');
-    if (stepWartet) {
+    if (stepWartet || ladeHinweis) {
       mitteEl.hidden = true;
       leinwand.hidden = false;
     }
