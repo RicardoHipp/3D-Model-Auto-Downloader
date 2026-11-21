@@ -704,12 +704,58 @@
       }
     }
   },
+  "libTrashFiles": {
+    "message": "Gelöschte Dateien",
+    "description": "Library page, trash: heading of single deleted files."
+  },
+  "libTrashFileFrom": {
+    "message": "aus „$MODELL$“ · gelöscht am $DATUM$ · $GROESSE$",
+    "description": "Library page, trash: origin of a deleted file.",
+    "placeholders": {
+      "modell": {
+        "content": "$1",
+        "example": "Dustbin for Dreame"
+      },
+      "datum": {
+        "content": "$2",
+        "example": "21.11.2026"
+      },
+      "groesse": {
+        "content": "$3",
+        "example": "2.1 MB"
+      }
+    }
+  },
+  "libTrashFileDeleteConfirm": {
+    "message": "„$NAME$“ endgültig löschen? Das lässt sich nicht rückgängig machen.",
+    "description": "Library page, trash: confirm deleting one file.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Deckel 4-5.stl"
+      }
+    }
+  },
+  "libTrashEmptyConfirmFiles": {
+    "message": "Alle $MODELLE$ Modelle und $DATEIEN$ einzelnen Dateien im Papierkorb endgültig löschen? Das lässt sich nicht rückgängig machen.",
+    "description": "Library page.",
+    "placeholders": {
+      "modelle": {
+        "content": "$1",
+        "example": "3"
+      },
+      "dateien": {
+        "content": "$2",
+        "example": "5"
+      }
+    }
+  },
   "libTrashNothing": {
     "message": "Der Papierkorb ist leer.",
     "description": "Library page."
   },
   "libTrashNote": {
-    "message": "Gelöschte Modelle liegen im Ordner _Trash_ in deinem Zielordner, bis du den Papierkorb leerst.",
+    "message": "Gelöschte Modelle und Dateien liegen im Ordner _Trash_ in deinem Zielordner, bis du den Papierkorb leerst.",
     "description": "Library page."
   },
   "libRestore": {
@@ -834,6 +880,104 @@
     "message": "Kantenschimmer",
     "description": "Model page."
   },
+  "modelCrease": {
+    "message": "Knickwinkel",
+    "description": "Model page, look panel: edges sharper than this stay hard in the render view."
+  },
+  "modelExposure": {
+    "message": "Belichtung",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelEnvLight": {
+    "message": "Umgebungslicht",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelKeyLight": {
+    "message": "Hauptlicht",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelFillLight": {
+    "message": "Fülllicht",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelRimLight": {
+    "message": "Kantenlicht",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelRoughness": {
+    "message": "Rauheit",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelGroundShadow": {
+    "message": "Bodenschatten",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelDeleteFile": {
+    "message": "Datei in den Papierkorb",
+    "description": "Model page: small x on a file in the list."
+  },
+  "modelDeleteFileConfirm": {
+    "message": "„$NAME$“ in den Papierkorb verschieben? Du findest sie in der Übersicht unter „Papierkorb“ und kannst sie dort wiederherstellen – sie kommt dann in dieses Modell zurück.",
+    "description": "Model page: confirm moving one file to the trash.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Deckel 4-5.stl"
+      }
+    }
+  },
+  "modelDeleteFilesConfirm": {
+    "message": "$ANZAHL$ Dateien in den Papierkorb verschieben? Du findest sie in der Übersicht unter „Papierkorb“ und kannst sie dort einzeln wiederherstellen.",
+    "description": "Model page: confirm moving several marked files to the trash.",
+    "placeholders": {
+      "anzahl": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "modelFilaments": {
+    "message": "Filamente",
+    "description": "Model page, filaments panel."
+  },
+  "modelFilamentsReset": {
+    "message": "Farben der Datei",
+    "description": "Model page, filaments panel."
+  },
+  "modelFilamentN": {
+    "message": "Filament $NUMMER$",
+    "description": "Model page, filaments panel.",
+    "placeholders": {
+      "nummer": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "modelHighlight": {
+    "message": "Hervorheben",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightGrey": {
+    "message": "Grau",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightGlass": {
+    "message": "Glas",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightPulse": {
+    "message": "Pulsieren",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightDark": {
+    "message": "Dunkel",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightOff": {
+    "message": "Gar nicht",
+    "description": "Model page, filaments panel: no highlight on hover."
+  },
   "modelGamma": {
     "message": "Gamma",
     "description": "Model page."
@@ -893,6 +1037,22 @@
   "expSetupButton": {
     "message": "Dateien herunterladen und Ordner öffnen",
     "description": "Options page."
+  },
+  "expImportant": {
+    "message": "Wichtig: Bitte lies die Schritte unten vollständig und genau durch, bevor du loslegst – besonders den Hinweis zu „Zulassen“ in Schritt 2.",
+    "description": "Options page, explorer setup."
+  },
+  "expUnblockTitle": {
+    "message": "Windows blockiert die Dateien?",
+    "description": "Options page, explorer setup."
+  },
+  "expUnblockText": {
+    "message": "Bietet Windows kein „Ausführen“ an, passiert beim Doppelklick nichts, oder meldet das Skript, der Registrierungseintrag habe nicht geklappt: Rechtsklick auf die Datei → „Eigenschaften“ → unten bei „Sicherheit“ den Haken „Zulassen“ setzen → „OK“. Das für beide Dateien machen – open-folder.vbs und stldl-protokoll.reg – und danach open-folder.vbs noch einmal doppelklicken.",
+    "description": "Options page, explorer setup."
+  },
+  "expUnblockWhy": {
+    "message": "Warum nicht jeder das braucht: Windows merkt sich an heruntergeladenen Dateien, dass sie aus dem Internet stammen. Wie streng es damit umgeht, hängt von den Sicherheitseinstellungen des Rechners ab – etwa „Intelligente App-Steuerung“ und SmartScreen in Windows 11, Firmenrichtlinien oder ob der Download-Ordner auf einem Laufwerk liegt, das sich diese Herkunft überhaupt merken kann. Deshalb fragt Windows bei manchen nur kurz nach und blockiert bei anderen, bis man „Zulassen“ setzt.",
+    "description": "Options page, explorer setup."
   },
   "expSetupS2Titel": {
     "message": "open-folder.vbs doppelklicken",

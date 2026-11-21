@@ -119,6 +119,16 @@
     cursor: pointer;
   }
   .datei:hover { background: #252539; }
+  /* Datei in den Papierkorb: kleines x unten rechts, nur beim Darueberfahren. */
+  .datei { position: relative; }
+  .datei .weg {
+    position: absolute; right: .4rem; bottom: .35rem;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: none; align-items: center; justify-content: center;
+    font-size: 13px; line-height: 1; color: #a6adc8; background: #313244;
+  }
+  .datei:hover .weg, .datei:focus-within .weg { display: flex; }
+  .datei .weg:hover, .datei .weg:focus-visible { color: #fff; background: #e64553; outline: none; }
 
   /* Unterordner: Kopfzeile zum Auf- und Zuklappen, der Inhalt eingerueckt
      mit einer feinen Linie links - so sieht man, was dazugehoert. */
@@ -184,6 +194,9 @@
   .teilKnoepfe button { flex: 1; font-size: 11px; padding: .4rem .3rem; }
   .note { font-size: 11px; color: #a6adc8; margin: .5rem .3rem 0; }
   .note[hidden] { display: none; }
+  /* Hinweis zu STL ueber dem Umschalter: Sein Platz bleibt auch bei 3MF
+     frei, sonst springen Umschalter und Knoepfe beim Wechsel. */
+  #stlHinweis[hidden] { display: block; visibility: hidden; }
   /* Dateiformat beim Speichern: zwei kleine Pillen, die gewaehlte blau. */
   .formatWahl { display: flex; gap: .25rem; margin: .5rem .3rem 0; }
   .formatWahl .format {
@@ -194,6 +207,7 @@
   .speichernOben { display: inline-flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
   .speichernOben[hidden] { display: none; }
   .speichernOben .formatWahl { margin: 0; }
+  .formatWahl[hidden] { display: none; }
   .speichernOben .formatWahl .format { flex: none; padding: .45rem .7rem; font-size: 12px; }
   .formatHinweis {
     font-size: 12px; color: #f9e2af; background: #1e1e2ecc; border: 1px solid #4a3d0a;
@@ -201,6 +215,16 @@
   }
   .formatHinweis[hidden] { display: none; }
   .datei[aria-current="true"] { background: #252539; border-color: #0a84ff; }
+  /* Mit Strg/Shift markiert - zum gemeinsamen Loeschen. */
+  /* "Papierkorb" in der Kopfzeile: wie der Seitentitel, aber als Weg zurueck. */
+  .pfadKorb {
+    align-self: center; color: #a6adc8; text-decoration: none; font-size: 14px;
+    padding: 4px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .pfadKorb:hover { background: rgba(255, 255, 255, .08); color: #f5f5f7; }
+  .pfadKorb[hidden] { display: none; }
+  .pfadKorb + .homeTrenner, .pfadTrenner { align-self: center; color: #585b70; font-size: 18px; line-height: 1; margin: 0 -2px; }
+  .datei.markiert { background: rgba(10, 132, 255, .14); border-color: rgba(10, 132, 255, .6); }
   .datei .bild {
     width: 52px; height: 52px; flex-shrink: 0; border-radius: 6px;
     background: #11111b; overflow: hidden;
@@ -306,7 +330,7 @@
      Schalter genau mittig. min-width sorgt dafuer, dass umgebrochen wird,
      bevor etwas gequetscht wird. */
   .ecke, .rechts { flex: 1 1 0; min-width: max-content; }
-  .rechts { display: flex; justify-content: flex-end; }
+  .rechts { display: flex; flex-direction: column; align-items: flex-end; gap: .45rem; }
   .ecke {
     display: flex; flex-direction: column; align-items: flex-start; gap: .45rem;
   }
@@ -331,17 +355,23 @@
     background: #2a2a40; border-color: #0a84ff; color: #0a84ff;
   }
   .eckKnopf[hidden] { display: none; }
-  /* Rendern: Solange die weichen Netze entstehen, dreht sich vor dem Text
-     ein kleiner Kreis. Gedreht wird per transform - das laeuft auch weiter,
-     wenn die Seite gerade mit dem Modell beschaeftigt ist. */
-  .eckKnopf.rechnet { cursor: progress; border-color: #0a84ff; }
-  .eckKnopf.rechnet::before {
-    content: ''; display: inline-block; width: .8em; height: .8em;
-    margin-right: .45em; vertical-align: -.1em;
+  /* Rendern: Solange die weichen Netze entstehen, dreht sich ein kleiner
+     Kreis rechts im Knopf - ueber dem Innenabstand, nicht im Text: Der Knopf
+     wird dadurch nicht breiter, nichts daneben verschiebt sich. Erst nach
+     einer Viertelsekunde sichtbar, damit es bei kleinen Dateien nicht
+     aufblitzt. Gedreht per transform - das laeuft auch weiter, wenn die
+     Seite gerade mit dem Modell beschaeftigt ist. */
+  #rendern { position: relative; }
+  .eckKnopf.rechnet { cursor: progress; }
+  .eckKnopf.rechnet::after {
+    content: ''; position: absolute; right: .3rem; top: 50%;
+    width: .6rem; height: .6rem; margin-top: -.3rem; box-sizing: border-box;
     border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
-    animation: rendernDreht .8s linear infinite;
+    opacity: 0;
+    animation: rendernDreht .8s linear infinite, rendernZeigen 0s .25s forwards;
   }
   @keyframes rendernDreht { to { transform: rotate(360deg); } }
+  @keyframes rendernZeigen { to { opacity: 1; } }
   /* Schalter fuer die Einzelteile: oben mittig ueber dem Modell. */
   .obenMitte { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
   .obenMitte .eckKnopf { white-space: nowrap; }
@@ -380,6 +410,27 @@
   }
   /* Zugeklappt eine Pille wie die Knoepfe daneben, aufgeklappt ein Feld. */
   .regler:not([open]) { border-radius: 999px; }
+  .regler[hidden] { display: none; }
+  /* Filamente: je Zeile Farbfeld (zum Aendern), Name, Farbwert, Anteil. */
+  .filament {
+    display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: .1rem .55rem;
+    padding: .3rem .35rem; margin: 0 -.35rem .2rem; border-radius: 8px; cursor: default;
+  }
+  .filament:hover { background: rgba(255, 255, 255, .06); }
+  .filament input[type="color"] {
+    grid-row: span 2; width: 28px; height: 28px; padding: 0; border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 6px; background: none; cursor: pointer;
+  }
+  .filament .fname { color: #cdd6f4; }
+  .filament .fanteil { color: #a6adc8; font-variant-numeric: tabular-nums; text-align: right; }
+  .filament .fwert { grid-column: 2 / 4; color: #6c7086; font-variant-numeric: tabular-nums; }
+  .filament.geaendert .fwert { color: #fab387; }
+  .hervorArt { margin-bottom: .6rem; color: #a6adc8; }
+  .hervorArt { display: flex !important; align-items: center; justify-content: space-between; gap: .5rem; }
+  .hervorArt select {
+    font: inherit; font-size: 12px; color: #cdd6f4; background: #1e1e2e; cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, .12); border-radius: 6px; padding: .15rem .3rem;
+  }
   .regler[open] { border-radius: 14px; }
   .regler summary {
     cursor: pointer; padding: .5rem .7rem; color: #cdd6f4;
@@ -389,6 +440,7 @@
   .regler summary::after { content: ' ▾'; color: #a6adc8; }
   .regler[open] summary::after { content: ' ▴'; }
   .regler .inhalt { padding: 0 .7rem .7rem; }
+  .regler .inhalt div[hidden] { display: none; }
   .regler label { display: block; margin-bottom: .55rem; color: #a6adc8; }
   .regler label span { display: flex; justify-content: space-between; gap: .5rem; }
   .regler input[type="range"] { width: 100%; accent-color: #0a84ff; margin-top: .15rem; }
@@ -468,6 +520,8 @@
 <header>
   <div class="kopf">
     <a class="home">3D</a>
+    <!-- Nur bei einem Modell im Papierkorb: Weg zurueck in dessen Ansicht -->
+    <a class="pfadKorb" id="pfadKorb" hidden data-i18n="libTrashButton">Papierkorb</a>
     <h1 id="titel">…</h1>
     <div class="meta">
       <span class="quelle" id="quelle" hidden></span>
@@ -503,11 +557,11 @@
         <button id="alleAus" data-i18n="modelHideAll">Alle ausblenden</button>
       </div>
       <div id="teileListe"></div>
+      <p class="note" id="stlHinweis" hidden data-i18n="modelStlNoColours">STL enthält keine Farben.</p>
       <div class="formatWahl" role="group">
         <button class="format" data-format="3mf" aria-pressed="true">3MF</button>
         <button class="format" data-format="stl" aria-pressed="false">STL</button>
       </div>
-      <p class="note" id="stlHinweis" hidden data-i18n="modelStlNoColours">STL enthält keine Farben.</p>
       <div class="teilKnoepfe">
         <button id="teilSpeichern" disabled data-i18n="modelSavePart">Teil speichern</button>
         <button id="alleSpeichern" data-i18n="modelSaveAll">Alle Teile</button>
@@ -559,9 +613,10 @@
           <span data-i18n="modelFileColors">Farben der Datei</span>
         </label>
         <label><span data-i18n="modelColor">Farbe</span>
-          <input type="color" id="rFarbe" value="#1568d5"></label>
+          <input type="color" id="rFarbe" value="#41618b"></label>
         <label><span data-i18n="modelBg">Hintergrund</span>
           <input type="color" id="rHintergrund" value="#000000"></label>
+        <div id="reglerFlach">
         <label><span><span data-i18n="modelAmbient">Grundhelligkeit</span><span class="wert" id="wGrund"></span></span>
           <input type="range" id="rGrund" min="0" max="1" step="0.01"></label>
         <label><span><span data-i18n="modelKey">Kopflicht</span><span class="wert" id="wKopf"></span></span>
@@ -576,8 +631,44 @@
           <input type="range" id="rKante" min="0" max="0.6" step="0.01"></label>
         <label><span><span data-i18n="modelGamma">Gamma</span><span class="wert" id="wGamma"></span></span>
           <input type="range" id="rGamma" min="1.4" max="3" step="0.05"></label>
+        </div>
+        <!-- Nur bei "Rendern": Licht und Material von three.js -->
+        <div id="reglerRender" hidden>
+        <label><span><span data-i18n="modelExposure">Belichtung</span><span class="wert" id="wBelichtung"></span></span>
+          <input type="range" id="rBelichtung" min="0.3" max="2" step="0.05"></label>
+        <label><span><span data-i18n="modelEnvLight">Umgebungslicht</span><span class="wert" id="wUmgebung"></span></span>
+          <input type="range" id="rUmgebung" min="0" max="2" step="0.05"></label>
+        <label><span><span data-i18n="modelKeyLight">Hauptlicht</span><span class="wert" id="wHaupt"></span></span>
+          <input type="range" id="rHaupt" min="0" max="5" step="0.1"></label>
+        <label><span><span data-i18n="modelFillLight">Fülllicht</span><span class="wert" id="wFuell"></span></span>
+          <input type="range" id="rFuell" min="0" max="2" step="0.05"></label>
+        <label><span><span data-i18n="modelRimLight">Kantenlicht</span><span class="wert" id="wKantenlicht"></span></span>
+          <input type="range" id="rKantenlicht" min="0" max="3" step="0.05"></label>
+        <label><span><span data-i18n="modelRoughness">Rauheit</span><span class="wert" id="wRauheit"></span></span>
+          <input type="range" id="rRauheit" min="0.05" max="1" step="0.01"></label>
+        <label><span><span data-i18n="modelGroundShadow">Bodenschatten</span><span class="wert" id="wSchatten"></span></span>
+          <input type="range" id="rSchatten" min="0" max="1" step="0.05"></label>
+        <label><span><span data-i18n="modelCrease">Knickwinkel</span><span class="wert" id="wKnick"></span></span>
+          <input type="range" id="rKnick" min="0" max="90" step="1"></label>
+        </div>
 
         <button id="rZurueck" data-i18n="modelReset">Zurücksetzen</button>
+      </div>
+    </details>
+    <!-- Filamente der Datei: ansehen und zum Ansehen/Exportieren umfaerben -->
+    <details class="regler" id="filamentFach" hidden>
+      <summary data-i18n="modelFilaments">Filamente</summary>
+      <div class="inhalt">
+        <label class="hervorArt"><span data-i18n="modelHighlight">Hervorheben</span>
+          <select id="hervorArtWahl">
+            <option value="puls" data-i18n="modelHighlightPulse">Pulsieren</option>
+            <option value="grau" data-i18n="modelHighlightGrey">Grau</option>
+            <option value="glas" data-i18n="modelHighlightGlass">Glas</option>
+            <option value="dunkel" data-i18n="modelHighlightDark">Dunkel</option>
+            <option value="aus" data-i18n="modelHighlightOff">Gar nicht</option>
+          </select></label>
+        <div id="filamentListe"></div>
+        <button id="filamentZurueck" hidden data-i18n="modelFilamentsReset">Farben der Datei</button>
       </div>
     </details>
     </div>
@@ -607,6 +698,7 @@
 <script src="vendor/three.min.js"></script>
 <script src="model_drei.js"></script>
 <script src="model_view.js"></script>
+<script src="papierkorb.js"></script>
 <script src="model.js"></script>
 <script src="home.js"></script>
 </body>

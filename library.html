@@ -275,6 +275,23 @@
     border-left: 2px solid rgba(255, 255, 255, .12); padding-left: .7rem;
   }
   .hinweis { color: #a6adc8; padding: 2rem 0; text-align: center; }
+  /* Papierkorb: einzeln geloeschte Dateien als Zeilen unter den Modellen. */
+  .dateiKorb { margin-top: 2rem; }
+  .dateiKorb[hidden] { display: none; }
+  .dateiKorb h2 { font-size: 15px; font-weight: 600; color: #cdd6f4; margin: 0 0 .7rem; }
+  .korbDatei {
+    display: flex; align-items: center; gap: .8rem; padding: .5rem .6rem; margin-bottom: .4rem;
+    border-radius: 10px; background: rgba(255, 255, 255, .03); border: 1px solid rgba(255, 255, 255, .06);
+  }
+  .korbDatei .bild {
+    width: 52px; height: 52px; flex-shrink: 0; border-radius: 6px; background: #000;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    font-size: 11px; color: #6c7086;
+  }
+  .korbDatei .bild img { width: 100%; height: 100%; object-fit: contain; }
+  .korbDatei .text { flex: 1; min-width: 0; }
+  .korbDatei .name { color: #cdd6f4; font-size: 13px; overflow-wrap: anywhere; }
+  .korbDatei .herkunft { color: #a6adc8; font-size: 12px; margin-top: .15rem; }
   .hinweis a { color: #0a84ff; }
   .hinweis p { margin: 0 0 1.1rem; }
 
@@ -338,6 +355,10 @@
   <p class="korbnote" id="korbNote" hidden data-i18n="libTrashNote">Gelöschte Modelle liegen im Ordner _Trash_ in deinem Zielordner, bis du den Papierkorb leerst.</p>
   <div class="hinweis" id="hinweis" data-i18n="libLoading">Ordner wird gelesen …</div>
   <div class="raster" id="raster"></div>
+  <section class="dateiKorb" id="dateiKorb" hidden>
+    <h2 data-i18n="libTrashFiles">Gelöschte Dateien</h2>
+    <div id="dateiKorbListe"></div>
+  </section>
 </main>
 
 
@@ -393,6 +414,7 @@
 <script src="target_dir.js"></script>
 <script src="tags.js"></script>
 <script src="explorer_link.js"></script>
+<script src="papierkorb.js"></script>
 <script src="library.js"></script>
 <script src="home.js"></script>
 </body>

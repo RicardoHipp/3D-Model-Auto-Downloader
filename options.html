@@ -134,6 +134,19 @@
   }
 
   .note { font-size: 12px; color: #a6adc8; margin-top: 1rem; }
+  /* Unuebersehbar: die Einrichtung genau lesen. */
+  .wichtig {
+    margin: 1rem 0 0; padding: .6rem .8rem; border-radius: 8px; font-weight: 600;
+    color: #ff6961; background: rgba(255, 69, 58, .12); border: 1px solid rgba(255, 69, 58, .4);
+  }
+  /* Hinweis "Zulassen" in Schritt 2 */
+  .zulassen {
+    margin: .8rem 0; padding: .6rem .8rem; border-radius: 8px;
+    background: rgba(249, 226, 175, .07); border: 1px solid rgba(249, 226, 175, .25);
+  }
+  .zulassen strong { color: #f9e2af; }
+  .zulassen p { margin: .35rem 0 0; }
+  .zulassen .note { margin-top: .5rem; }
   .schalter { display: flex; align-items: center; gap: .6rem; cursor: pointer; margin: .3rem 0 .2rem; }
   .schalter input { width: 16px; height: 16px; accent-color: #a6e3a1; cursor: pointer; }
   .feldlabel { font-size: 12px; color: #cdd6f4; margin: 1rem 0 .35rem; }
@@ -264,6 +277,7 @@
 
       <div class="card">
         <p data-i18n="expIntro">In „Meine Modelle“ hat jedes Modell einen Knopf, der seinen Ordner im Windows-Explorer öffnet. Dafür sind zwei kleine Dateien nötig – die beiden Schritte unten richten sie ein. Das Ganze ist freiwillig: Lässt du es weg, funktioniert alles andere unverändert weiter, nur dieser eine Knopf bleibt dann ohne Wirkung.</p>
+        <p class="wichtig" data-i18n="expImportant">Wichtig: Bitte lies die Schritte unten vollständig und genau durch, bevor du loslegst – besonders den Hinweis zu „Zulassen“ in Schritt 2.</p>
         <p class="note" data-i18n="expOwnIntro">Zwei kleine Dateien, die wir hier erzeugen. Beide stehen unten im Klartext – du siehst also genau, was auf deinem Rechner landet. Das ist der Unterschied zu einem fertigen Programm, bei dem du dem Hersteller vertrauen musst.</p>
 
         <ol class="anleitung">
@@ -280,6 +294,11 @@
           <li>
             <h4 data-i18n="expSetupS2Titel">open-folder.vbs doppelklicken</h4>
             <p data-i18n="expSetupS2Text">Windows fragt zuerst, ob du die Datei wirklich ausführen willst. Danach erklärt das Skript, was es tut, Windows bestätigt den Registrierungseintrag, und zuletzt wählst du deinen Zielordner aus – genau denselben, den du oben unter „Zielordner“ freigegeben hast.</p>
+            <div class="zulassen">
+              <strong data-i18n="expUnblockTitle">Windows blockiert die Dateien?</strong>
+              <p data-i18n="expUnblockText">Bietet Windows kein „Ausführen“ an, passiert beim Doppelklick nichts, oder meldet das Skript, der Registrierungseintrag habe nicht geklappt: Rechtsklick auf die Datei → „Eigenschaften“ → unten bei „Sicherheit“ den Haken „Zulassen“ setzen → „OK“. Das für beide Dateien machen – open-folder.vbs und stldl-protokoll.reg – und danach open-folder.vbs noch einmal doppelklicken.</p>
+              <p class="note" data-i18n="expUnblockWhy">Warum nicht jeder das braucht: Windows merkt sich an heruntergeladenen Dateien, dass sie aus dem Internet stammen. Wie streng es damit umgeht, hängt von den Sicherheitseinstellungen des Rechners ab – etwa „Intelligente App-Steuerung“ und SmartScreen in Windows 11, Firmenrichtlinien oder ob der Download-Ordner auf einem Laufwerk liegt, das sich diese Herkunft überhaupt merken kann. Deshalb fragt Windows bei manchen nur kurz nach und blockiert bei anderen, bis man „Zulassen“ setzt.</p>
+            </div>
             <div class="knopfreihe">
               <button class="tat" id="expAbbrechen" hidden data-i18n="expSetupCancel">Abbrechen</button>
             </div>

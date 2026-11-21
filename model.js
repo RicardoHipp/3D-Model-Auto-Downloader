@@ -185,8 +185,15 @@ async function sammle(handle, pfad = '') {
 
 async function modellOeffnen() {
   try {
-    const { ansicht, exportFormat: format } = await chrome.storage.local.get(['ansicht', 'exportFormat']);
+    const { ansicht, exportFormat: format, rendernStandard } =
+      await chrome.storage.local.get(['ansicht', 'exportFormat', 'rendernStandard']);
     if (ansicht) darstellung = ansicht;
+    // "Rendern" ist ab Werk an - bei neuen Installationen wie beim Update.
+    // Einmalig: Schaltet man es danach aus, bleibt es aus.
+    if (!rendernStandard) {
+      darstellung.rendern = true;
+      await chrome.storage.local.set({ rendernStandard: true, ansicht: darstellung });
+    }
     if (format === 'stl' || format === '3mf') { exportFormat = format; zeigeFormat(); }
   } catch { /* dann die Voreinstellung aus dem Renderer */ }
 
@@ -470,6 +477,114 @@ function ziehbar(knopf, d) {
   });
 }
 
+// Eine Datei in den Papierkorb (papierkorb.js). Von dort kommt sie beim
+// Wiederherstellen in dieses Modell zurueck.
+async function dateiLoeschen(liste) {
+  if (!liste.length) return;
+  if (!await frage({
+    titel: t('modelDeleteFile'),
+    text: liste.length === 1
+      ? t('modelDeleteFileConfirm', [liste[0].name])
+      : t('modelDeleteFilesConfirm', [String(liste.length)]),
+    ja: t('libDelete')
+  })) return;
+  const warGezeigt = liste.includes(gezeigteDatei);
+  try {
+    zeigeBalken(true);
+    const wurzel = await getTargetDir();
+    for (const d of liste) {
+      // Das kleine Bild aus der Liste mitnehmen - im Papierkorb der
+      // Uebersicht erkennt man die Datei daran.
+      let vorschau = null;
+      const bild = d.bildFach?.querySelector('img');
+      if (bild) { try { vorschau = await (await fetch(bild.src)).blob(); } catch { /* ohne Bild */ } }
+      await dateiInPapierkorb(wurzel, ORDNER, d.pfad, d.handle, d.ordner, vorschau);
+      netzSpeicher.delete(speicherSchluessel(d));
+    }
+  } catch (err) {
+    zeigeHinweis(t('libMoveFailed', [err.message]), 'zielordner');
+  }
+  try {
+    markierteDateien.clear();
+    dateien = (await sammle(modellHandle)).sort((a, b) => a.pfad.localeCompare(b.pfad));
+    zeichneListe();
+    if (warGezeigt) {
+      if (detailsKnopf) {
+        zeigeDetails();
+      } else {
+        ++wahlNummer;
+        gezeigteDatei = null;
+        if (leinwand) leinwand.hidden = true;
+        if (grossesBild) grossesBild.hidden = true;
+        pdfAusblenden();
+        for (const el of [lageEl, masseEl, feinheitEl, teileFach, modusKnopf, speichernOben, stepWarnungEl, renderKnopf, filamentFach]) el.hidden = true;
+        sucheTeile(null);
+        dateienEl.hidden = false;
+        teileModus = false;
+        mitteEl.textContent = t('modelPick');
+        mitteEl.hidden = false;
+      }
+    }
+  } finally {
+    zeigeBalken(false);
+  }
+}
+
+// --- Mehrere Dateien markieren (wie im Windows-Explorer) ---------------------
+//
+// Strg + Klick nimmt eine Datei in die Markierung auf oder heraus, Shift +
+// Klick markiert alles von der zuletzt angeklickten bis zu dieser - in der
+// sichtbaren Reihenfolge. Die grosse Ansicht bleibt dabei, wo sie ist; erst
+// ein einfacher Klick oeffnet eine Datei und hebt die Markierung auf.
+// Entf oder das x an einer markierten Datei loescht alle markierten, Esc
+// hebt die Markierung auf.
+const markierteDateien = new Set();
+let ankerDatei = null;
+
+function zeigeMarkierung() {
+  for (const d of dateien) d.knopf?.classList.toggle('markiert', markierteDateien.has(d));
+}
+
+function sichtbareDateien() {
+  return [...dateienEl.querySelectorAll('.datei')]
+    .filter((k) => k.offsetParent !== null && k.__datei)
+    .map((k) => k.__datei);
+}
+
+function klickAufDatei(d, e) {
+  if (e.ctrlKey || e.metaKey) {
+    if (markierteDateien.has(d)) markierteDateien.delete(d); else markierteDateien.add(d);
+    ankerDatei = d;
+    zeigeMarkierung();
+    return;
+  }
+  if (e.shiftKey && ankerDatei) {
+    const reihe = sichtbareDateien();
+    const von = reihe.indexOf(ankerDatei), bis = reihe.indexOf(d);
+    if (von >= 0 && bis >= 0) {
+      markierteDateien.clear();
+      for (let i = Math.min(von, bis); i <= Math.max(von, bis); i++) markierteDateien.add(reihe[i]);
+      zeigeMarkierung();
+      return;
+    }
+  }
+  markierteDateien.clear();
+  zeigeMarkierung();
+  ankerDatei = d;
+  waehle(d);
+}
+
+addEventListener('keydown', (e) => {
+  if (frageEl.open || e.target.closest?.('input, textarea, [contenteditable]')) return;
+  if (e.key === 'Escape' && markierteDateien.size) {
+    markierteDateien.clear();
+    zeigeMarkierung();
+  } else if (e.key === 'Delete' && markierteDateien.size && !IM_KORB) {
+    e.preventDefault();
+    dateiLoeschen(sichtbareDateien().filter((d) => markierteDateien.has(d)));
+  }
+});
+
 function dateiEintrag(d) {
   const knopf = document.createElement('button');
   knopf.className = 'datei';
@@ -495,16 +610,41 @@ function dateiEintrag(d) {
   text.append(name, groesse);
 
   knopf.append(bild, text);
-  knopf.addEventListener('click', () => waehle(d));
+  knopf.addEventListener('click', (e) => klickAufDatei(d, e));
+  // Shift + Klick soll markieren, nicht Text auswaehlen.
+  knopf.addEventListener('mousedown', (e) => { if (e.shiftKey) e.preventDefault(); });
   ziehbar(knopf, d);
 
+  // Kleines x unten rechts: Datei in den Papierkorb. Kein eigener <button> -
+  // der Eintrag ist selbst einer, und Knoepfe duerfen nicht ineinander.
+  // Im Papierkorb selbst nicht: Dort wird das ganze Modell zurueckgeholt
+  // oder geloescht.
+  if (!IM_KORB) {
+    const weg = document.createElement('span');
+    weg.className = 'weg';
+    weg.setAttribute('role', 'button');
+    weg.tabIndex = 0;
+    weg.textContent = '×';
+    weg.title = t('modelDeleteFile');
+    weg.setAttribute('aria-label', t('modelDeleteFile') + ': ' + d.name);
+    // An einer markierten Datei: alle markierten, sonst nur diese.
+    const los = (e) => {
+      e.stopPropagation(); e.preventDefault();
+      dateiLoeschen(markierteDateien.has(d) && markierteDateien.size > 1
+        ? sichtbareDateien().filter((x) => markierteDateien.has(x)) : [d]);
+    };
+    weg.addEventListener('click', los);
+    weg.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') los(e); });
+    knopf.appendChild(weg);
+  }
+
   d.knopf = knopf;
+  knopf.__datei = d;
   d.bildFach = bild;
   if (BILD_ENDUNGEN.includes(endung) || NETZ_ENDUNGEN.includes(endung)) {
     // Auch in zugeklappten Ordnern: Der Beobachter meldet den Eintrag erst,
     // wenn er beim Aufklappen sichtbar wird.
     beobachter.observe(knopf);
-    knopf.__datei = d;
   }
   return knopf;
 }
@@ -522,10 +662,27 @@ const beobachter = new IntersectionObserver((eintraege) => {
   // für "kommt in Sicht".
 }, { root: document.getElementById('dateienFach'), rootMargin: '150px' });
 
+// Zwei Stufen: Was schon im Bildspeicher liegt oder ohnehin ein Bild ist,
+// kommt sofort und fuer alle sichtbaren Eintraege zugleich - das kostet nur
+// Millisekunden. Nur was fehlt, wird erzeugt, und das eins nach dem anderen
+// in einer Warteschlange. Sonst haelt eine neue, grosse Datei weit vorn in
+// der Liste alle bekannten Bilder dahinter auf.
 const schlange = [];
 let arbeitet = false;
 
-function reiheEin(d) {
+function zeigeKleinesBild(d, url) {
+  bildUrls.push(url);
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = '';
+  d.bildFach.replaceChildren(img);
+}
+
+async function reiheEin(d) {
+  try {
+    const url = await bildSofort(d);
+    if (url) { zeigeKleinesBild(d, url); return; }
+  } catch { /* dann eben erzeugen */ }
   schlange.push(d);
   if (!arbeitet) naechstesBild();
 }
@@ -535,14 +692,8 @@ async function naechstesBild() {
   while (schlange.length) {
     const d = schlange.shift();
     try {
-      const url = await kleinesBild(d);
-      if (url) {
-        bildUrls.push(url);
-        const img = document.createElement('img');
-        img.src = url;
-        img.alt = '';
-        d.bildFach.replaceChildren(img);
-      }
+      const url = await bildErzeugen(d);
+      if (url) zeigeKleinesBild(d, url);
     } catch { /* dann bleibt die Endung stehen */ }
   }
   arbeitet = false;
@@ -553,8 +704,15 @@ async function naechstesBild() {
 // Lichtreglern - aendern die sich, gilt ein neuer Schluessel.
 function bildSchluessel(d, datei, art) {
   const ort = (IM_KORB ? PAPIERKORB + '/' : '') + ORDNER + '/' + d.pfad;
-  const zusatz = art === 'gezeichnet' ? '|' + kurzHash(JSON.stringify(darstellung)) : '';
-  return `${ort}|${datei.size}|${datei.lastModified}|${art}${zusatz}`;
+  // Was nur die gerenderte Ansicht betrifft, gehoert nicht dazu: Die Bilder
+  // links bleiben ohnehin flach.
+  const flach = { ...darstellung };
+  for (const feld of NUR_RENDERN) flach[feld] = undefined;
+  const zusatz = art === 'gezeichnet' ? '|' + kurzHash(JSON.stringify(flach)) : '';
+  // Gezeichnete 3MF-Bilder: Seit einfarbige 3MF ihre hinterlegte Farbe
+  // zeigen, gilt ein neuer Schluessel - die alten waren in der eigenen Farbe.
+  const stand = art === 'gezeichnet' && /\.3mf$/i.test(d.name) ? 'f' : '';
+  return `${ort}|${datei.size}|${datei.lastModified}|${art}${stand}${zusatz}`;
 }
 
 function kurzHash(text) {
@@ -563,19 +721,26 @@ function kurzHash(text) {
   return (h >>> 0).toString(36);
 }
 
-async function kleinesBild(d) {
+// Stufe 1: Bilddateien selbst und alles aus dem Bildspeicher. null, wenn
+// das Bild erst erzeugt werden muss.
+async function bildSofort(d) {
   const endung = endungVon(d.name);
-  if (BILD_ENDUNGEN.includes(endung)) {
-    return URL.createObjectURL(await d.handle.getFile());
-  }
-
   const datei = await d.handle.getFile();
-  const paketSchluessel = bildSchluessel(d, datei, 'paket');
-  const zeichenSchluessel = bildSchluessel(d, datei, 'gezeichnet');
-  for (const schluessel of endung === '.3mf' ? [paketSchluessel, zeichenSchluessel] : [zeichenSchluessel]) {
-    const gemerkt = await bildAusSpeicher(schluessel);
+  if (BILD_ENDUNGEN.includes(endung)) return URL.createObjectURL(datei);
+  const schluessel = endung === '.3mf'
+    ? [bildSchluessel(d, datei, 'paket'), bildSchluessel(d, datei, 'gezeichnet')]
+    : [bildSchluessel(d, datei, 'gezeichnet')];
+  for (const s of schluessel) {
+    const gemerkt = await bildAusSpeicher(s);
     if (gemerkt) return URL.createObjectURL(gemerkt);
   }
+  return null;
+}
+
+// Stufe 2: erzeugen und fuer das naechste Mal merken.
+async function bildErzeugen(d) {
+  const endung = endungVon(d.name);
+  const datei = await d.handle.getFile();
 
   // Ein 3MF trägt ein fertiges Vorschaubild im Paket - deshalb zeigt auch
   // der Windows-Explorer Modelle an, ohne sie zu zeichnen. Das herauszuholen
@@ -586,7 +751,7 @@ async function kleinesBild(d) {
       const zip = liesZip(await datei.arrayBuffer());
       const bild = await bild3mf(zip);
       if (bild) {
-        bildInSpeicher(paketSchluessel, bild.blob);
+        bildInSpeicher(bildSchluessel(d, datei, 'paket'), bild.blob);
         return URL.createObjectURL(bild.blob);
       }
     } catch { /* kein Bild im Paket - dann eben zeichnen */ }
@@ -598,7 +763,7 @@ async function kleinesBild(d) {
   if (!netze?.length) return null;
   // Braucht den Betrachter - er bringt Renderer und Umgebung mit.
   const blob = await erzeugeVorschau(netze, 128, darstellung);
-  bildInSpeicher(zeichenSchluessel, blob);
+  bildInSpeicher(bildSchluessel(d, datei, 'gezeichnet'), blob);
   return URL.createObjectURL(blob);
 }
 
@@ -667,13 +832,63 @@ async function netzeVon(d, nurBild = false, beiFortschritt = null) {
   }
 
   const puffer = await (await d.handle.getFile()).arrayBuffer();
-  const netze = endungVon(d.name) === '.3mf'
-    ? await lies3mf(liesZip(puffer))
-    : (() => {
-        const { ecken } = liesStl(puffer);
-        return ecken.length ? [{ ecken, indizes: null }] : [];
-      })();
+  const netze = await liesNebenher(endungVon(d.name) === '.3mf' ? '3mf' : 'stl', puffer, nurBild);
   return merkeNetze(d.pfad, netze);
+}
+
+// --- 3MF und STL nebenher lesen (model_lesen_worker.js) -------------------
+//
+// Zwei Arbeiter: einer fuer die grosse Ansicht, einer fuer die Bilder links.
+// So wartet die angeklickte Datei nicht hinter einem Vorschaubild, und
+// umgekehrt. Klickt man waehrend des Lesens eine andere Datei an, wird der
+// Arbeiter der Ansicht beendet und neu gestartet - das alte Ergebnis wuerde
+// ohnehin nicht mehr gebraucht, und die neue Datei kaeme sonst erst danach.
+const leser = { ansicht: null, bilder: null };
+let leseNummer = 0;
+
+// Gegenstueck zu packeCodes im Arbeiter: wieder ein Feld je Dreieck, als
+// Ausschnitte desselben Speichers (kein Kopieren).
+function entpackeCodes(netze) {
+  for (const n of netze) {
+    const p = n.teilungCode;
+    if (!p || Array.isArray(p)) continue;
+    const codes = new Array(p.anfang.length - 1);
+    for (let i = 0; i < codes.length; i++) codes[i] = p.alle.subarray(p.anfang[i], p.anfang[i + 1]);
+    n.teilungCode = codes;
+  }
+  return netze;
+}
+
+function neuerLeser() {
+  const l = { worker: new Worker('model_lesen_worker.js'), wartende: new Map() };
+  l.worker.onmessage = ({ data }) => {
+    const w = l.wartende.get(data.nummer);
+    if (!w) return;
+    l.wartende.delete(data.nummer);
+    if (data.fehler) w.fehler(new Error(data.fehler));
+    else w.fertig(Object.assign(entpackeCodes(data.netze), data.zusatz));
+  };
+  l.worker.onerror = (e) => {
+    for (const w of l.wartende.values()) w.fehler(new Error(e.message || 'Fehler'));
+    l.wartende.clear();
+  };
+  return l;
+}
+
+function liesNebenher(art, puffer, nurBild) {
+  const welcher = nurBild ? 'bilder' : 'ansicht';
+  let l = leser[welcher];
+  if (!nurBild && l?.wartende.size) {
+    l.worker.terminate();
+    for (const w of l.wartende.values()) w.fehler(new Error('abgebrochen'));
+    l = null;
+  }
+  if (!l) l = leser[welcher] = neuerLeser();
+  const nummer = ++leseNummer;
+  return new Promise((fertig, fehler) => {
+    l.wartende.set(nummer, { fertig, fehler });
+    l.worker.postMessage({ nummer, art, puffer }, [puffer]);
+  });
 }
 
 // --- STEP ----------------------------------------------------------------
@@ -912,6 +1127,10 @@ function setzeTeileModus(an) {
   teileFach.hidden = !teileModus;
   modusKnopf.setAttribute('aria-pressed', String(teileModus));
   modusKnopf.textContent = t(teileModus ? 'modelSplitOff' : 'modelSplit');
+  // In der Teileansicht speichert das Teile-Fach links, mit eigenem
+  // Umschalter. Der Knopf oben (ganzes Modell) wuerde dort nur verwirren -
+  // er kommt beim Verlassen wieder.
+  speichernOben.hidden = teileModus || obenFormat === undefined;
   if (!teileModus) {
     // Zurueck in der Dateiansicht ist wieder das ganze Modell zu sehen.
     if (betrachter) betrachter.ausgeblendet.clear();
@@ -961,7 +1180,9 @@ function zeigeTeile(datei, netze) {
   // erscheint erst, wenn dabei mehr als ein Körper herauskommt.
   zerlegbar = false;
   modusKnopf.hidden = aktuelleTeile.length < 2;
-  speichernOben.hidden = !STL_UMWANDELBAR.includes(endungVon(datei.name));
+  obenFormat = OBEN_ZIEL[endungVon(datei.name)];
+  speichernOben.hidden = obenFormat === undefined;
+  zeigeFormat();
   sucheTeile(!netze.teile && netze.length === 1 && netze[0].ecken.length > 0 ? netze[0].ecken : null);
 
   if (aktuelleTeile.length > 1) baueTeileListe();
@@ -1140,10 +1361,13 @@ function zeigeFormat() {
   for (const k of document.querySelectorAll('.formatWahl .format')) {
     k.setAttribute('aria-pressed', String(k.dataset.format === exportFormat));
   }
-  const stl = exportFormat === 'stl';
-  stlHinweis.hidden = !stl;
-  stlHinweisOben.hidden = !stl;
-  if (!stlKnopf.disabled) stlKnopf.textContent = t(stl ? 'modelSaveAsStl' : 'modelSaveAs3mf');
+  stlHinweis.hidden = exportFormat !== 'stl';
+  // Oben: Steht das Ziel fest (3MF -> STL, STL -> 3MF), nur der eine Knopf,
+  // ohne Umschalter und Hinweis. Nur bei STEP passt beides.
+  const oben = obenFormat || exportFormat;
+  obenWahl.hidden = !!obenFormat;
+  stlHinweisOben.hidden = !!obenFormat || oben !== 'stl';
+  if (!stlKnopf.disabled) stlKnopf.textContent = t(oben === 'stl' ? 'modelSaveAsStl' : 'modelSaveAs3mf');
 }
 
 for (const g of document.querySelectorAll('.formatWahl')) g.title = t('modelFormat');
@@ -1157,9 +1381,10 @@ for (const k of document.querySelectorAll('.formatWahl .format')) {
 
 // Was in die Datei kommt. Die Farbtafel haengt am ganzen Modell, nicht an
 // den einzelnen Netzen eines Teils.
-function dateiInhalt(netze, teile) {
-  if (exportFormat === 'stl') return schreibeStl(netze);
-  return schreibe3mf(netze, aktuelleNetze.farbtafel || [], teile);
+function dateiInhalt(netze, teile, format = exportFormat) {
+  if (format === 'stl') return schreibeStl(netze);
+  // Umgefaerbte Filamente kommen so in die neue Datei.
+  return schreibe3mf(netze, aktuelleTafel(), teile);
 }
 
 async function schreibeDatei(ordner, name, puffer) {
@@ -1206,7 +1431,12 @@ async function speichereTeile(welche) {
 // also in der eingestellten Feinheit -, mittig und auf Z=0 gestellt. Die
 // Datei kommt neben das Original, mit gleichem Namen; gibt es den schon,
 // haengt eine Nummer an. Ueberschrieben wird nie etwas.
-const STL_UMWANDELBAR = ['.step', '.stp', '.3mf'];
+// Was oben angeboten wird: ein 3MF als STL, ein STL als 3MF - jeweils das
+// andere Format. STEP kann beides, dort entscheidet der Umschalter (null).
+// Andere Dateien bekommen keinen Knopf.
+const OBEN_ZIEL = { '.3mf': 'stl', '.stl': '3mf', '.step': null, '.stp': null };
+let obenFormat;
+const obenWahl = document.querySelector('.speichernOben .formatWahl');
 
 async function freierDateiname(ordner, basis, endung) {
   for (let n = 1; ; n++) {
@@ -1225,8 +1455,9 @@ stlKnopf.addEventListener('click', async () => {
   let meldung;
   try {
     const ordner = datei.ordner || modellHandle;
-    const name = await freierDateiname(ordner, datei.name.replace(/\.[^.]+$/, ''), '.' + exportFormat);
-    await schreibeDatei(ordner, name, await dateiInhalt(aktuelleNetze, aktuelleTeile));
+    const format = obenFormat || exportFormat;
+    const name = await freierDateiname(ordner, datei.name.replace(/\.[^.]+$/, ''), '.' + format);
+    await schreibeDatei(ordner, name, await dateiInhalt(aktuelleNetze, aktuelleTeile, format));
     meldung = '✓ ' + t('modelSavedOne', [name]);
     // Die neue Datei soll gleich in der Liste stehen.
     dateien = (await sammle(modellHandle)).sort((a, b) => a.pfad.localeCompare(b.pfad));
@@ -1362,6 +1593,7 @@ feinReglerEl.addEventListener('change', async () => {
     zeigeMasse(betrachter.groesse);
     zeigeTeile(d, netze);
     zeigeFarbSchalter();
+    zeigeFilamente();
     zeigeFeinheit(d, netze);
   } catch {
     document.getElementById('feinDreiecke').textContent = t('modelReadFailed', [d.name]);
@@ -1466,7 +1698,7 @@ function zeigeDetails() {
   if (leinwand) leinwand.hidden = true;
   if (grossesBild) grossesBild.hidden = true;
   pdfAusblenden();
-  for (const el of [mitteEl, lageEl, masseEl, feinheitEl, teileFach, modusKnopf, speichernOben, stepWarnungEl, renderKnopf]) el.hidden = true;
+  for (const el of [mitteEl, lageEl, masseEl, feinheitEl, teileFach, modusKnopf, speichernOben, stepWarnungEl, renderKnopf, filamentFach]) el.hidden = true;
   sucheTeile(null);
   dateienEl.hidden = false;
   teileModus = false;
@@ -1614,6 +1846,7 @@ async function waehle(d) {
   mitteEl.hidden = true;
   lageEl.hidden = true;
   renderKnopf.hidden = true;
+  filamentFach.hidden = true;
   masseEl.hidden = true;
   stepWarnungEl.hidden = true;
   feinheitEl.hidden = true;
@@ -1715,22 +1948,24 @@ async function waehle(d) {
       mitteEl.hidden = true;
       leinwand.hidden = false;
     }
-    // Jede neu angeklickte Datei beginnt flach - "Rendern" schaltet man
-    // fuer die Datei ein, die man gerade ansieht.
-    betrachter.rendern = false;
-    zeigeRendern();
+    // "Rendern" bleibt, wie es zuletzt eingestellt war - ist es an, wird
+    // die neue Datei gleich im Hintergrund aufbereitet (setzeNetze).
+    // Umgefaerbte Filamente gelten nur fuer die Datei, in der man sie
+    // geaendert hat.
+    betrachter.filamentTafel = null;
+    betrachter.hervorFilament = null;
     betrachter.setzeNetze(netze);
-    // Ein Klick ins Bild holt die Teileliste gleich mit hervor - sonst
-    // leuchtet etwas auf, und man sähe nicht, was es ist.
+    // Ein Klick ins Bild waehlt ein Teil nur, wenn die Teileansicht schon
+    // offen ist - eingeschaltet wird sie ausschliesslich ueber den Knopf oben.
     betrachter.beiAuswahl = (nr) => {
-      if (nr !== null && !teileModus) setzeTeileModus(true);
-      waehleTeil(nr);
+      if (teileModus) waehleTeil(nr);
     };
     lageEl.hidden = false;
     renderKnopf.hidden = false;
     zeigeMasse(betrachter.groesse);
     zeigeTeile(d, netze);
     zeigeFarbSchalter();
+    zeigeFilamente();
     zeigeFeinheit(d, netze);
   } catch (err) {
     if (meineWahl !== wahlNummer) return;
@@ -1758,8 +1993,22 @@ const REGLER = [
   ['rRichtung', 'lichtDrehung', Math.PI / 180, 0, 'wRichtung', '°'],
   ['rHoehe',    'lichtHoehe',   Math.PI / 180, 0, 'wHoehe',    '°'],
   ['rKante',    'kante',        1,             2, 'wKante',    ''],
-  ['rGamma',    'gamma',        1,             2, 'wGamma',    '']
+  ['rGamma',    'gamma',        1,             2, 'wGamma',    ''],
+  // Gerenderte Ansicht
+  ['rBelichtung',  'dreiBelichtung', 1,             2, 'wBelichtung',  ''],
+  ['rUmgebung',    'dreiUmgebung',   1,             2, 'wUmgebung',    ''],
+  ['rHaupt',       'dreiHaupt',      1,             1, 'wHaupt',       ''],
+  ['rFuell',       'dreiFuell',      1,             2, 'wFuell',       ''],
+  ['rKantenlicht', 'dreiKante',      1,             2, 'wKantenlicht', ''],
+  ['rRauheit',     'dreiRauheit',    1,             2, 'wRauheit',     ''],
+  ['rSchatten',    'dreiSchatten',   1,             2, 'wSchatten',    ''],
+  ['rKnick',       'knickwinkel',    Math.PI / 180, 0, 'wKnick',       '°']
 ];
+
+// Felder der gerenderten Ansicht - sie beeinflussen die flach gezeichneten
+// Vorschaubilder nicht und zaehlen deshalb nicht zu deren Schluessel.
+const NUR_RENDERN = ['rendern', 'hervorArt', 'knickwinkel', 'dreiBelichtung', 'dreiUmgebung', 'dreiHaupt',
+                     'dreiFuell', 'dreiKante', 'dreiRauheit', 'dreiSchatten'];
 
 const FARBREGLER = [['rFarbe', 'farbe'], ['rHintergrund', 'hintergrund']];
 
@@ -1792,11 +2041,89 @@ function zeigeFarbSchalter() {
   document.getElementById('zDateiFarben').hidden = !betrachter?.hatDateiFarben;
 }
 
+// --- Filamente --------------------------------------------------------------
+//
+// Zeigt die Filamente, die das Modell wirklich benutzt, mit Anteil, und
+// laesst sie umfaerben: sofort in der Ansicht, und beim Speichern als 3MF
+// kommen die neuen Farben in die Datei. Die Originaldatei bleibt, wie sie
+// ist, und gemerkt wird nichts - die naechste Datei zeigt wieder ihre
+// eigenen Farben.
+const filamentFach = document.getElementById('filamentFach');
+const filamentListe = document.getElementById('filamentListe');
+const filamentZurueck = document.getElementById('filamentZurueck');
+
+// Die Farbtafel, die gerade gilt - umgefaerbt oder die der Datei.
+function aktuelleTafel() {
+  return betrachter?.filamentTafel || aktuelleNetze.farbtafel || [];
+}
+
+function zeigeFilamente() {
+  const original = aktuelleNetze.farbtafel || [];
+  const anteile = betrachter?.filamentAnteile() || new Map();
+  const genutzt = [...anteile.keys()].filter((f) => original[f - 1]).sort((a, b) => a - b);
+  filamentFach.hidden = !genutzt.length;
+  filamentListe.textContent = '';
+  if (!genutzt.length) return;
+  const tafel = aktuelleTafel();
+  const gesamt = [...anteile.values()].reduce((s, v) => s + v, 0) || 1;
+  for (const f of genutzt) {
+    const zeile = document.createElement('label');
+    zeile.className = 'filament';
+    zeile.classList.toggle('geaendert', tafel[f - 1].toLowerCase() !== original[f - 1].toLowerCase());
+    const waehler = document.createElement('input');
+    waehler.type = 'color';
+    waehler.value = tafel[f - 1].slice(0, 7).toLowerCase();
+    const name = document.createElement('span');
+    name.className = 'fname';
+    name.textContent = t('modelFilamentN', [String(f)]);
+    const anteil = document.createElement('span');
+    anteil.className = 'fanteil';
+    const prozent = 100 * anteile.get(f) / gesamt;
+    anteil.textContent = (prozent < 1 ? '<1' : Math.round(prozent)) + ' %';
+    const wert = document.createElement('span');
+    wert.className = 'fwert';
+    wert.textContent = tafel[f - 1].slice(0, 7).toUpperCase();
+    zeile.append(waehler, name, anteil, wert);
+    waehler.addEventListener('input', () => {
+      const neu = [...aktuelleTafel()];
+      neu[f - 1] = waehler.value.toUpperCase();
+      betrachter.setzeFilamentFarben(neu);
+      wert.textContent = neu[f - 1];
+      zeile.classList.toggle('geaendert', neu[f - 1].toLowerCase() !== original[f - 1].toLowerCase());
+      filamentZurueck.hidden = false;
+    });
+    // Darueberfahren: dieses Filament im Modell hervorheben.
+    zeile.addEventListener('mouseenter', () => betrachter.setzeHervorFilament(f));
+    zeile.addEventListener('mouseleave', () => betrachter.setzeHervorFilament(null));
+    filamentListe.appendChild(zeile);
+  }
+  filamentZurueck.hidden = !betrachter?.filamentTafel;
+}
+
+// Art des Hervorhebens - eine Vorliebe, wird mit der Darstellung gemerkt.
+const hervorArtWahl = document.getElementById('hervorArtWahl');
+function zeigeHervorArt() {
+  if (betrachter) hervorArtWahl.value = betrachter.hervorArt;
+}
+hervorArtWahl.addEventListener('change', () => {
+  if (!betrachter) return;
+  betrachter.hervorArt = hervorArtWahl.value;
+  reglerSichern();
+});
+
+filamentZurueck.addEventListener('click', () => {
+  betrachter.setzeFilamentFarben([...(aktuelleNetze.farbtafel || [])]);
+  betrachter.filamentTafel = null;
+  zeigeFilamente();
+});
+
 async function reglerSichern() {
   darstellung = {};
   for (const [, feld] of REGLER) darstellung[feld] = betrachter[feld];
   for (const [, feld] of FARBREGLER) darstellung[feld] = betrachter[feld];
   darstellung.dateiFarben = betrachter.dateiFarben;
+  darstellung.rendern = betrachter.rendern;
+  darstellung.hervorArt = betrachter.hervorArt;
   try { await chrome.storage.local.set({ ansicht: darstellung }); } catch { /* nicht schlimm */ }
 }
 
@@ -1807,6 +2134,7 @@ async function reglerEinrichten() {
 
   Object.assign(betrachter, darstellung);
   zeigeRendern();
+  zeigeHervorArt();
   betrachter.beiRendern = (laeuft) => renderKnopf.classList.toggle('rechnet', laeuft);
 
   for (const [id, feld, faktor, stellen, anzeige, einheit] of REGLER) {
@@ -1818,6 +2146,13 @@ async function reglerEinrichten() {
       reglerSichern();
     });
   }
+  // Knickwinkel: Die weichen Netze muessen neu gerechnet werden - erst wenn
+  // der Regler kurz still steht, nicht bei jedem Zwischenschritt.
+  let knickUhr = null;
+  document.getElementById('rKnick').addEventListener('input', () => {
+    clearTimeout(knickUhr);
+    knickUhr = setTimeout(() => betrachter.neuAufbereiten(), 150);
+  });
   for (const [id, feld] of FARBREGLER) {
     document.getElementById(id).addEventListener('input', (e) => {
       betrachter[feld] = ausHex(e.target.value);
@@ -1835,6 +2170,7 @@ async function reglerEinrichten() {
     for (const [, feld] of FARBREGLER) betrachter[feld] = [...standard[feld]];
     betrachter.dateiFarben = true;
     reglerAnzeigen();
+    betrachter.neuAufbereiten();
     betrachter.zeichne();
     reglerSichern();
   });
@@ -1847,13 +2183,18 @@ async function reglerEinrichten() {
 // --- Rendern -------------------------------------------------------------
 //
 // Schaltet die grosse Ansicht zwischen flach (jede Facette sichtbar, gut zum
-// Pruefen) und weich schattiert mit Studiolicht um. Gemerkt wird die Wahl
-// nicht: Jede neu angeklickte Datei beginnt flach.
+// Pruefen) und weich schattiert mit Studiolicht um. Die Wahl bleibt
+// gespeichert wie die anderen Darstellungs-Einstellungen und gilt fuer jede
+// Datei, die man danach anklickt.
 const renderKnopf = document.getElementById('rendern');
 renderKnopf.title = t('modelRenderHint');
 
 function zeigeRendern() {
-  renderKnopf.setAttribute('aria-pressed', String(!!betrachter?.rendern));
+  const an = !!betrachter?.rendern;
+  renderKnopf.setAttribute('aria-pressed', String(an));
+  // Unter "Darstellung" nur die Regler, die in der Ansicht etwas tun.
+  document.getElementById('reglerFlach').hidden = an;
+  document.getElementById('reglerRender').hidden = !an;
 }
 
 renderKnopf.addEventListener('click', () => {
@@ -1888,6 +2229,19 @@ explorerEl.addEventListener('click', async () => {
                  exp.pfad.replace(/[\\/]+$/, '') + '\\' + unter.replace(/\//g, '\\'));
   }
 });
+
+// Im Papierkorb: in der Kopfzeile "Haus › Papierkorb › Modell", und
+// "Papierkorb" fuehrt zurueck in dessen Ansicht der Uebersicht.
+if (IM_KORB) {
+  const pfadKorb = document.getElementById('pfadKorb');
+  pfadKorb.href = chrome.runtime.getURL('library.html') + '?korb=1';
+  pfadKorb.hidden = false;
+  const trenner = document.createElement('span');
+  trenner.className = 'pfadTrenner';
+  trenner.setAttribute('aria-hidden', 'true');
+  trenner.textContent = '›';
+  pfadKorb.after(trenner);
+}
 
 const loeschEl = document.getElementById('loeschen');
 const wiederEl = document.getElementById('wieder');
@@ -1931,9 +2285,7 @@ loeschEl.addEventListener('click', async () => {
 wiederEl.addEventListener('click', async () => {
   await mitAnzeige(wiederEl, 'libRestoring', async () => {
     const wurzel = await getTargetDir();
-    const korb = await wurzel.getDirectoryHandle(PAPIERKORB);
-    const ziel = await freierName(wurzel, ORDNER.replace(GELOESCHT, ''));
-    await verschiebe(korb, ORDNER, wurzel, ziel);
+    await modellAusPapierkorb(wurzel, ORDNER, GELOESCHT);
     zurueckZurUebersicht();
   });
 });
@@ -1954,50 +2306,7 @@ async function mitAnzeige(knopf, textSchluessel, tat) {
   }
 }
 
-// --- Verschieben (wie in der Übersicht) ---------------------------------
-
-function heute() {
-  const d = new Date();
-  const zwei = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${zwei(d.getMonth() + 1)}-${zwei(d.getDate())}`;
-}
-
-async function gibtEs(ordner, name) {
-  try { await ordner.getDirectoryHandle(name); return true; } catch { return false; }
-}
-
-async function freierName(ordner, wunsch) {
-  let name = wunsch;
-  for (let n = 2; await gibtEs(ordner, name); n++) name = `${wunsch}-${n}`;
-  return name;
-}
-
-// Ordner lassen sich nicht verschieben, einzelne Dateien schon. Scheitert
-// move(), wird kopiert. Dasselbe steht in library.js (mehrere markierte
-// Modelle auf einmal in den Papierkorb).
-async function verschiebe(vonEltern, name, nachEltern, neuerName) {
-  const quelle = await vonEltern.getDirectoryHandle(name);
-  const ziel = await nachEltern.getDirectoryHandle(neuerName, { create: true });
-  let umhaengen = typeof FileSystemFileHandle.prototype.move === 'function';
-
-  const gehe = async (von, nach) => {
-    for await (const [kind, eintrag] of von.entries()) {
-      if (eintrag.kind === 'directory') {
-        await gehe(eintrag, await nach.getDirectoryHandle(kind, { create: true }));
-        continue;
-      }
-      if (umhaengen) {
-        try { await eintrag.move(nach, kind); continue; }
-        catch { umhaengen = false; }
-      }
-      const strom = await (await nach.getFileHandle(kind, { create: true })).createWritable();
-      await (await eintrag.getFile()).stream().pipeTo(strom);
-    }
-  };
-
-  await gehe(quelle, ziel);
-  await vonEltern.removeEntry(name, { recursive: true });
-}
+// Verschieben, Papierkorb: siehe papierkorb.js.
 
 // --- Start --------------------------------------------------------------
 

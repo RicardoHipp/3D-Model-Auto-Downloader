@@ -148,7 +148,9 @@ async function ladeModelle() {
     // Der Papierkorb wird selten angesehen und nicht zwischengespeichert.
     const ordner = await korbHandle(false);
     modelle = ordner ? await modelleAus(ordner) : [];
+    korbDateien = ordner ? await geloeschteDateien(await getTargetDir()) : [];
     nachLaden();
+    zeichneKorbDateien();
     return;
   }
 
@@ -175,8 +177,8 @@ function nachLaden() {
   }
   if (quellen.includes(vorher)) quelleEl.value = vorher;
 
-  hinweisEl.hidden = modelle.length > 0;
-  if (!modelle.length) {
+  hinweisEl.hidden = modelle.length > 0 || (imPapierkorb && korbDateien.length > 0);
+  if (hinweisEl.hidden === false) {
     hinweisEl.textContent = t(imPapierkorb ? 'libTrashNothing' : 'libEmpty');
   }
   zeichneTagLeiste();
@@ -312,6 +314,8 @@ async function modelleAus(ordner) {
   for await (const [name, handle] of ordner.entries()) {
     if (handle.kind !== 'directory') continue;
     if (!imPapierkorb && name === PAPIERKORB) continue;
+    // Einzeln geloeschte Dateien haben ihren eigenen Abschnitt.
+    if (imPapierkorb && name === DATEIEN_ORDNER) continue;
     const treffer = name.match(GELOESCHT);
     const ohneMarke = treffer ? name.slice(0, treffer.index) : name;
     raus.push({
@@ -841,7 +845,94 @@ async function zeigeAnsicht(korb) {
   hinweisEl.textContent = t('libLoading');
   hinweisEl.hidden = false;
   rasterEl.textContent = '';
+  korbDateien = [];
+  zeichneKorbDateien();
   await ladeModelle();
+}
+
+// --- Einzeln geloeschte Dateien (nur im Papierkorb) ---------------------------
+//
+// Eine Zeile je Datei: ihr kleines Bild, Name, aus welchem Modell, wann
+// geloescht - und je Zeile zurueckholen oder endgueltig loeschen. Siehe
+// papierkorb.js fuer die Ablage.
+let korbDateien = [];
+let korbBildUrls = [];
+const dateiKorbEl = document.getElementById('dateiKorb');
+const dateiKorbListe = document.getElementById('dateiKorbListe');
+
+function zeichneKorbDateien() {
+  for (const url of korbBildUrls) URL.revokeObjectURL(url);
+  korbBildUrls = [];
+  dateiKorbListe.textContent = '';
+  dateiKorbEl.hidden = !imPapierkorb || !korbDateien.length;
+  for (const e of korbDateien) {
+    const zeile = document.createElement('div');
+    zeile.className = 'korbDatei';
+
+    const bild = document.createElement('div');
+    bild.className = 'bild';
+    if (e.vorschau) {
+      const img = document.createElement('img');
+      const url = URL.createObjectURL(e.vorschau);
+      korbBildUrls.push(url);
+      img.src = url;
+      img.alt = '';
+      bild.appendChild(img);
+    } else {
+      bild.textContent = (e.name.split('.').pop() || '?').toUpperCase();
+    }
+
+    const text = document.createElement('div');
+    text.className = 'text';
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = e.name;
+    name.title = e.pfad;
+    const herkunft = document.createElement('div');
+    herkunft.className = 'herkunft';
+    herkunft.textContent = t('libTrashFileFrom', [zerlegeOrdnername(e.modell).titel,
+      formatDatum(e.geloescht.slice(0, 10)), formatGroesse(e.groesse)]);
+    text.append(name, herkunft);
+
+    const wieder = document.createElement('button');
+    wieder.className = 'wichtig';
+    wieder.textContent = t('libRestore');
+    wieder.addEventListener('click', () => korbDateiTat(e, wieder, async (wurzel) => {
+      await dateiAusPapierkorb(wurzel, e.kennung);
+    }));
+    const weg = document.createElement('button');
+    weg.className = 'gefahr';
+    weg.textContent = t('libDeleteForever');
+    weg.addEventListener('click', async () => {
+      if (!await frage({
+        titel: t('libDeleteForever'),
+        text: t('libTrashFileDeleteConfirm', [e.name]),
+        ja: t('libDeleteForever'),
+        gefahr: true
+      })) return;
+      korbDateiTat(e, weg, (wurzel) => dateiEndgueltigLoeschen(wurzel, e.kennung));
+    });
+
+    zeile.append(bild, text, wieder, weg);
+    dateiKorbListe.appendChild(zeile);
+  }
+}
+
+async function korbDateiTat(e, knopf, tat) {
+  knopf.disabled = true;
+  try {
+    await tat(await getTargetDir());
+    korbDateien = korbDateien.filter((x) => x !== e);
+    zeichneKorbDateien();
+    if (!modelle.length && !korbDateien.length) {
+      hinweisEl.textContent = t('libTrashNothing');
+      hinweisEl.hidden = false;
+    }
+  } catch (err) {
+    knopf.disabled = false;
+    hinweisEl.textContent = t('libMoveFailed', [err.message]);
+    hinweisEl.hidden = false;
+  }
 }
 
 korbEl.addEventListener('click', () => {
@@ -904,10 +995,8 @@ document.getElementById('markiertWieder').addEventListener('click', async (e) =>
   const erledigt = [];
   try {
     const wurzel = await getTargetDir();
-    const korb = await wurzel.getDirectoryHandle(PAPIERKORB);
     for (const m of ziele) {
-      const ziel = await freierName(wurzel, m.name.replace(GELOESCHT, ''));
-      await verschiebe(korb, m.name, wurzel, ziel);
+      await modellAusPapierkorb(wurzel, m.name, GELOESCHT);
       erledigt.push(m.name);
     }
   } catch (err) {
@@ -926,56 +1015,15 @@ document.getElementById('markiertWieder').addEventListener('click', async (e) =>
   }
 });
 
-// --- Verschieben (wie auf der Modellseite, model.js) -----------------------
-
-function heute() {
-  const d = new Date();
-  const zwei = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${zwei(d.getMonth() + 1)}-${zwei(d.getDate())}`;
-}
-
-async function gibtEs(ordner, name) {
-  try { await ordner.getDirectoryHandle(name); return true; } catch { return false; }
-}
-
-async function freierName(ordner, wunsch) {
-  let name = wunsch;
-  for (let n = 2; await gibtEs(ordner, name); n++) name = `${wunsch}-${n}`;
-  return name;
-}
-
-// Ordner lassen sich nicht verschieben, einzelne Dateien schon: Jede Datei
-// wird in den neuen Ordner umgehaengt (move), und wo das nicht geht, kopiert.
-// Danach ist der alte Ordner leer und wird entfernt.
-async function verschiebe(vonEltern, name, nachEltern, neuerName) {
-  const quelle = await vonEltern.getDirectoryHandle(name);
-  const ziel = await nachEltern.getDirectoryHandle(neuerName, { create: true });
-  let umhaengen = typeof FileSystemFileHandle.prototype.move === 'function';
-
-  const gehe = async (von, nach) => {
-    for await (const [kind, eintrag] of von.entries()) {
-      if (eintrag.kind === 'directory') {
-        await gehe(eintrag, await nach.getDirectoryHandle(kind, { create: true }));
-        continue;
-      }
-      if (umhaengen) {
-        try { await eintrag.move(nach, kind); continue; }
-        catch { umhaengen = false; }
-      }
-      const strom = await (await nach.getFileHandle(kind, { create: true })).createWritable();
-      await (await eintrag.getFile()).stream().pipeTo(strom);
-    }
-  };
-
-  await gehe(quelle, ziel);
-  await vonEltern.removeEntry(name, { recursive: true });
-}
+// Verschieben, Papierkorb: siehe papierkorb.js.
 
 leerenEl.addEventListener('click', async () => {
-  if (!modelle.length) return;
+  if (!modelle.length && !korbDateien.length) return;
   if (!await frage({
     titel: t('libTrashEmptyButton'),
-    text: t('libTrashEmptyConfirm', [String(modelle.length)]),
+    text: korbDateien.length
+      ? t('libTrashEmptyConfirmFiles', [String(modelle.length), String(korbDateien.length)])
+      : t('libTrashEmptyConfirm', [String(modelle.length)]),
     ja: t('libTrashEmptyButton'),
     gefahr: true
   })) return;
@@ -984,6 +1032,8 @@ leerenEl.addEventListener('click', async () => {
   // nächsten Löschen von selbst wieder.
   await wurzel.removeEntry(PAPIERKORB, { recursive: true });
   modelle = [];
+  korbDateien = [];
+  zeichneKorbDateien();
   hinweisEl.textContent = t('libTrashNothing');
   hinweisEl.hidden = false;
   zeichne();

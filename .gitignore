@@ -24,6 +24,7 @@
 !options.js
 !library.html
 !library.js
+!papierkorb.js
 !welcome.html
 !welcome.js
 !model.html
@@ -38,6 +39,7 @@
 !model_teile_worker.js
 !model_drei.js
 !model_drei_worker.js
+!model_lesen_worker.js
 !vendor/
 !vendor/occt-import-js.js
 !vendor/occt-import-js.wasm

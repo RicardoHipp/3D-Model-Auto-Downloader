@@ -36,6 +36,11 @@
 const KOPF = '<?xml version="1.0" encoding="UTF-8"?>\n';
 const NORM = 'http://schemas.microsoft.com/3dmanufacturing/core/2015/02';
 const PRUSA = 'http://schemas.slic3r.org/3mf/2017/06';
+// Eigener Namensraum fuer ein Kennzeichen am <model>: "von dieser
+// Erweiterung geschrieben". Slicer ignorieren unbekannte Attribute fremder
+// Namensraeume; unser Leser erkennt daran, dass die Farbe gewollt ist -
+// auch bei einem einfarbigen Teil (siehe EIGENER_EXPORT in model_3mf.js).
+const EIGEN = 'https://github.com/RicardoHipp/3D-Model-Auto-Downloader';
 const ANWENDUNG = '3D Model Downloader & Organizer';
 
 // --- Bemalung verschluesseln ----------------------------------------------
@@ -106,7 +111,7 @@ function eckenUndDreiecke(netz) {
 // Grosse Modelle ergeben Hunderte Megabyte Text - mehr, als in eine
 // Zeichenkette passt. Deshalb in Stuecken, die gleich gepackt werden.
 function* modellText(objekte, farbtafel, bunt) {
-  yield KOPF + `<model unit="millimeter" xml:lang="en-US" xmlns="${NORM}" xmlns:slic3rpe="${PRUSA}">\n`
+  yield KOPF + `<model unit="millimeter" xml:lang="en-US" xmlns="${NORM}" xmlns:slic3rpe="${PRUSA}" xmlns:mdo="${EIGEN}" mdo:export="1">\n`
     + ` <metadata name="Application">${xmlText(ANWENDUNG)}</metadata>\n <resources>\n`;
   if (bunt) {
     yield '  <basematerials id="1">\n' + farbtafel.map((hex, i) =>

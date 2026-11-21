@@ -32,6 +32,7 @@ uniform vec3 lichtRichtung;
 // x = Grundhelligkeit, y = Kopflicht, z = zweites Licht, w = Kantenschimmer
 uniform vec4 staerken;
 uniform float gamma;
+uniform float deckkraft;
 out vec4 ergebnis;
 
 void main() {
@@ -48,7 +49,7 @@ void main() {
 
   vec3 licht = farbe * (staerken.x + staerken.y * haupt + staerken.z * zweit)
              + vec3(staerken.w) * rand;
-  ergebnis = vec4(pow(licht, vec3(1.0 / gamma)), 1.0);
+  ergebnis = vec4(pow(licht, vec3(1.0 / gamma)), deckkraft);
 }`;
 
 // --- Ansicht "Rendern" ----------------------------------------------------
@@ -62,8 +63,12 @@ void main() {
 // das Modell gleich gross im Bild bleibt.
 const SICHT = 35 * Math.PI / 180;
 const ALTE_SICHT = 0.9;
-// Ab hier gilt eine Kante als Kante und wird nicht geglaettet.
-const KNICKWINKEL = 35 * Math.PI / 180;
+// Ab hier gilt eine Kante als Kante und wird nicht geglaettet. Die Anleitung
+// nennt 30-40 Grad; bei CAD-Exporten mit grossen Dreiecken auf ebenen
+// Flaechen zieht das helle Flecken ueber die Flaeche (Fasen unter dem
+// Grenzwinkel werden mitgeglaettet). 15 Grad war beim Ausprobieren der
+// beste Kompromiss. Einstellbar unter "Darstellung".
+const KNICKWINKEL = 15 * Math.PI / 180;
 
 // Zum Anklicken: Dieselbe Szene wird noch einmal gezeichnet, jedes Netz in
 // einer eigenen Farbe, die seine Nummer verschlüsselt. Danach wird genau
@@ -155,7 +160,7 @@ function farbBereiche(netz, farbtafel) {
     start[f] = ab;
     // Fehlt die Farbe in der Tafel, gilt die des ersten Filaments.
     const hex = farbtafel[f - 1] || farbtafel[0] || '#808080';
-    liste.push({ hex, farbe: alsFarbe(hex), ab: ab * 3, anzahl: anzahl[f] * 3 });
+    liste.push({ filament: f, hex, farbe: alsFarbe(hex), ab: ab * 3, anzahl: anzahl[f] * 3 });
     ab += anzahl[f];
   }
 
@@ -172,7 +177,7 @@ function farbBereiche(netz, farbtafel) {
 // "#RRGGBB" in die Werte, mit denen der Shader rechnet. Zwei Anpassungen:
 // Reines Weiss wuerde unter dem Kopflicht flaechig ausbrennen und reines
 // Schwarz vor dem schwarzen Hintergrund verschwinden - also oben etwas
-// gedaempft und unten leicht angehoben. Die Voreinstellung #1568d5 liegt
+// gedaempft und unten leicht angehoben. Die Voreinstellung #41618b liegt
 // im selben Helligkeitsbereich.
 function alsFarbe(hex) {
   const zahl = parseInt(hex.slice(1, 7), 16);
@@ -204,7 +209,8 @@ class Betrachter {
       farbe:  gl.getUniformLocation(this.programm, 'farbe'),
       licht:  gl.getUniformLocation(this.programm, 'lichtRichtung'),
       staerken: gl.getUniformLocation(this.programm, 'staerken'),
-      gamma:  gl.getUniformLocation(this.programm, 'gamma')
+      gamma:  gl.getUniformLocation(this.programm, 'gamma'),
+      deckkraft: gl.getUniformLocation(this.programm, 'deckkraft')
     };
 
     gl.enable(gl.DEPTH_TEST);
@@ -236,6 +242,27 @@ class Betrachter {
     this.dreiArbeiter = null;
     this.beiRendern = null;
     this.rendernRechnet = false;
+    // Ab hier gilt eine Kante als Kante und wird nicht geglaettet (Bogenmass).
+    this.knickwinkel = KNICKWINKEL;
+    // Feld "Filamente": geaenderte Farbtafel (null = die der Datei) und das
+    // Filament, das gerade hervorgehoben wird (null = keines).
+    this.filamentTafel = null;
+    this.hervorFilament = null;
+    // Wie das hervorgehobene Filament sich abhebt: 'grau' (die anderen
+    // hellgrau), 'glas' (die anderen durchscheinend), 'puls' (es pulsiert,
+    // der Rest bleibt), 'dunkel' (die anderen abgedunkelt) oder 'aus'.
+    this.hervorArt = 'puls';
+    this.pulsLaeuft = false;
+    // Licht und Material der gerenderten Ansicht, einstellbar unter
+    // "Darstellung", solange "Rendern" an ist. Nach Auge abgestimmt
+    // (Ausgang waren die Werte der Anleitung: 1 / 1 / 2,2 / 0,5 / 1 / 0,55 / 0,25).
+    this.dreiBelichtung = 1.2;
+    this.dreiUmgebung = 0.25;
+    this.dreiHaupt = 2.5;
+    this.dreiFuell = 1.5;
+    this.dreiKante = 0;
+    this.dreiRauheit = 0.55;
+    this.dreiSchatten = 0.2;
 
     // Kameralage: Winkel um die Hochachse, Höhenwinkel, Abstand.
     // Hochachse ist Z - so legen es STL und 3MF im 3D-Druck ab. Mit der in
@@ -249,7 +276,7 @@ class Betrachter {
 
     // Alles, woran sich drehen lässt, an einer Stelle. Die Werte gelten je
     // Betrachter - das Vorschaubild zeichnet mit denselben.
-    this.farbe = [0.0824, 0.4078, 0.8353];     // #1568d5
+    this.farbe = [0.2549, 0.3804, 0.5451];     // #41618b
     this.hintergrund = [0, 0, 0];
     this.grund = 0;           // kein Grundlicht - die Tiefen bleiben dunkel
     this.kopflicht = 1.5;     // sitzt in der Kamera und trägt das Bild
@@ -276,14 +303,16 @@ class Betrachter {
     }
     this.drei?.leeren();
 
-    const farbtafel = netze.farbtafel || [];
+    // Vom Nutzer umgefaerbt (Feld "Filamente")? Dann gilt diese Tafel.
+    const farbtafel = this.filamentTafel || netze.farbtafel || [];
     const bereicheJeNetz = netze.map((n) => farbBereiche(n, farbtafel));
-    // Nur wenn wirklich mehr als eine Farbe vorkommt. Eine einfarbige Datei
-    // traegt zwar auch eine Filamentfarbe, aber die ist Zufall - was der
-    // Ersteller gerade eingelegt hatte.
+    // Eine 3MF zeigt ihre hinterlegte Farbe auch, wenn es nur eine ist. Bei
+    // STEP dagegen nur ab zwei verschiedenen: Eine einzige CAD-Farbe ist
+    // meist das Standardgrau des Programms. Abschalten laesst sich beides
+    // unter "Darstellung" (Farben der Datei).
     const verschiedene = new Set();
     for (const b of bereicheJeNetz) for (const stueck of b?.liste || []) verschiedene.add(stueck.hex);
-    this.hatDateiFarben = verschiedene.size > 1;
+    this.hatDateiFarben = verschiedene.size > 1 || (!!netze.aus3mf && verschiedene.size === 1);
 
     this.netze = netze.map(({ ecken, indizes, teil }, netzNummer) => {
       const bunt = this.hatDateiFarben ? bereicheJeNetz[netzNummer] : null;
@@ -339,6 +368,66 @@ class Betrachter {
     this.zeichne();
   }
 
+  // Filamente umfaerben, ohne die Netze neu hochzuladen: nur die Farben der
+  // Abschnitte und - in der gerenderten Ansicht - der Materialien.
+  setzeFilamentFarben(tafel) {
+    this.filamentTafel = tafel;
+    this.netze.forEach((n, i) => {
+      if (!n.bereiche) return;
+      for (const stueck of n.bereiche) {
+        const hex = tafel[stueck.filament - 1];
+        if (!hex) continue;
+        stueck.hex = hex;
+        stueck.farbe = alsFarbe(hex);
+      }
+      this.drei?.faerbe(i, n.bereiche);
+    });
+    this.zeichne();
+  }
+
+  // Hervorheben ein-/ausschalten. Beim Pulsieren zeichnet die Ansicht
+  // fortlaufend, solange etwas hervorgehoben ist.
+  setzeHervorFilament(f) {
+    this.hervorFilament = f;
+    this.zeichne();
+    if (f !== null && this.hervorArt === 'puls' && !this.pulsLaeuft) {
+      this.pulsLaeuft = true;
+      const schritt = () => {
+        if (this.hervorFilament === null || this.hervorArt !== 'puls') { this.pulsLaeuft = false; this.zeichne(); return; }
+        this.zeichne();
+        requestAnimationFrame(schritt);
+      };
+      requestAnimationFrame(schritt);
+    }
+  }
+
+  // 0..1, langsam auf und ab - fuer "Pulsieren".
+  pulsWert() {
+    return 0.5 - 0.5 * Math.cos(performance.now() / 1000 * 2 * Math.PI / 1.2);
+  }
+
+  // Wie viel vom Modell in welchem Filament ist: Map Filament -> Dreiecke.
+  filamentAnteile() {
+    const raus = new Map();
+    for (const n of this.netze) {
+      for (const stueck of n.bereiche || []) {
+        raus.set(stueck.filament, (raus.get(stueck.filament) || 0) + stueck.anzahl / 3);
+      }
+    }
+    return raus;
+  }
+
+  // Knickwinkel geaendert: Ist "Rendern" an, gleich neu rechnen; sonst die
+  // vorbereiteten Netze verwerfen, damit sie beim Einschalten neu entstehen.
+  neuAufbereiten() {
+    if (!this.netze.length) return;
+    if (this.rendern && this.drei) { this.aufbereiten(true); return; }
+    this.dreiLauf++;
+    this.meldeRechnen(false);
+    for (const n of this.netze) n.weich = false;
+    this.drei?.leeren();
+  }
+
   meldeRechnen(laeuft) {
     this.rendernRechnet = laeuft;
     this.beiRendern?.(laeuft);
@@ -347,7 +436,9 @@ class Betrachter {
   // Schickt die Netze nacheinander an den Arbeiter (three.js,
   // toCreasedNormals) und reicht die Ergebnisse an die three.js-Buehne.
   // Wechselt inzwischen das Modell, verfallen die Antworten (Laufnummer).
-  async aufbereiten() {
+  // ersetzen: alle Netze neu rechnen (anderer Knickwinkel) - die bisherigen
+  // bleiben so lange zu sehen und werden erst am Ende ausgetauscht.
+  async aufbereiten(ersetzen = false) {
     const lauf = ++this.dreiLauf;
     const netze = this.netze;
     this.meldeRechnen(true);
@@ -358,21 +449,28 @@ class Betrachter {
       }
       if (!this.dreiArbeiter) this.dreiArbeiter = new Worker('model_drei_worker.js');
       const arbeiter = this.dreiArbeiter;
+      const neu = [];
       for (let i = 0; i < netze.length; i++) {
         const n = netze[i];
-        if (n.weich) continue;
+        if (n.weich && !ersetzen) continue;
+        // Nur die eigene Antwort annehmen: Ein ueberholter Lauf kann noch
+        // eine im Arbeiter stecken haben.
         const antwort = await new Promise((fertig) => {
-          arbeiter.onmessage = ({ data }) => fertig(data);
+          arbeiter.onmessage = ({ data }) => { if (data.lauf === lauf && data.nummer === i) fertig(data); };
           arbeiter.onerror = (e) => fertig({ fehler: e.message || 'Fehler' });
-          arbeiter.postMessage({ nummer: i, ecken: n.quelle.ecken, indizes: n.quelle.indizes,
-                                 winkel: KNICKWINKEL });
+          arbeiter.postMessage({ lauf, nummer: i, ecken: n.quelle.ecken, indizes: n.quelle.indizes,
+                                 winkel: this.knickwinkel });
         });
         if (lauf !== this.dreiLauf) return;
         if (antwort.fehler) throw new Error(antwort.fehler);
-        this.drei.setzeNetz(i, antwort, n.bereiche, n.teil);
-        n.weich = true;
-        // Erst zeichnen, wenn alle fertig sind - ein halb weiches Modell
-        // saehe aus wie ein Fehler.
+        neu.push([i, antwort]);
+      }
+      // Erst einsetzen, wenn alle fertig sind - ein halb weiches Modell
+      // saehe aus wie ein Fehler.
+      if (ersetzen) this.drei.leeren();
+      for (const [i, antwort] of neu) {
+        this.drei.setzeNetz(i, antwort, netze[i].bereiche, netze[i].teil);
+        netze[i].weich = true;
       }
       this.zeichne();
     } catch (fehler) {
@@ -457,7 +555,14 @@ class Betrachter {
         nah: Math.max(r * 0.01, 0.01), fern: abstand + r * 4,
         hintergrund: this.hintergrund, farbe: this.farbe,
         blass: this.farbe.map((w) => w * 0.3 + 0.04),
-        hervor: this.hervor, ausgeblendet: this.ausgeblendet, dateiFarben: this.dateiFarben
+        hervor: this.hervor, ausgeblendet: this.ausgeblendet, dateiFarben: this.dateiFarben,
+        hervorFilament: this.hervorArt === 'aus' ? null : this.hervorFilament, hervorArt: this.hervorArt,
+        puls: this.hervorArt === 'puls' && this.hervorFilament !== null ? this.pulsWert() : 0,
+        licht: {
+          belichtung: this.dreiBelichtung, umgebung: this.dreiUmgebung,
+          haupt: this.dreiHaupt, fuell: this.dreiFuell, kante: this.dreiKante,
+          rauheit: this.dreiRauheit, schatten: this.dreiSchatten
+        }
       });
       return;
     }
@@ -476,6 +581,29 @@ class Betrachter {
     ]));
     gl.uniform4f(this.orte.staerken, this.grund, this.kopflicht, this.zweitlicht, this.kante);
     gl.uniform1f(this.orte.gamma, this.gamma);
+    gl.uniform1f(this.orte.deckkraft, 1);
+
+    // Ein Filament hervorgehoben (Feld "Filamente")? Dann sehen die anderen
+    // je nach Art anders aus; bei "Glas" werden sie erst zum Schluss
+    // durchscheinend ueber das Uebrige gezeichnet.
+    const hf = this.hervorFilament;
+    const art = hf === null || this.hervorArt === 'aus' ? null : this.hervorArt;
+    const GRAU = alsFarbe('#d2d2d2');
+    const puls = art === 'puls' ? this.pulsWert() * 0.65 : 0;
+    const glas = [];
+    const farbeFuer = (farbe, gewaehlt) => {
+      if (art === null) return farbe;
+      // Pulsieren: helle Farben werden dunkler, dunkle heller - sonst saehe
+      // man es bei Weiss oder Hellgelb gar nicht.
+      if (gewaehlt && puls) {
+        const hell = 0.2126 * farbe[0] + 0.7152 * farbe[1] + 0.0722 * farbe[2] > 0.5;
+        return farbe.map((w) => (hell ? w * (1 - puls) : w + (1 - w) * puls));
+      }
+      if (gewaehlt) return farbe;
+      if (art === 'dunkel') return farbe.map((w) => w * 0.25);
+      if (art === 'grau') return GRAU;
+      return farbe;
+    };
 
     // Ist ein Teil ausgewählt, werden die übrigen zurückgenommen statt
     // ausgeblendet: So bleibt sichtbar, wo das Teil im Ganzen sitzt.
@@ -492,14 +620,17 @@ class Betrachter {
       if (betont && this.dateiFarben && n.bereiche) {
         gl.bindVertexArray(n.vao);
         for (const stueck of n.bereiche) {
-          gl.uniform3fv(this.orte.farbe, stueck.farbe);
+          const gewaehlt = stueck.filament === hf;
+          if (art === 'glas' && !gewaehlt) { glas.push([n, stueck]); continue; }
+          gl.uniform3fv(this.orte.farbe, farbeFuer(stueck.farbe, gewaehlt));
           gl.drawElements(gl.TRIANGLES, stueck.anzahl, gl.UNSIGNED_INT, stueck.ab * 4);
         }
         letzteFarbe = null;
         continue;
       }
+      if (art === 'glas') { glas.push([n, null]); continue; }
 
-      const gewollt = betont ? this.farbe : blass;
+      const gewollt = art && betont ? farbeFuer(this.farbe, false) : betont ? this.farbe : blass;
       if (gewollt !== letzteFarbe) {
         gl.uniform3fv(this.orte.farbe, new Float32Array(gewollt));
         letzteFarbe = gewollt;
@@ -507,6 +638,25 @@ class Betrachter {
       gl.bindVertexArray(n.vao);
       if (n.indexPuffer) gl.drawElements(gl.TRIANGLES, n.anzahl, gl.UNSIGNED_INT, 0);
       else gl.drawArrays(gl.TRIANGLES, 0, n.anzahl);
+    }
+
+    // "Glas": die uebrigen Filamente durchscheinend darueber - ohne in die
+    // Tiefe zu schreiben, damit sie einander nicht verdecken.
+    if (glas.length) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.depthMask(false);
+      gl.uniform1f(this.orte.deckkraft, 0.12);
+      for (const [n, stueck] of glas) {
+        gl.bindVertexArray(n.vao);
+        gl.uniform3fv(this.orte.farbe, stueck ? stueck.farbe : new Float32Array(this.farbe));
+        if (stueck) gl.drawElements(gl.TRIANGLES, stueck.anzahl, gl.UNSIGNED_INT, stueck.ab * 4);
+        else if (n.indexPuffer) gl.drawElements(gl.TRIANGLES, n.anzahl, gl.UNSIGNED_INT, 0);
+        else gl.drawArrays(gl.TRIANGLES, 0, n.anzahl);
+      }
+      gl.depthMask(true);
+      gl.disable(gl.BLEND);
+      gl.uniform1f(this.orte.deckkraft, 1);
     }
     gl.bindVertexArray(null);
   }

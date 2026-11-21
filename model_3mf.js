@@ -859,8 +859,14 @@ async function lies3mf(zip, melde) {
     netze.farbtafel = [];
   }
   for (const netz of netze) delete netz.objekt;
+  // Von uns selbst geschrieben (model_3mf_schreiben.js)? Dann ist die Farbe
+  // auch bei einem einfarbigen Teil gewollt und kein Zufall.
+  netze.eigenerExport = EIGENER_EXPORT.test(haupt.modellTag || '');
+  netze.aus3mf = true;
   return netze;
 }
+
+const EIGENER_EXPORT = /\bmdo:export\s*=\s*["']1["']/;
 
 // --- Vorschaubild -------------------------------------------------------
 //

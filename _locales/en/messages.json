@@ -704,12 +704,58 @@
       }
     }
   },
+  "libTrashFiles": {
+    "message": "Deleted files",
+    "description": "Library page, trash: heading of single deleted files."
+  },
+  "libTrashFileFrom": {
+    "message": "from “$MODELL$” · deleted on $DATUM$ · $GROESSE$",
+    "description": "Library page, trash: origin of a deleted file.",
+    "placeholders": {
+      "modell": {
+        "content": "$1",
+        "example": "Dustbin for Dreame"
+      },
+      "datum": {
+        "content": "$2",
+        "example": "21.11.2026"
+      },
+      "groesse": {
+        "content": "$3",
+        "example": "2.1 MB"
+      }
+    }
+  },
+  "libTrashFileDeleteConfirm": {
+    "message": "Delete “$NAME$” permanently? This cannot be undone.",
+    "description": "Library page, trash: confirm deleting one file.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Deckel 4-5.stl"
+      }
+    }
+  },
+  "libTrashEmptyConfirmFiles": {
+    "message": "Permanently delete all $MODELLE$ models and $DATEIEN$ single files in the trash? This cannot be undone.",
+    "description": "Library page.",
+    "placeholders": {
+      "modelle": {
+        "content": "$1",
+        "example": "3"
+      },
+      "dateien": {
+        "content": "$2",
+        "example": "5"
+      }
+    }
+  },
   "libTrashNothing": {
     "message": "The trash is empty.",
     "description": "Library page."
   },
   "libTrashNote": {
-    "message": "Deleted models stay in the folder _Trash_ inside your target folder until you empty the trash.",
+    "message": "Deleted models and files stay in the _Trash_ folder in your target folder until you empty the trash.",
     "description": "Library page."
   },
   "libRestore": {
@@ -834,6 +880,104 @@
     "message": "Rim light",
     "description": "Model page."
   },
+  "modelCrease": {
+    "message": "Crease angle",
+    "description": "Model page, look panel: edges sharper than this stay hard in the render view."
+  },
+  "modelExposure": {
+    "message": "Exposure",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelEnvLight": {
+    "message": "Environment light",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelKeyLight": {
+    "message": "Key light",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelFillLight": {
+    "message": "Fill light",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelRimLight": {
+    "message": "Rim light",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelRoughness": {
+    "message": "Roughness",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelGroundShadow": {
+    "message": "Ground shadow",
+    "description": "Model page, look panel (render view)."
+  },
+  "modelDeleteFile": {
+    "message": "Move file to trash",
+    "description": "Model page: small x on a file in the list."
+  },
+  "modelDeleteFileConfirm": {
+    "message": "Move “$NAME$” to the trash? You will find it in the overview under “Trash” and can restore it there – it then goes back into this model.",
+    "description": "Model page: confirm moving one file to the trash.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Deckel 4-5.stl"
+      }
+    }
+  },
+  "modelDeleteFilesConfirm": {
+    "message": "Move $ANZAHL$ files to the trash? You will find them in the overview under “Trash” and can restore each of them there.",
+    "description": "Model page: confirm moving several marked files to the trash.",
+    "placeholders": {
+      "anzahl": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "modelFilaments": {
+    "message": "Filaments",
+    "description": "Model page, filaments panel."
+  },
+  "modelFilamentsReset": {
+    "message": "Colours from file",
+    "description": "Model page, filaments panel."
+  },
+  "modelFilamentN": {
+    "message": "Filament $NUMMER$",
+    "description": "Model page, filaments panel.",
+    "placeholders": {
+      "nummer": {
+        "content": "$1",
+        "example": "2"
+      }
+    }
+  },
+  "modelHighlight": {
+    "message": "Highlight",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightGrey": {
+    "message": "Grey",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightGlass": {
+    "message": "Glass",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightPulse": {
+    "message": "Pulse",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightDark": {
+    "message": "Dark",
+    "description": "Model page, filaments panel: how a hovered filament stands out."
+  },
+  "modelHighlightOff": {
+    "message": "Off",
+    "description": "Model page, filaments panel: no highlight on hover."
+  },
   "modelGamma": {
     "message": "Gamma",
     "description": "Model page."
@@ -893,6 +1037,22 @@
   "expSetupButton": {
     "message": "Download files and open folder",
     "description": "Options page."
+  },
+  "expImportant": {
+    "message": "Important: please read the steps below completely and carefully before you start – especially the note about “Unblock” in step 2.",
+    "description": "Options page, explorer setup."
+  },
+  "expUnblockTitle": {
+    "message": "Windows blocks the files?",
+    "description": "Options page, explorer setup."
+  },
+  "expUnblockText": {
+    "message": "If Windows offers no “Run”, nothing happens on double-click, or the script reports that the registry entry failed: right-click the file → “Properties” → at the bottom under “Security” tick “Unblock” → “OK”. Do this for both files – open-folder.vbs and stldl-protokoll.reg – and then double-click open-folder.vbs again.",
+    "description": "Options page, explorer setup."
+  },
+  "expUnblockWhy": {
+    "message": "Why not everyone needs this: Windows marks downloaded files as coming from the internet. How strictly it treats them depends on the computer’s security settings – for example “Smart App Control” and SmartScreen in Windows 11, company policies, or whether the download folder is on a drive that can store this origin at all. That is why Windows only asks briefly on some computers and blocks on others until you tick “Unblock”.",
+    "description": "Options page, explorer setup."
   },
   "expSetupS2Titel": {
     "message": "Double-click open-folder.vbs",

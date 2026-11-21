@@ -1,7 +1,7 @@
 // Ansicht "Rendern" mit three.js (vendor/three.min.js, MIT-Lizenz).
 //
 // Umgesetzt nach Anleitung-Leora-Optik.md:
-//   1. Weiche Normalen mit scharfen Kanten (toCreasedNormals, 35 Grad) -
+//   1. Weiche Normalen mit scharfen Kanten (wie toCreasedNormals, Knickwinkel einstellbar) -
 //      in model_drei_worker.js.
 //   2. Renderer: sRGB-Ausgabe, ACES-Tonemapping, weiche Schatten.
 //   3. Umgebung (RoomEnvironment) fuer Reflexe und Grundhelligkeit, dazu
@@ -25,6 +25,8 @@ const LICHTER = [
 ];
 const SICHT = 35;          // Grad, wie ein Fotoobjektiv
 const RAUHEIT = 0.55;
+const WEISS = new DREI.Color(1, 1, 1);
+const SCHWARZ = new DREI.Color(0, 0, 0);
 
 class DreiBuehne {
   constructor(unter) {
@@ -85,6 +87,26 @@ class DreiBuehne {
     this.blass = this.einfach.clone();
   }
 
+  // Neue Farben fuer die Abschnitte eines Netzes (Feld "Filamente").
+  faerbe(nummer, bereiche) {
+    const n = this.netze[nummer];
+    if (!n) return;
+    bereiche.forEach((stueck, i) => { if (n.farben[i]) n.farben[i].userData.hex = stueck.hex; });
+  }
+
+  stelleLicht({ belichtung, umgebung, haupt, fuell, kante, rauheit, schatten }) {
+    this.renderer.toneMappingExposure = belichtung;
+    this.szene.environmentIntensity = umgebung;
+    [haupt, fuell, kante].forEach((staerke, i) => { this.lichter[i].licht.intensity = staerke; });
+    this.boden.material.opacity = schatten;
+    this.boden.visible = schatten > 0;
+    if (this.rauheit !== rauheit) {
+      this.rauheit = rauheit;
+      this.einfach.roughness = this.blass.roughness = rauheit;
+      for (const n of this.netze) for (const m of n?.farben || []) m.roughness = rauheit;
+    }
+  }
+
   zeigen(an) {
     this.sichtbar = an;
     this.leinwand.hidden = !an || this.unter.hidden;
@@ -100,19 +122,22 @@ class DreiBuehne {
     this.netze = [];
   }
 
-  // lage/normalen: nicht indiziert, aus dem Arbeiter. bereiche: Abschnitte
-  // je Filament (Anfang und Laenge in Ecken) oder null.
-  setzeNetz(nummer, { lage, normalen }, bereiche, teil) {
+  // lage/normalen/indizes aus dem Arbeiter, gleiche Ecken zusammengelegt.
+  // bereiche: Abschnitte je Filament (Anfang und Laenge im Index) oder null.
+  setzeNetz(nummer, { lage, normalen, indizes }, bereiche, teil) {
     const geo = new DREI.BufferGeometry();
     geo.setAttribute('position', new DREI.BufferAttribute(lage, 3));
     geo.setAttribute('normal', new DREI.BufferAttribute(normalen, 3));
+    geo.setIndex(new DREI.BufferAttribute(indizes, 1));
     const farben = [];
     if (bereiche) {
       bereiche.forEach((stueck, i) => {
         geo.addGroup(stueck.ab, stueck.anzahl, i);
-        farben.push(new DREI.MeshStandardMaterial({
-          color: new DREI.Color(stueck.hex), roughness: RAUHEIT, metalness: 0, side: DREI.DoubleSide
-        }));
+        const m = new DREI.MeshStandardMaterial({
+          color: new DREI.Color(stueck.hex), roughness: this.rauheit ?? RAUHEIT, metalness: 0, side: DREI.DoubleSide
+        });
+        m.userData = { filament: stueck.filament, hex: stueck.hex };
+        farben.push(m);
       });
     }
     const mesh = new DREI.Mesh(geo, this.einfach);
@@ -135,11 +160,15 @@ class DreiBuehne {
     kamera.updateProjectionMatrix();
   }
 
+  // licht: Werte der Regler unter "Darstellung" (siehe Betrachter):
+  // { belichtung, umgebung, haupt, fuell, kante, rauheit, schatten }
   zeichne({ breite, hoehe, auge, ziel, oben, nah, fern, hintergrund, farbe, blass,
-            hervor, ausgeblendet, dateiFarben }) {
+            hervor, ausgeblendet, dateiFarben, hervorFilament = null, hervorArt = 'grau', puls = 0,
+            licht: werte }) {
     const r = this.renderer;
     r.setPixelRatio(1);
     r.setSize(breite, hoehe, false);
+    if (werte) this.stelleLicht(werte);
 
     const k = this.kamera;
     k.aspect = breite / hoehe;
@@ -170,6 +199,28 @@ class DreiBuehne {
     this.blass.color.setRGB(...blass, DREI.SRGBColorSpace);
     for (const n of this.netze) {
       if (!n) continue;
+      // Ein Filament hervorgehoben (Feld "Filamente"): die anderen je nach Art
+      // grau, durchscheinend oder dunkel - oder das gewaehlte pulsiert.
+      for (const m of n.farben) {
+        m.color.set(m.userData.hex);
+        const andere = hervorFilament !== null && m.userData.filament !== hervorFilament;
+        const glas = andere && hervorArt === 'glas';
+        if (andere && hervorArt === 'dunkel') m.color.multiplyScalar(0.2);
+        if (andere && hervorArt === 'grau') m.color.set('#d2d2d2');
+        // Pulsieren: helle Farben zum Dunklen hin, dunkle zum Hellen - sonst
+        // saehe man es bei Weiss oder Hellgelb gar nicht.
+        if (!andere && hervorFilament !== null && puls) {
+          const z = parseInt(m.userData.hex.slice(1, 7), 16);
+          const hell = (0.2126 * (z >> 16 & 255) + 0.7152 * (z >> 8 & 255) + 0.0722 * (z & 255)) / 255 > 0.5;
+          m.color.lerp(hell ? SCHWARZ : WEISS, puls * 0.65);
+        }
+        if (m.transparent !== glas) {
+          m.transparent = glas;
+          m.depthWrite = !glas;
+          m.needsUpdate = true;
+        }
+        m.opacity = glas ? 0.12 : 1;
+      }
       n.mesh.visible = !ausgeblendet.has(n.teil);
       const betont = hervor === null || n.teil === hervor;
       n.mesh.material = betont && dateiFarben && n.farben.length ? n.farben
