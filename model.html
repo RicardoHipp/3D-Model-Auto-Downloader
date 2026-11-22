@@ -355,6 +355,8 @@
     background: #2a2a40; border-color: #0a84ff; color: #0a84ff;
   }
   .eckKnopf[hidden] { display: none; }
+  /* Rendern an: gruen statt blau, damit man es auf einen Blick sieht. */
+  #rendern[aria-pressed="true"] { border-color: #a6e3a1; color: #a6e3a1; }
   /* Rendern: Solange die weichen Netze entstehen, dreht sich ein kleiner
      Kreis rechts im Knopf - ueber dem Innenabstand, nicht im Text: Der Knopf
      wird dadurch nicht breiter, nichts daneben verschiebt sich. Erst nach
@@ -442,6 +444,11 @@
   .regler summary::after { content: ' ▾'; color: #a6adc8; }
   .regler[open] summary::after { content: ' ▴'; }
   .regler .inhalt { padding: 0 .7rem .7rem; }
+  /* Reicht ein aufgeklapptes Feld ueber die Buehne hinaus, rollt nur sein
+     Inhalt - nicht die ganze Seite. Die Hoehe setzt model.js
+     (passeFachHoehe), passend zum Platz bis zum unteren Buehnenrand. */
+  .regler .inhalt { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+                    scrollbar-color: #45475a transparent; }
   .regler .inhalt div[hidden] { display: none; }
   .regler label { display: block; margin-bottom: .55rem; color: #a6adc8; }
   .regler label span { display: flex; justify-content: space-between; gap: .5rem; }
@@ -457,6 +464,8 @@
   .regler label.haken span { display: inline; }
   .regler label.haken input { accent-color: #0a84ff; margin: 0; }
   .regler button { width: 100%; margin-top: .2rem; font-size: 12px; padding: 6px; }
+  .regler .erklaerung { margin: -.3rem 0 .6rem; color: #6c7086; font-size: 11px; line-height: 1.35; }
+  .regler .erklaerung[hidden] { display: none; }
 
   .fortschritt {
     position: absolute; left: 0; right: 0; top: 0; height: 3px; background: #313244;
@@ -612,6 +621,13 @@
     <details class="regler" id="regler" hidden>
       <summary data-i18n="modelLook">Darstellung</summary>
       <div class="inhalt">
+        <label class="hervorArt"><span data-i18n="modelWire">Drahtgitter</span>
+          <select id="gitterWahl">
+            <option value="aus" data-i18n="modelWireOff">aus</option>
+            <option value="darueber" data-i18n="modelWireOver">über dem Modell</option>
+            <option value="nur" data-i18n="modelWireOnly">nur Gitter</option>
+          </select></label>
+        <p class="erklaerung" id="gitterHinweis" hidden data-i18n="modelWireFine">Gitter sehr fein – zum Erkennen heranzoomen.</p>
         <label class="haken" id="zDateiFarben" hidden>
           <input type="checkbox" id="rDateiFarben">
           <span data-i18n="modelFileColors">Farben der Datei</span>
@@ -654,9 +670,29 @@
           <input type="range" id="rSchatten" min="0" max="1" step="0.05"></label>
         <label><span><span data-i18n="modelCrease">Knickwinkel</span><span class="wert" id="wKnick"></span></span>
           <input type="range" id="rKnick" min="0" max="90" step="1"></label>
+        <label><span><span data-i18n="modelShadowRes">Schattenauflösung</span><span class="wert" id="wKarte"></span></span>
+          <input type="range" id="rKarte" min="9" max="14" step="1" value="12"></label>
         </div>
 
         <button id="rZurueck" data-i18n="modelReset">Zurücksetzen</button>
+      </div>
+    </details>
+    <!-- Bewegung: wie das Modell auf Maus und Rad reagiert, Bildrate -->
+    <details class="regler" id="bewegungFach" hidden>
+      <summary data-i18n="modelMotion">Bewegung</summary>
+      <div class="inhalt">
+        <label><span><span data-i18n="modelSpin">Selbst drehen</span><span class="wert" id="wDrehen"></span></span>
+          <input type="range" id="rDrehen" min="0" max="180" step="5" value="0"></label>
+        <label><span><span data-i18n="modelSmoothing">Nachlauf beim Drehen und Zoomen</span><span class="wert" id="wGlaettung"></span></span>
+          <input type="range" id="rGlaettung" min="0" max="100" step="5" value="60"></label>
+        <p class="erklaerung" data-i18n="modelSmoothingHint">Bewegungen mit Maus und Rad laufen weich aus. Mehr = ruhiger, aber träger.</p>
+        <label><span><span data-i18n="modelFpsCap">Bildrate begrenzen</span><span class="wert" id="wFpsGrenze"></span></span>
+          <input type="range" id="rFpsGrenze" min="0" max="240" step="5" value="0"></label>
+        <label class="haken">
+          <input type="checkbox" id="rFps">
+          <span data-i18n="modelShowFps">Bildrate anzeigen</span>
+        </label>
+        <button id="bewegungZurueck" data-i18n="modelReset">Zurücksetzen</button>
       </div>
     </details>
     <!-- Filamente der Datei: ansehen und zum Ansehen/Exportieren umfaerben -->

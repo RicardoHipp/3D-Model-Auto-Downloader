@@ -181,8 +181,8 @@ function baueObjekte(netze, teile, farbtafel, versatz) {
           if (roh) return dekodierer.decode(roh);
           // Auch wo das Dreieck die Grundfarbe des Teils hat: Ob ein Slicer
           // die Grundfarbe aus model_settings.config uebernimmt, ist nicht
-          // sicher - die Bemalung schon (so machen es auch die Leora-
-          // Exporte). Nur bei Filament 1 ueberall ist nichts zu sagen.
+          // sicher - die Bemalung schon (so machen es auch andere
+          // Programme beim Export). Nur bei Filament 1 ueberall ist nichts zu sagen.
           const f = gueltig((bemalt && bemalt[d]) || eigen);
           return f !== extruder || f !== 1 ? malCode(f) : '';
         }
@@ -202,9 +202,9 @@ function baueObjekte(netze, teile, farbtafel, versatz) {
 // selbst eines an - mit der naechsten Farbe aus seiner eigenen Reihe
 // (Plater.cpp, get_next_color_for_filament), daher sonst etwa Tuerkis statt
 // Schwarz. Geschrieben wird deshalb ein vollstaendiger Satz Werte je
-// Filament (Generic PLA), wie ihn die Leora-Exporte mitbringen, die in Orca
+// Filament (Generic PLA), wie ihn fremde Exporte mitbringen, die in Orca
 // einwandfrei laden. Eine Fassung nur mit den Farben liess dagegen Orcas
-// Kommandozeile abstuerzen - die stuerzt allerdings auch an den Leora-
+// Kommandozeile abstuerzen - die stuerzt allerdings auch an jenen fremden
 // Dateien ab, sagt also ueber das Programmfenster nichts.
 // Werte je Filament; jedes Feld wird so oft wiederholt, wie es Filamente gibt.
 // Nur Einstellwerte - Start- und End-G-Code bleiben leer. Der Beispielcode

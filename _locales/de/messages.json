@@ -880,6 +880,58 @@
     "message": "Kantenschimmer",
     "description": "Model page."
   },
+  "modelShadowRes": {
+    "message": "Schattenauflösung",
+    "description": "Model page, look panel (test): size of the shadow map in points per side."
+  },
+  "modelShowFps": {
+    "message": "Bildrate anzeigen",
+    "description": "Model page, look panel (test): show frames per second and time per frame in the render view."
+  },
+  "modelSpin": {
+    "message": "Selbst drehen",
+    "description": "Model page, look panel (test): slider for turning the model by itself, degrees per second."
+  },
+  "modelSpinOff": {
+    "message": "aus",
+    "description": "Model page, look panel: value shown when auto-rotate is at 0."
+  },
+  "modelFpsCap": {
+    "message": "Bildrate begrenzen",
+    "description": "Model page, look panel (test): draw only every n-th screen refresh while moving."
+  },
+  "modelMotion": {
+    "message": "Bewegung",
+    "description": "Model page: panel heading for how the model reacts to mouse and wheel, auto-rotate and frame rate."
+  },
+  "modelSmoothing": {
+    "message": "Nachlauf beim Drehen und Zoomen",
+    "description": "Model page, motion panel: mouse and wheel movements are spread over a few frames; time constant in ms."
+  },
+  "modelSmoothingHint": {
+    "message": "Bewegungen mit Maus und Rad laufen weich aus. Mehr = ruhiger, aber träger.",
+    "description": "Model page, motion panel: explanation below the smoothing slider."
+  },
+  "modelWire": {
+    "message": "Drahtgitter",
+    "description": "Model page, look panel: choice for showing the triangle edges."
+  },
+  "modelWireOff": {
+    "message": "aus",
+    "description": "Model page, look panel, wireframe choice: no wireframe."
+  },
+  "modelWireOver": {
+    "message": "über dem Modell",
+    "description": "Model page, look panel, wireframe choice: edges drawn over the normal model."
+  },
+  "modelWireOnly": {
+    "message": "nur Gitter",
+    "description": "Model page, look panel, wireframe choice: only the edges, no surfaces."
+  },
+  "modelWireFine": {
+    "message": "Gitter sehr fein – zum Erkennen heranzoomen.",
+    "description": "Model page, look panel: shown below the wireframe choice while the triangles are only a few pixels on screen."
+  },
   "modelCrease": {
     "message": "Knickwinkel",
     "description": "Model page, look panel: edges sharper than this stay hard in the render view."

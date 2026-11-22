@@ -880,6 +880,58 @@
     "message": "Rim light",
     "description": "Model page."
   },
+  "modelShadowRes": {
+    "message": "Shadow resolution",
+    "description": "Model page, look panel (test): size of the shadow map in points per side."
+  },
+  "modelShowFps": {
+    "message": "Show frame rate",
+    "description": "Model page, look panel (test): show frames per second and time per frame in the render view."
+  },
+  "modelSpin": {
+    "message": "Auto-rotate",
+    "description": "Model page, look panel (test): slider for turning the model by itself, degrees per second."
+  },
+  "modelSpinOff": {
+    "message": "off",
+    "description": "Model page, look panel: value shown when auto-rotate is at 0."
+  },
+  "modelFpsCap": {
+    "message": "Limit frame rate",
+    "description": "Model page, look panel (test): draw only every n-th screen refresh while moving."
+  },
+  "modelMotion": {
+    "message": "Motion",
+    "description": "Model page: panel heading for how the model reacts to mouse and wheel, auto-rotate and frame rate."
+  },
+  "modelSmoothing": {
+    "message": "Smoothing when rotating and zooming",
+    "description": "Model page, motion panel: mouse and wheel movements are spread over a few frames; time constant in ms."
+  },
+  "modelSmoothingHint": {
+    "message": "Mouse and wheel movements ease out smoothly. More = calmer, but slower to respond.",
+    "description": "Model page, motion panel: explanation below the smoothing slider."
+  },
+  "modelWire": {
+    "message": "Wireframe",
+    "description": "Model page, look panel: choice for showing the triangle edges."
+  },
+  "modelWireOff": {
+    "message": "off",
+    "description": "Model page, look panel, wireframe choice: no wireframe."
+  },
+  "modelWireOver": {
+    "message": "over the model",
+    "description": "Model page, look panel, wireframe choice: edges drawn over the normal model."
+  },
+  "modelWireOnly": {
+    "message": "wireframe only",
+    "description": "Model page, look panel, wireframe choice: only the edges, no surfaces."
+  },
+  "modelWireFine": {
+    "message": "Very fine mesh – zoom in to see the lines.",
+    "description": "Model page, look panel: shown below the wireframe choice while the triangles are only a few pixels on screen."
+  },
   "modelCrease": {
     "message": "Crease angle",
     "description": "Model page, look panel: edges sharper than this stay hard in the render view."

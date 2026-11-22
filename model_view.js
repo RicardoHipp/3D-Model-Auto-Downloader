@@ -52,6 +52,53 @@ void main() {
   ergebnis = vec4(pow(licht, vec3(1.0 / gamma)), deckkraft);
 }`;
 
+// Drahtgitter: nur die Kanten der Dreiecke, in einer Farbe mit Deckkraft.
+// Eigenes Programm - der Flaechenshader rechnet seine Normale aus der
+// Flaeche, und die gibt es bei Linien nicht.
+//
+// Deckkraft nach Dichte: kantePx ist die typische Kantenlaenge des Netzes
+// in Bildpunkten im Abstand 1. Geteilt durch den Abstand des Punkts ergibt
+// sich, wie lang eine Kante dort auf dem Bildschirm ist. Ab GITTER_VOLL
+// Bildpunkten voll, darunter anteilig durchsichtiger: Halb so lange Kanten
+// heisst doppelt so viele Linien uebereinander, jede halb so deckend - in
+// der Summe bleibt ein gleichmaessiger Schleier, statt dass ein feines
+// Modell herausgezoomt ganz dunkel (oder bei "nur Gitter" weiss) wird.
+// GITTER_MIN haelt die Linien sichtbar: Darunter wuerde die Mischung in
+// 8 Bit gar nichts mehr aendern, und das Gitter wirkte abgeschaltet.
+const GITTER_VOLL = 8.0;
+const GITTER_MIN = 0.015;
+const LINIEN_SHADER = `#version 300 es
+precision highp float;
+in vec3 welt;
+uniform vec4 linienFarbe;
+uniform vec3 auge;
+uniform float kantePx;
+out vec4 ergebnis;
+void main() {
+  float px = kantePx / max(distance(auge, welt), 1e-6);
+  float a = max(linienFarbe.a * clamp(px / ${GITTER_VOLL.toFixed(1)}, 0.0, 1.0), ${GITTER_MIN});
+  ergebnis = vec4(linienFarbe.rgb, a);
+}`;
+
+// Typische Kantenlaenge eines Netzes: Median ueber bis zu 30000 gleichmaessig
+// verteilte Dreiecke. Der Median, weil einzelne lange Kanten (grosse ebene
+// Flaechen in CAD-Exporten) den Mittelwert verzerren wuerden.
+function typischeKante({ ecken, indizes }) {
+  const dreiecke = Math.floor((indizes ? indizes.length : ecken.length / 3) / 3);
+  if (!dreiecke) return 0;
+  const schritt = Math.max(1, Math.floor(dreiecke / 30000));
+  const laengen = [];
+  const ecke = (i) => (indizes ? indizes[i] : i) * 3;
+  for (let d = 0; d < dreiecke; d += schritt) {
+    for (let k = 0; k < 3; k++) {
+      const a = ecke(d * 3 + k), b = ecke(d * 3 + (k + 1) % 3);
+      laengen.push(Math.hypot(ecken[a] - ecken[b], ecken[a + 1] - ecken[b + 1], ecken[a + 2] - ecken[b + 2]));
+    }
+  }
+  laengen.sort((x, y) => x - y);
+  return laengen[laengen.length >> 1];
+}
+
 // --- Ansicht "Rendern" ----------------------------------------------------
 //
 // Weich schattiert mit three.js - siehe model_drei.js.
@@ -63,12 +110,12 @@ void main() {
 // das Modell gleich gross im Bild bleibt.
 const SICHT = 35 * Math.PI / 180;
 const ALTE_SICHT = 0.9;
-// Ab hier gilt eine Kante als Kante und wird nicht geglaettet. Die Anleitung
-// nennt 30-40 Grad; bei CAD-Exporten mit grossen Dreiecken auf ebenen
+// Ab hier gilt eine Kante als Kante und wird nicht geglaettet. Ueblich sind
+// 30-40 Grad; bei CAD-Exporten mit grossen Dreiecken auf ebenen
 // Flaechen zieht das helle Flecken ueber die Flaeche (Fasen unter dem
-// Grenzwinkel werden mitgeglaettet). 15 Grad war beim Ausprobieren der
-// beste Kompromiss. Einstellbar unter "Darstellung".
-const KNICKWINKEL = 15 * Math.PI / 180;
+// Grenzwinkel werden mitgeglaettet). Erst 15 Grad, dann 20 Grad als
+// Standard gewaehlt. Einstellbar unter "Darstellung".
+const KNICKWINKEL = 20 * Math.PI / 180;
 
 // Zum Anklicken: Dieselbe Szene wird noch einmal gezeichnet, jedes Netz in
 // einer eigenen Farbe, die seine Nummer verschlüsselt. Danach wird genau
@@ -201,6 +248,18 @@ class Betrachter {
     this.gl = gl;
 
     this.programm = baueProgramm(gl, ECKPUNKT_SHADER, FLAECHEN_SHADER);
+    this.linienProgramm = baueProgramm(gl, ECKPUNKT_SHADER, LINIEN_SHADER);
+    this.linienOrte = {
+      lage:  gl.getAttribLocation(this.linienProgramm, 'lage'),
+      mvp:   gl.getUniformLocation(this.linienProgramm, 'mvp'),
+      modell: gl.getUniformLocation(this.linienProgramm, 'modell'),
+      farbe: gl.getUniformLocation(this.linienProgramm, 'linienFarbe'),
+      auge:  gl.getUniformLocation(this.linienProgramm, 'auge'),
+      kantePx: gl.getUniformLocation(this.linienProgramm, 'kantePx')
+    };
+    // Drahtgitter: 'aus', 'darueber' (Linien ueber dem Modell) oder 'nur'
+    // (nur die Linien). Wird nicht gemerkt.
+    this.gitter = 'aus';
     this.orte = {
       lage:   gl.getAttribLocation(this.programm, 'lage'),
       mvp:    gl.getUniformLocation(this.programm, 'mvp'),
@@ -260,8 +319,7 @@ class Betrachter {
     this.hervorArt = 'puls';
     this.pulsLaeuft = false;
     // Licht und Material der gerenderten Ansicht, einstellbar unter
-    // "Darstellung", solange "Rendern" an ist. Nach Auge abgestimmt
-    // (Ausgang waren die Werte der Anleitung: 1 / 1 / 2,2 / 0,5 / 1 / 0,55 / 0,25).
+    // "Darstellung", solange "Rendern" an ist. Nach Auge abgestimmt.
     this.dreiBelichtung = 1.2;
     this.dreiUmgebung = 0.25;
     this.dreiHaupt = 2.5;
@@ -269,6 +327,12 @@ class Betrachter {
     this.dreiKante = 0;
     this.dreiRauheit = 0.55;
     this.dreiSchatten = 0.2;
+    this.dreiKarte = 4096;     // Punkte je Seite der Schattenkarte (Testregler)
+    // Glaettung von Maus und Rad in ms (siehe bewege). 60 ms wirken ruhig,
+    // ohne dass das Modell spuerbar hinterherhaengt.
+    this.glaettung = 60;
+    this.fpsGrenze = 0;
+    this.drehTempo = 0;
 
     // Kameralage: Winkel um die Hochachse, Höhenwinkel, Abstand.
     // Hochachse ist Z - so legen es STL und 3MF im 3D-Druck ab. Mit der in
@@ -288,7 +352,7 @@ class Betrachter {
     this.kopflicht = 1.5;     // sitzt in der Kamera und trägt das Bild
     this.zweitlicht = 0.27;   // feste Richtung im Raum, nur zum Auflockern
     this.kante = 0.1;         // dezenter Schimmer auf der Silhouette
-    this.gamma = 1.5;         // kräftiger als die üblichen 2.2
+    this.gamma = 1.4;         // kräftiger als die üblichen 2.2
     // Richtung des zweiten Lichts in denselben Winkeln wie die Kamera.
     this.lichtDrehung = 247 * Math.PI / 180;
     this.lichtHoehe = 78 * Math.PI / 180;
@@ -306,6 +370,7 @@ class Betrachter {
       gl.deleteBuffer(n.eckPuffer);
       if (n.indexPuffer) gl.deleteBuffer(n.indexPuffer);
       gl.deleteVertexArray(n.vao);
+      if (n.gitter) { gl.deleteBuffer(n.gitter.puffer); gl.deleteVertexArray(n.gitter.vao); }
     }
     this.drei?.leeren();
 
@@ -427,11 +492,189 @@ class Betrachter {
       this.pulsLaeuft = true;
       const schritt = () => {
         if (this.hervorFilament === null || this.hervorArt !== 'puls') { this.pulsLaeuft = false; this.zeichne(); return; }
-        this.zeichne();
+        this.anfordern();
         requestAnimationFrame(schritt);
       };
       requestAnimationFrame(schritt);
     }
+  }
+
+  // Kanten eines Netzes fuer das Drahtgitter - erst beim ersten Einschalten
+  // gebaut, denn bei grossen Modellen kostet das Speicher. Bei gemeinsamen
+  // Ecken (3MF) wird jede Kante nur einmal gezeichnet; STL hat je Dreieck
+  // eigene Ecken, dort zeichnen zwei Dreiecke ihre gemeinsame Kante doppelt.
+  gitterVon(n) {
+    if (n.gitter) return n.gitter;
+    const gl = this.gl;
+    n.kante ??= typischeKante(n.quelle);
+    const { ecken, indizes } = n.quelle;
+    const anzahl = indizes ? indizes.length : ecken.length / 3;
+    const linien = new Uint32Array(anzahl * 2);
+    let l = 0;
+    const gesehen = indizes ? new Set() : null;
+    const eckenZahl = ecken.length / 3;
+    for (let d = 0; d + 2 < anzahl; d += 3) {
+      for (let k = 0; k < 3; k++) {
+        const a = indizes ? indizes[d + k] : d + k;
+        const b = indizes ? indizes[d + (k + 1) % 3] : d + (k + 1) % 3;
+        if (gesehen) {
+          const schluessel = a < b ? a * eckenZahl + b : b * eckenZahl + a;
+          if (gesehen.has(schluessel)) continue;
+          gesehen.add(schluessel);
+        }
+        linien[l++] = a;
+        linien[l++] = b;
+      }
+    }
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, n.eckPuffer);
+    gl.enableVertexAttribArray(this.linienOrte.lage);
+    gl.vertexAttribPointer(this.linienOrte.lage, 3, gl.FLOAT, false, 0, 0);
+    const puffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, puffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, linien.subarray(0, l), gl.STATIC_DRAW);
+    gl.bindVertexArray(null);
+    n.gitter = { vao, puffer, anzahl: l };
+    return n.gitter;
+  }
+
+  // Bild fuer eine Bewegung anfordern (Maus, Rad, Selbstdrehen, Pulsieren).
+  // Ohne Begrenzung wird sofort gezeichnet wie bisher. Mit Begrenzung
+  // (testweise, fpsGrenze = Bilder je Sekunde) hoechstens so oft: Gezeichnet
+  // wird im ersten Bildschirmbild, das den Abstand erreicht. Passt die Zahl
+  // nicht glatt zur Bildschirmrate, stehen Bilder unterschiedlich lang.
+  // zeichne() selbst bleibt sofort: Vorschaubilder und Teilauswahl lesen das
+  // Bild direkt danach aus.
+  anfordern() {
+    if (!(this.fpsGrenze > 0)) { this.zeichne(); return; }
+    this.ausstehend = true;
+    if (this.taktLaeuft) return;
+    this.taktLaeuft = true;
+    const takt = (jetzt) => {
+      const grenze = this.fpsGrenze;
+      let dran = true;   // Grenze inzwischen aus: sofort zeichnen
+      if (grenze > 0) {
+        const abstand = 1000 / grenze;
+        // Zeitplan statt "seit dem letzten Bild": So bleibt der Schnitt bei
+        // der eingestellten Zahl, auch wenn ein Bild etwas spaet kommt.
+        // Liegt der geplante Zeitpunkt mehr als einen Abstand daneben -
+        // Pause, neue Grenze, noch keiner gesetzt -, neu ansetzen. Das
+        // !(... <= ...) faengt auch undefined ab.
+        if (!(Math.abs(jetzt - this.naechstesBild) <= abstand)) this.naechstesBild = jetzt;
+        dran = jetzt >= this.naechstesBild - 1;
+        if (dran && this.ausstehend) this.naechstesBild += abstand;
+      }
+      if (dran) {
+        if (!this.ausstehend) { this.taktLaeuft = false; return; }
+        this.ausstehend = false;
+        this.zeichne();
+      }
+      requestAnimationFrame(takt);
+    };
+    requestAnimationFrame(takt);
+  }
+
+  // Bewegung mit Maus oder Rad: drehung/hoehe in Bogenmass, schub als
+  // Verschiebung, zoom als Logarithmus des Faktors fuer den Abstand.
+  //
+  // Mit Glaettung (glaettung = Zeitkonstante in ms, testweise einstellbar)
+  // wird die Bewegung nicht auf einmal ausgefuehrt, sondern als Rest
+  // gemerkt, den das Modell in jedem Bild zu einem Teil abbaut - nach der
+  // Zeitkonstante sind knapp zwei Drittel davon geschehen. Ungleichmaessig
+  // ankommende Mausbewegungen verteilen sich so auf mehrere Bilder.
+  // Gemerkt wird der Rest, nicht ein Ziel: Setzt anderes die Kamera direkt
+  // (Zuruecksetzen, Teilansicht, Selbstdrehen), zieht nichts zurueck.
+  bewege({ drehung = 0, hoehe = 0, schub = null, zoom = 0 }) {
+    if (!(this.glaettung > 0)) {
+      this.schritt({ drehung, hoehe, schub, zoom });
+      this.anfordern();
+      return;
+    }
+    const r = this.rest ??= { drehung: 0, hoehe: 0, schub: [0, 0, 0], zoom: 0 };
+    r.drehung += drehung;
+    r.hoehe += hoehe;
+    r.zoom += zoom;
+    if (schub) for (let a = 0; a < 3; a++) r.schub[a] += schub[a];
+    if (this.glaettLaeuft) return;
+    this.glaettLaeuft = true;
+    let vorher = performance.now();
+    const takt = (jetzt) => {
+      const dt = Math.max(0, jetzt - vorher);
+      vorher = jetzt;
+      const tau = this.glaettung;
+      // Anteil, der in diesem Bild geschieht. Ohne Glaettung (Regler
+      // inzwischen auf 0) alles auf einmal.
+      const k = tau > 0 ? 1 - Math.exp(-dt / tau) : 1;
+      const klein = Math.abs(r.drehung) < 1e-5 && Math.abs(r.hoehe) < 1e-5 && Math.abs(r.zoom) < 1e-5
+        && r.schub.every((v) => Math.abs(v) < this.radius * 1e-5);
+      const teil = klein ? 1 : k;
+      this.schritt({ drehung: r.drehung * teil, hoehe: r.hoehe * teil,
+                     schub: r.schub.map((v) => v * teil), zoom: r.zoom * teil });
+      r.drehung -= r.drehung * teil;
+      r.hoehe -= r.hoehe * teil;
+      r.zoom -= r.zoom * teil;
+      for (let a = 0; a < 3; a++) r.schub[a] -= r.schub[a] * teil;
+      this.anfordern();
+      if (klein) { this.glaettLaeuft = false; return; }
+      requestAnimationFrame(takt);
+    };
+    requestAnimationFrame(takt);
+  }
+
+  // Fuehrt eine Bewegung sofort aus (siehe bewege).
+  schritt({ drehung, hoehe, schub, zoom }) {
+    this.drehung += drehung;
+    // Ohne Anschlag: hoch und runter so weit wie links und rechts. Der
+    // Winkel bleibt zwischen -pi und pi, damit er nicht endlos waechst.
+    this.hoehe += hoehe;
+    if (this.hoehe > Math.PI) this.hoehe -= 2 * Math.PI;
+    if (this.hoehe < -Math.PI) this.hoehe += 2 * Math.PI;
+    if (schub) for (let a = 0; a < 3; a++) this.schub[a] += schub[a];
+    if (zoom) {
+      this.abstand = Math.max(this.radius * 0.2, Math.min(this.radius * 20, this.abstand * Math.exp(zoom)));
+    }
+  }
+
+  // Testweise: Blickwinkel, Zoom und Verschiebung als Text - fuer die
+  // Bildratenanzeige und zum Nachstellen einer Ansicht (setzeKamera).
+  // Zoom: Abstand im Verhaeltnis zum Einpassen, 1 = ganzes Modell im Bild.
+  kameraText() {
+    const grad = (w) => (w * 180 / Math.PI).toFixed(1);
+    const zoom = this.abstand / (this.radius * 2.6);
+    return `Drehung ${grad(this.drehung)}°  Hoehe ${grad(this.hoehe)}°  Zoom ${zoom.toFixed(3)}  ` +
+      `Verschiebung ${this.schub.map((v) => v.toFixed(1)).join('/')}`;
+  }
+
+  // Gegenstueck zu kameraText: setzeKamera(152.3, 12, 0.45, [0, 0, 0]).
+  setzeKamera(drehGrad, hoeheGrad, zoom = 1, schub = [0, 0, 0]) {
+    this.drehung = drehGrad * Math.PI / 180;
+    this.hoehe = hoeheGrad * Math.PI / 180;
+    this.abstand = zoom * this.radius * 2.6;
+    this.schub = [...schub];
+    this.zeichne();
+  }
+
+  // Testweise: das Modell von selbst um die Hochachse drehen lassen.
+  // grad: Grad je Sekunde, 0 = aus. Die Schrittweite richtet sich nach der
+  // tatsaechlich vergangenen Zeit - bei ausfallenden Bildern springt das
+  // Modell, statt langsamer zu werden.
+  setzeDrehTempo(grad) {
+    this.drehTempo = grad;
+    if (!grad || this.drehtLaeuft) return;
+    this.drehtLaeuft = true;
+    let vorher = performance.now();
+    const schritt = (jetzt) => {
+      if (!this.drehTempo) { this.drehtLaeuft = false; return; }
+      // Hoechstens 0,1 s auf einmal - nach einem verdeckten Tab nicht springen.
+      const dt = Math.min(0.1, Math.max(0, jetzt - vorher) / 1000);
+      vorher = jetzt;
+      this.drehung += this.drehTempo * Math.PI / 180 * dt;
+      if (this.drehung > Math.PI) this.drehung -= 2 * Math.PI;
+      this.anfordern();
+      requestAnimationFrame(schritt);
+    };
+    requestAnimationFrame(schritt);
   }
 
   // 0..1, langsam auf und ab - fuer "Pulsieren".
@@ -537,7 +780,68 @@ class Betrachter {
     this.drei?.einpassen(this.mitte, this.groesse, this.radius);
   }
 
+  // Zeichnet sofort. Mit Bildratenanzeige wird danach auf die Grafikkarte
+  // gewartet, damit "ms je Bild" die ganze Zeit zeigt.
   zeichne() {
+    if (!this.anzeige) { this.zeichneBild(); return; }
+    const anfang = performance.now();
+    this.zeichneBild();
+    const gerendert = this.drei && !this.drei.leinwand.hidden;
+    (gerendert ? this.drei.renderer.getContext() : this.gl).finish();
+    this.gerechnet.push(performance.now());
+    this.neuesBild = true;
+    this.dauer = performance.now() - anfang;
+  }
+
+  // Testweise: Bildrate und Zeit je Bild oben links einblenden, in der
+  // flachen wie in der gerenderten Ansicht.
+  //   angezeigt: Bildschirmbilder je Sekunde, in denen ein neues Bild kam -
+  //              das ist, was man als fluessig oder ruckelig sieht.
+  //   gerechnet: wie oft je Sekunde gezeichnet wurde.
+  //   ms:        Zeit fuer ein Bild, mit Warten auf die Grafikkarte.
+  //   laengste Pause: groesster Abstand zwischen zwei angezeigten Bildern in
+  //              der letzten Sekunde - Ruckler sieht man hier.
+  // Dazu bei "Rendern" die Schattenkarte und immer die Kamera (kameraText).
+  zaehler(an) {
+    if (!an) {
+      this.anzeige?.remove();
+      this.anzeige = null;
+      return;
+    }
+    if (this.anzeige) return;
+    const el = document.createElement('div');
+    el.style.cssText = 'position:absolute;left:8px;top:8px;z-index:5;pointer-events:none;' +
+      'font:12px/1.4 ui-monospace,Consolas,monospace;color:#fff;background:rgba(0,0,0,.55);' +
+      'padding:3px 7px;border-radius:4px;white-space:pre';
+    this.leinwand.parentNode.append(el);
+    this.anzeige = el;
+    this.gerechnet = [];
+    this.angezeigt = [];
+    this.neuesBild = false;
+    this.dauer = 0;
+    const takt = (jetzt) => {
+      if (this.anzeige !== el) return;
+      el.hidden = this.leinwand.hidden && !(this.drei && !this.drei.leinwand.hidden);
+      if (this.neuesBild) { this.angezeigt.push(jetzt); this.neuesBild = false; }
+      const grenze = jetzt - 1000;
+      while (this.angezeigt.length && this.angezeigt[0] < grenze) this.angezeigt.shift();
+      while (this.gerechnet.length && this.gerechnet[0] < grenze) this.gerechnet.shift();
+      let pause = 0;
+      for (let i = 1; i < this.angezeigt.length; i++) {
+        pause = Math.max(pause, this.angezeigt[i] - this.angezeigt[i - 1]);
+      }
+      const gerendert = this.drei && !this.drei.leinwand.hidden;
+      el.textContent =
+        `angezeigt ${this.angezeigt.length} fps   gerechnet ${this.gerechnet.length}/s\n` +
+        `${this.dauer.toFixed(1)} ms je Bild   laengste Pause ${pause.toFixed(0)} ms\n` +
+        (gerendert ? this.drei.schattenText() + '\n' : '') +
+        this.kameraText();
+      requestAnimationFrame(takt);
+    };
+    requestAnimationFrame(takt);
+  }
+
+  zeichneBild() {
     const gl = this.gl;
     const dpr = this.festeGroesse ? 1 : Math.min(devicePixelRatio || 1, 2);
     const breite = this.festeGroesse
@@ -583,6 +887,19 @@ class Betrachter {
     // statt sie noch einmal auszurechnen.
     this.letzteMvp = mvp;
 
+    // Drahtgitter: Bildpunkte je Weltlaenge im Abstand 1 - fuer die
+    // Deckkraft nach Dichte (siehe LINIEN_SHADER).
+    const pxFaktor = hoehe / (2 * Math.tan(SICHT / 2));
+    if (this.gitter !== 'aus') {
+      for (const n of this.netze) n.kante ??= typischeKante(n.quelle);
+      // Hinweis, solange die Kanten selbst am Blickpunkt kaum ein paar
+      // Bildpunkte lang sind - dann sieht man nur den Schleier.
+      const groesste = Math.max(0, ...this.netze.map((n) => n.kante || 0));
+      this.beiGitterFein?.(groesste * pxFaktor / abstand < 3);
+    } else {
+      this.beiGitterFein?.(false);
+    }
+
     this.drei?.zeigen(gerendert);
     if (gerendert) {
       this.drei.zeichne({
@@ -592,12 +909,13 @@ class Betrachter {
         blass: this.farbe.map((w) => w * 0.3 + 0.04),
         hervor: this.hervor, ausgeblendet: this.ausgeblendet, dateiFarben: this.dateiFarben,
         hervorFilament: this.hervorArt === 'aus' ? null : this.hervorFilament, hervorArt: this.hervorArt,
-        hervorTeil: this.hervorTeil,
+        hervorTeil: this.hervorTeil, gitter: this.gitter,
+        gitterKantePx: this.netze.map((n) => (n.kante || 0) * pxFaktor),
         puls: this.hervorArt === 'puls' && this.hervorFilament !== null ? this.pulsWert() : 0,
         licht: {
           belichtung: this.dreiBelichtung, umgebung: this.dreiUmgebung,
           haupt: this.dreiHaupt, fuell: this.dreiFuell, kante: this.dreiKante,
-          rauheit: this.dreiRauheit, schatten: this.dreiSchatten
+          rauheit: this.dreiRauheit, schatten: this.dreiSchatten, karte: this.dreiKarte
         }
       });
       return;
@@ -646,8 +964,15 @@ class Betrachter {
     const blass = this.farbe.map((w) => w * 0.22 + 0.05);
     let letzteFarbe = null;
 
+    // Drahtgitter darueber: Flaechen ein wenig nach hinten, damit die Linien
+    // nicht mit ihnen um dieselbe Tiefe streiten.
+    if (this.gitter === 'darueber') {
+      gl.enable(gl.POLYGON_OFFSET_FILL);
+      gl.polygonOffset(1, 1);
+    }
     for (const n of this.netze) {
       if (this.ausgeblendet.has(n.teil)) continue;
+      if (this.gitter === 'nur') continue;
       const betont = this.hervor === null || n.teil === this.hervor;
 
       // Mehrfarbig: je Filament ein Abschnitt des Indexpuffers. Zurueck-
@@ -694,7 +1019,39 @@ class Betrachter {
       gl.disable(gl.BLEND);
       gl.uniform1f(this.orte.deckkraft, 1);
     }
+    gl.disable(gl.POLYGON_OFFSET_FILL);
+    if (this.gitter !== 'aus') this.zeichneGitter(mvp, auge, pxFaktor);
     gl.bindVertexArray(null);
+  }
+
+  // Drahtgitter der flachen Ansicht. Darueber: dunkle, halb durchsichtige
+  // Linien, verdeckte Kanten bleiben verdeckt. Nur Gitter: helle Linien in
+  // der Modellfarbe, alle Kanten sichtbar.
+  zeichneGitter(mvp, auge, pxFaktor) {
+    const gl = this.gl;
+    const nur = this.gitter === 'nur';
+    gl.useProgram(this.linienProgramm);
+    gl.uniformMatrix4fv(this.linienOrte.mvp, false, mvp);
+    gl.uniform3fv(this.linienOrte.auge, new Float32Array(auge));
+    gl.uniformMatrix4fv(this.linienOrte.modell, false, new Float32Array([
+      1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
+    ]));
+    const hell = this.farbe.map((w) => w + (1 - w) * 0.45);
+    if (nur) gl.uniform4f(this.linienOrte.farbe, hell[0], hell[1], hell[2], 0.9);
+    else gl.uniform4f(this.linienOrte.farbe, 0, 0, 0, 0.35);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
+    for (const n of this.netze) {
+      if (this.ausgeblendet.has(n.teil)) continue;
+      const g = this.gitterVon(n);
+      gl.uniform1f(this.linienOrte.kantePx, n.kante * pxFaktor);
+      gl.bindVertexArray(g.vao);
+      gl.drawElements(gl.LINES, g.anzahl, gl.UNSIGNED_INT, 0);
+    }
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
+    gl.useProgram(this.programm);
   }
 
   // --- Anklicken ---------------------------------------------------------
@@ -820,12 +1177,7 @@ class Betrachter {
         // Drehung um die Hochachse fuer das Auge andersherum - dann das
         // Vorzeichen umkehren, damit die Maus das Modell weiter "anfasst".
         const kopf = Math.cos(this.hoehe) < 0 ? -1 : 1;
-        this.drehung += dx * 0.008 * kopf;
-        // Ohne Anschlag: hoch und runter so weit wie links und rechts. Der
-        // Winkel bleibt zwischen -pi und pi, damit er nicht endlos waechst.
-        this.hoehe += dy * 0.008;
-        if (this.hoehe > Math.PI) this.hoehe -= 2 * Math.PI;
-        if (this.hoehe < -Math.PI) this.hoehe += 2 * Math.PI;
+        this.bewege({ drehung: dx * 0.008 * kopf, hoehe: dy * 0.008 });
       } else {
         // Schieben in der Bildebene: entlang der Rechts- und Hochachse der
         // Kamera, nicht entlang der Weltachsen - sonst wandert das Modell
@@ -843,18 +1195,13 @@ class Betrachter {
           -Math.cos(this.drehung) * Math.sin(this.hoehe),
           Math.cos(this.hoehe)
         ];
-        for (let a = 0; a < 3; a++) {
-          this.schub[a] += (dx * rechts[a] + dy * hoch[a]) * schritt;
-        }
+        this.bewege({ schub: [0, 1, 2].map((a) => (dx * rechts[a] + dy * hoch[a]) * schritt) });
       }
-      this.zeichne();
     });
     el.addEventListener('contextmenu', (e) => e.preventDefault());
     el.addEventListener('wheel', (e) => {
       e.preventDefault();
-      this.abstand = Math.max(this.radius * 0.2,
-        Math.min(this.radius * 20, this.abstand * (1 + Math.sign(e.deltaY) * 0.12)));
-      this.zeichne();
+      this.bewege({ zoom: Math.log(1 + Math.sign(e.deltaY) * 0.12) });
     }, { passive: false });
   }
 }

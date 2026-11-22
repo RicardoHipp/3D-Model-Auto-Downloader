@@ -1,9 +1,9 @@
 // Weiche Normalen fuer die Ansicht "Rendern" - in einem eigenen Faden,
 // damit die Seite bei grossen Modellen nicht einfriert.
 //
-// Nach Anleitung-Leora-Optik.md, Abschnitt 1: je Ecke der Mittelwert der
+// Je Ecke der Mittelwert der
 // Flaechennormalen an derselben Stelle, aber nur der Flaechen, die weniger
-// als den Grenzwinkel abknicken (Voreinstellung 15 Grad, siehe model_view.js) - Kanten bleiben scharf.
+// als den Grenzwinkel abknicken (Voreinstellung siehe KNICKWINKEL in model_view.js) - Kanten bleiben scharf.
 //
 // Das ist toCreasedNormals aus three.js (BufferGeometryUtils, r175),
 // Schritt fuer Schritt nachgebaut, mit demselben Ergebnis Bit fuer Bit:

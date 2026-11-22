@@ -4,6 +4,46 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [Unveröffentlicht]
+
+### Hinzugefügt
+
+- **Drahtgitter.** Ganz oben unter „Darstellung“: „über dem Modell“ legt
+  die Kanten der Dreiecke über das Modell, „nur Gitter“ zeigt nur sie – in
+  der flachen und der gerenderten Ansicht. Bei fein aufgelösten Modellen
+  werden die Linien herausgezoomt durchsichtiger, sodass ein gleichmäßiger
+  Schleier bleibt statt eines zugelaufenen Bilds; ein Hinweis sagt dann,
+  dass man zum Erkennen heranzoomen muss.
+- **Neues Feld „Bewegung“** rechts oben, mit eigenem „Zurücksetzen“:
+  - **Nachlauf beim Drehen und Zoomen** (ab Werk 60 ms): Bewegungen mit
+    Maus und Rad laufen weich aus – ruhiger, ungleichmäßig ankommende
+    Mausbewegungen ruckeln nicht mehr.
+  - **Selbst drehen** in einstellbarer Geschwindigkeit.
+  - **Bildrate begrenzen** auf einen frei wählbaren Wert.
+  - **Bildrate anzeigen:** Bilder je Sekunde, Zeit je Bild, längste Pause,
+    Blickwinkel, Zoom und Verschiebung – bei „Rendern“ auch die
+    Schattenkarte.
+- **Schattenauflösung** einstellbar unter „Darstellung“ (512 bis 16384,
+  ab Werk 4096).
+
+### Geändert
+
+- **Schärfere Schatten beim Heranzoomen.** Die Schattenkarte wird nur über
+  den Teil des Modells gespannt, der gerade zu sehen ist, und ist doppelt
+  so fein wie bisher. Die welligen Streifen auf schräg beleuchteten Flächen
+  sind weg.
+- Rechts oben ist immer nur ein Feld aufgeklappt. Reicht es über die
+  Ansicht hinaus, rollt nur das Feld, nicht die ganze Seite.
+- Der Knopf „Rendern“ leuchtet grün, wenn er an ist.
+- Knickwinkel ab Werk 20° statt 15°, Gamma der flachen Ansicht ab Werk
+  1,4 statt 1,5.
+
+### Behoben
+
+- Beim Blick von unten auf ein Modell konnten Schatten je nach Winkel
+  verschwinden und wieder auftauchen.
+- „Zurücksetzen“ unter „Darstellung“ erfasst jetzt alle Regler.
+
 ## [1.3.0] – 2026-11-22
 
 ### Hinzugefügt

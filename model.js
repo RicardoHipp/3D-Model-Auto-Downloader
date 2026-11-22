@@ -2047,6 +2047,7 @@ const alsHex = (v) => '#' + v.map((z) =>
 const ausHex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
 
 let standard = null;
+let testreglerZurueck = () => {};
 
 function zeigeWert(feldId, wert, stellen, einheit) {
   document.getElementById(feldId).textContent =
@@ -2219,6 +2220,86 @@ async function reglerEinrichten() {
     clearTimeout(knickUhr);
     knickUhr = setTimeout(() => betrachter.neuAufbereiten(), 150);
   });
+  // Testweise: Schattenaufloesung als Zweierpotenz (512 bis 16384) und
+  // Bildratenanzeige. Beides wird nicht gemerkt.
+  const karteRegler = document.getElementById('rKarte');
+  const zeigeKarte = () => {
+    document.getElementById('wKarte').textContent = String(2 ** Number(karteRegler.value));
+  };
+  zeigeKarte();
+  karteRegler.addEventListener('input', () => {
+    betrachter.dreiKarte = 2 ** Number(karteRegler.value);
+    zeigeKarte();
+    betrachter.zeichne();
+  });
+  // Testweise: Modell von selbst drehen lassen, Grad je Sekunde. Nicht gemerkt.
+  const drehRegler = document.getElementById('rDrehen');
+  const zeigeDrehen = () => {
+    const grad = Number(drehRegler.value);
+    document.getElementById('wDrehen').textContent = grad ? grad + '°/s' : t('modelSpinOff');
+  };
+  zeigeDrehen();
+  drehRegler.addEventListener('input', () => {
+    zeigeDrehen();
+    betrachter.setzeDrehTempo(Number(drehRegler.value));
+  });
+  // Schattenaufloesung steht nicht in REGLER (anderer Umrechnungsweg, nicht
+  // gemerkt) - "Zuruecksetzen" unter "Darstellung" stellt sie hier zurueck.
+  testreglerZurueck = () => {
+    karteRegler.value = 12;
+    betrachter.dreiKarte = 4096;
+    zeigeKarte();
+    gitterWahl.value = 'aus';
+    betrachter.gitter = 'aus';
+  };
+  // Drahtgitter - wird nicht gemerkt.
+  const gitterWahl = document.getElementById('gitterWahl');
+  gitterWahl.value = betrachter.gitter;
+  const gitterHinweis = document.getElementById('gitterHinweis');
+  betrachter.beiGitterFein = (fein) => { if (gitterHinweis.hidden === fein) gitterHinweis.hidden = !fein; };
+  gitterWahl.addEventListener('change', () => {
+    betrachter.gitter = gitterWahl.value;
+    betrachter.zeichne();
+  });
+  // Feld "Bewegung": eigener Knopf "Zuruecksetzen" fuer seine Regler.
+  document.getElementById('bewegungZurueck').addEventListener('click', () => {
+    drehRegler.value = 0;
+    betrachter.setzeDrehTempo(0);
+    zeigeDrehen();
+    glattRegler.value = 60;
+    betrachter.glaettung = 60;
+    zeigeGlaettung();
+    grenzRegler.value = 0;
+    betrachter.fpsGrenze = 0;
+    zeigeGrenze();
+  });
+  // Testweise: Glaettung der Maus- und Radbewegung in ms, 0 = aus. Nicht gemerkt.
+  const glattRegler = document.getElementById('rGlaettung');
+  const zeigeGlaettung = () => {
+    const ms = Number(glattRegler.value);
+    document.getElementById('wGlaettung').textContent = ms ? ms + ' ms' : t('modelSpinOff');
+  };
+  zeigeGlaettung();
+  glattRegler.addEventListener('input', () => {
+    betrachter.glaettung = Number(glattRegler.value);
+    zeigeGlaettung();
+  });
+  // Testweise: Bildrate frei begrenzen, 0 = aus. Nicht gemerkt.
+  const grenzRegler = document.getElementById('rFpsGrenze');
+  const zeigeGrenze = () => {
+    const fps = Number(grenzRegler.value);
+    document.getElementById('wFpsGrenze').textContent = fps ? fps + ' fps' : t('modelSpinOff');
+  };
+  zeigeGrenze();
+  grenzRegler.addEventListener('input', () => {
+    betrachter.fpsGrenze = Number(grenzRegler.value);
+    zeigeGrenze();
+  });
+  document.getElementById('rFps').addEventListener('change', (e) => {
+    betrachter.fpsAn = e.target.checked;
+    betrachter.zaehler(e.target.checked);
+    betrachter.zeichne();
+  });
   for (const [id, feld] of FARBREGLER) {
     document.getElementById(id).addEventListener('input', (e) => {
       betrachter[feld] = ausHex(e.target.value);
@@ -2236,6 +2317,7 @@ async function reglerEinrichten() {
     for (const [, feld] of FARBREGLER) betrachter[feld] = [...standard[feld]];
     betrachter.dateiFarben = true;
     reglerAnzeigen();
+    testreglerZurueck();
     betrachter.neuAufbereiten();
     betrachter.zeichne();
     reglerSichern();
@@ -2244,6 +2326,7 @@ async function reglerEinrichten() {
   reglerAnzeigen();
   betrachter.zeichne();
   document.getElementById('regler').hidden = false;
+  document.getElementById('bewegungFach').hidden = false;
 }
 
 // --- Rendern -------------------------------------------------------------
@@ -2384,3 +2467,42 @@ modellOeffnen().catch((err) => {
   mitteEl.textContent = t('libError', [err.message]);
   mitteEl.hidden = false;
 });
+
+// Rechts oben (Darstellung, Bewegung, Filamente) ist immer nur ein Feld
+// aufgeklappt: Oeffnet man eines, klappen die anderen zu.
+// Schon beim Klick, nicht erst bei "toggle": Das kommt erst, wenn das neue
+// Feld offen ist - fuer ein Bild waeren beide offen, die Seite kurz zu hoch,
+// und der Rollbalken blitzte auf. "toggle" bleibt fuer Oeffnen per Code.
+const faecher = () => document.querySelectorAll('.rechts details.regler');
+const andereZu = (fach) => {
+  for (const anderes of faecher()) if (anderes !== fach && anderes.open) anderes.open = false;
+};
+// Das offene Feld darf hoechstens bis zum unteren Rand der Buehne reichen;
+// was nicht passt, rollt im Feld selbst (siehe .regler .inhalt).
+function passeFachHoehe() {
+  const unten = buehneEl.getBoundingClientRect().bottom - 12;
+  for (const fach of faecher()) {
+    const inhalt = fach.querySelector('.inhalt');
+    if (!fach.open) { inhalt.style.maxHeight = ''; continue; }
+    // Erst bis zum Rand, dann um das kuerzen, was die zugeklappten Felder
+    // darunter noch ueberhaengen lassen - gemessen an der ganzen Spalte.
+    const hoehe = unten - inhalt.getBoundingClientRect().top;
+    inhalt.style.maxHeight = Math.max(120, hoehe) + 'px';
+    const ueber = fach.closest('.rechts').getBoundingClientRect().bottom - unten;
+    if (ueber > 0) inhalt.style.maxHeight = Math.max(120, inhalt.getBoundingClientRect().height - ueber) + 'px';
+  }
+}
+new ResizeObserver(passeFachHoehe).observe(buehneEl);
+for (const fach of faecher()) {
+  fach.querySelector('summary').addEventListener('click', (e) => {
+    if (fach.open) return;            // Zuklappen wie gewohnt
+    e.preventDefault();
+    andereZu(fach);
+    fach.open = true;
+    passeFachHoehe();
+  });
+  fach.addEventListener('toggle', () => {
+    if (fach.open) andereZu(fach);
+    passeFachHoehe();
+  });
+}
