@@ -207,6 +207,10 @@ function baueObjekte(netze, teile, farbtafel, versatz) {
 // Kommandozeile abstuerzen - die stuerzt allerdings auch an den Leora-
 // Dateien ab, sagt also ueber das Programmfenster nichts.
 // Werte je Filament; jedes Feld wird so oft wiederholt, wie es Filamente gibt.
+// Nur Einstellwerte - Start- und End-G-Code bleiben leer. Der Beispielcode
+// der Vorlage regelte nur Zusatzluefter bestimmter Bambu-Drucker; wer das
+// braucht, waehlt im Slicer sein Filamentprofil. Stammt das Modell aus einem
+// Bambu-/Orca-Projekt, gilt ohnehin dessen eigener Code.
 const PROJEKT_JE_FILAMENT = {
   "activate_air_filtration": "0",
   "additional_cooling_fan_speed": "0",
@@ -266,7 +270,7 @@ const PROJEKT_JE_FILAMENT = {
   "filament_settings_id": "Generic PLA @System",
   "filament_shrink": "100%",
   "filament_soluble": "0",
-  "filament_start_gcode": "; filament start gcode\n{if  (bed_temperature[current_extruder] >55)||(bed_temperature_initial_layer[current_extruder] >55)}M106 P3 S200\n{elsif(bed_temperature[current_extruder] >50)||(bed_temperature_initial_layer[current_extruder] >50)}M106 P3 S150\n{elsif(bed_temperature[current_extruder] >45)||(bed_temperature_initial_layer[current_extruder] >45)}M106 P3 S50\n{endif}\nM142 P1 R35 S40\n{if activate_air_filtration[current_extruder] && support_air_filtration}\nM106 P3 S{during_print_exhaust_fan_speed_num[current_extruder]} \n{endif}",
+  "filament_start_gcode": " ",
   "filament_type": "PLA",
   "filament_velocity_adaptation_factor": "1",
   "filament_vendor": "Generic",
