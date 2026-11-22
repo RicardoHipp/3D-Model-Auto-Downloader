@@ -185,14 +185,18 @@ async function sammle(handle, pfad = '') {
 
 async function modellOeffnen() {
   try {
-    const { ansicht, exportFormat: format, rendernStandard } =
-      await chrome.storage.local.get(['ansicht', 'exportFormat', 'rendernStandard']);
+    const { ansicht, exportFormat: format, ansichtVersion } =
+      await chrome.storage.local.get(['ansicht', 'exportFormat', 'ansichtVersion']);
     if (ansicht) darstellung = ansicht;
-    // "Rendern" ist ab Werk an - bei neuen Installationen wie beim Update.
-    // Einmalig: Schaltet man es danach aus, bleibt es aus.
-    if (!rendernStandard) {
-      darstellung.rendern = true;
-      await chrome.storage.local.set({ rendernStandard: true, ansicht: darstellung });
+    // Mit jeder neuen Version (und bei neuer Installation) startet die
+    // Ansicht mit den Werkseinstellungen und "Rendern" an - so sieht jeder
+    // die Ansicht erst einmal so, wie sie gedacht ist. Was man danach
+    // verstellt, bleibt bis zur naechsten Version.
+    const version = chrome.runtime.getManifest().version;
+    if (ansichtVersion !== version) {
+      darstellung = { rendern: true };
+      await chrome.storage.local.set({ ansicht: darstellung, ansichtVersion: version });
+      chrome.storage.local.remove('rendernStandard').catch(() => {});
     }
     if (format === 'stl' || format === '3mf') { exportFormat = format; zeigeFormat(); }
   } catch { /* dann die Voreinstellung aus dem Renderer */ }

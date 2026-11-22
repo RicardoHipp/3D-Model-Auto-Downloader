@@ -37,6 +37,10 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - Der Knopf „Rendern“ leuchtet grün, wenn er an ist.
 - Knickwinkel ab Werk 20° statt 15°, Gamma der flachen Ansicht ab Werk
   1,4 statt 1,5.
+- **Mit jeder neuen Version startet die Ansicht mit den
+  Werkseinstellungen** und „Rendern“ an – so sieht jeder die Neuerungen
+  erst einmal wie gedacht. Was man danach verstellt, bleibt bis zur
+  nächsten Version.
 
 ### Behoben
 
