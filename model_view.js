@@ -248,6 +248,12 @@ class Betrachter {
     // Filament, das gerade hervorgehoben wird (null = keines).
     this.filamentTafel = null;
     this.hervorFilament = null;
+    // Umgefaerbte Filamente nur in einzelnen Teilen: Map Teil -> Map
+    // Filament -> "#rrggbb". null = keine.
+    this.teilFarben = null;
+    // Hervorheben nur innerhalb eines Teils (Feld "Filamente" in der
+    // Teileansicht), sonst null.
+    this.hervorTeil = null;
     // Wie das hervorgehobene Filament sich abhebt: 'grau' (die anderen
     // hellgrau), 'glas' (die anderen durchscheinend), 'puls' (es pulsiert,
     // der Rest bleibt), 'dunkel' (die anderen abgedunkelt) oder 'aus'.
@@ -304,7 +310,8 @@ class Betrachter {
     this.drei?.leeren();
 
     // Vom Nutzer umgefaerbt (Feld "Filamente")? Dann gilt diese Tafel.
-    const farbtafel = this.filamentTafel || netze.farbtafel || [];
+    this.dateiTafel = netze.farbtafel || [];
+    const farbtafel = this.filamentTafel || this.dateiTafel;
     const bereicheJeNetz = netze.map((n) => farbBereiche(n, farbtafel));
     // Eine 3MF zeigt ihre hinterlegte Farbe auch, wenn es nur eine ist. Bei
     // STEP dagegen nur ab zwei verschiedenen: Eine einzige CAD-Farbe ist
@@ -353,6 +360,8 @@ class Betrachter {
 
     this.hervor = null;
     this.ausgeblendet = new Set();
+    // Teilfarben gelten weiter (etwa bei anderer STEP-Feinheit derselben Datei).
+    if (this.teilFarben) this.faerbeNetze();
     this.passeEin(netze);
     if (this.rendern) this.aufbereiten();
     else this.dreiLauf++;
@@ -372,17 +381,41 @@ class Betrachter {
   // Abschnitte und - in der gerenderten Ansicht - der Materialien.
   setzeFilamentFarben(tafel) {
     this.filamentTafel = tafel;
+    this.faerbeNetze();
+    this.zeichne();
+  }
+
+  // Ein Filament nur in einem Teil umfaerben (hex) oder zuruecksetzen (null).
+  setzeTeilFarbe(teil, filament, hex) {
+    if (!this.teilFarben) this.teilFarben = new Map();
+    if (!this.teilFarben.has(teil)) this.teilFarben.set(teil, new Map());
+    const je = this.teilFarben.get(teil);
+    if (hex) je.set(filament, hex); else je.delete(filament);
+    if (!je.size) this.teilFarben.delete(teil);
+    if (!this.teilFarben.size) this.teilFarben = null;
+    this.faerbeNetze();
+    this.zeichne();
+  }
+
+  // Farbe eines Filaments in einem Teil: Teilfarbe, sonst Tafel.
+  farbeVon(teil, filament) {
+    return this.teilFarben?.get(teil)?.get(filament)
+      || (this.filamentTafel || this.dateiTafel || [])[filament - 1] || null;
+  }
+
+  // Farben aller Abschnitte nach Tafel und Teilfarben setzen - ohne die
+  // Netze neu hochzuladen.
+  faerbeNetze() {
     this.netze.forEach((n, i) => {
       if (!n.bereiche) return;
       for (const stueck of n.bereiche) {
-        const hex = tafel[stueck.filament - 1];
+        const hex = this.farbeVon(n.teil, stueck.filament);
         if (!hex) continue;
         stueck.hex = hex;
         stueck.farbe = alsFarbe(hex);
       }
       this.drei?.faerbe(i, n.bereiche);
     });
-    this.zeichne();
   }
 
   // Hervorheben ein-/ausschalten. Beim Pulsieren zeichnet die Ansicht
@@ -406,10 +439,12 @@ class Betrachter {
     return 0.5 - 0.5 * Math.cos(performance.now() / 1000 * 2 * Math.PI / 1.2);
   }
 
-  // Wie viel vom Modell in welchem Filament ist: Map Filament -> Dreiecke.
-  filamentAnteile() {
+  // Wie viel vom Modell (oder von einem Teil) in welchem Filament ist:
+  // Map Filament -> Dreiecke.
+  filamentAnteile(teil = null) {
     const raus = new Map();
     for (const n of this.netze) {
+      if (teil !== null && n.teil !== teil) continue;
       for (const stueck of n.bereiche || []) {
         raus.set(stueck.filament, (raus.get(stueck.filament) || 0) + stueck.anzahl / 3);
       }
@@ -557,6 +592,7 @@ class Betrachter {
         blass: this.farbe.map((w) => w * 0.3 + 0.04),
         hervor: this.hervor, ausgeblendet: this.ausgeblendet, dateiFarben: this.dateiFarben,
         hervorFilament: this.hervorArt === 'aus' ? null : this.hervorFilament, hervorArt: this.hervorArt,
+        hervorTeil: this.hervorTeil,
         puls: this.hervorArt === 'puls' && this.hervorFilament !== null ? this.pulsWert() : 0,
         licht: {
           belichtung: this.dreiBelichtung, umgebung: this.dreiUmgebung,
@@ -620,7 +656,7 @@ class Betrachter {
       if (betont && this.dateiFarben && n.bereiche) {
         gl.bindVertexArray(n.vao);
         for (const stueck of n.bereiche) {
-          const gewaehlt = stueck.filament === hf;
+          const gewaehlt = stueck.filament === hf && (this.hervorTeil === null || n.teil === this.hervorTeil);
           if (art === 'glas' && !gewaehlt) { glas.push([n, stueck]); continue; }
           gl.uniform3fv(this.orte.farbe, farbeFuer(stueck.farbe, gewaehlt));
           gl.drawElements(gl.TRIANGLES, stueck.anzahl, gl.UNSIGNED_INT, stueck.ab * 4);

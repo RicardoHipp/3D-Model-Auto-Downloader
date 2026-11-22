@@ -8,12 +8,9 @@
 //     seiner Grundfarbe (pid/pindex), abweichende Dreiecke mit eigener (p1).
 //     Das lesen alle normtreuen Programme.
 //   - Bambu Studio und OrcaSlicer: paint_color an bemalten Dreiecken, dazu
-//     in Metadata/model_settings.config das Filament jedes Objekts. Die
-//     Filamentfarben selbst lassen sich dort nicht mitgeben: Sie stehen in
-//     Metadata/project_settings.config, und eine unvollstaendige Fassung
-//     davon bringt OrcaSlicer zum Absturz (ausprobiert mit 2.3.1). Die
-//     Farben stellt man im Slicer ein; welches Teil welches Filament nimmt,
-//     kommt mit.
+//     in Metadata/model_settings.config das Filament jedes Objekts und in
+//     Metadata/project_settings.config die Filamente samt Farben (siehe
+//     projektEinstellungen).
 //   - PrusaSlicer: dieselbe Bemalung als slic3rpe:mmu_segmentation und die
 //     Farben in Metadata/Slic3r_PE.config.
 //
@@ -182,8 +179,12 @@ function baueObjekte(netze, teile, farbtafel, versatz) {
         codeVon: (d) => {
           const roh = geteilt.get(d);
           if (roh) return dekodierer.decode(roh);
+          // Auch wo das Dreieck die Grundfarbe des Teils hat: Ob ein Slicer
+          // die Grundfarbe aus model_settings.config uebernimmt, ist nicht
+          // sicher - die Bemalung schon (so machen es auch die Leora-
+          // Exporte). Nur bei Filament 1 ueberall ist nichts zu sagen.
           const f = gueltig((bemalt && bemalt[d]) || eigen);
-          return f !== extruder ? malCode(f) : '';
+          return f !== extruder || f !== 1 ? malCode(f) : '';
         }
       };
       basis += auswahl.length;
@@ -192,6 +193,214 @@ function baueObjekte(netze, teile, farbtafel, versatz) {
     objekte.push({ id: objekte.length + 1, name, extruder, teile: stuecke });
   }
   return objekte;
+}
+
+// --- Projekteinstellungen fuer Bambu Studio und OrcaSlicer ---------------------
+//
+// Die Farbtoene der Filamente liest OrcaSlicer nur aus
+// Metadata/project_settings.config. Fehlt dort ein Filament, legt Orca
+// selbst eines an - mit der naechsten Farbe aus seiner eigenen Reihe
+// (Plater.cpp, get_next_color_for_filament), daher sonst etwa Tuerkis statt
+// Schwarz. Geschrieben wird deshalb ein vollstaendiger Satz Werte je
+// Filament (Generic PLA), wie ihn die Leora-Exporte mitbringen, die in Orca
+// einwandfrei laden. Eine Fassung nur mit den Farben liess dagegen Orcas
+// Kommandozeile abstuerzen - die stuerzt allerdings auch an den Leora-
+// Dateien ab, sagt also ueber das Programmfenster nichts.
+// Werte je Filament; jedes Feld wird so oft wiederholt, wie es Filamente gibt.
+const PROJEKT_JE_FILAMENT = {
+  "activate_air_filtration": "0",
+  "additional_cooling_fan_speed": "0",
+  "chamber_temperatures": "0",
+  "circle_compensation_speed": "200",
+  "close_fan_the_first_x_layers": "1",
+  "complete_print_exhaust_fan_speed": "80",
+  "cool_plate_temp": "35",
+  "cool_plate_temp_initial_layer": "35",
+  "counter_coef_1": "0",
+  "counter_coef_2": "0.025",
+  "counter_coef_3": "-0.11",
+  "counter_limit_max": "0.05",
+  "counter_limit_min": "-0.04",
+  "default_filament_colour": "",
+  "diameter_limit": "50",
+  "during_print_exhaust_fan_speed": "60",
+  "eng_plate_temp": "45",
+  "eng_plate_temp_initial_layer": "45",
+  "fan_cooling_layer_time": "60",
+  "fan_max_speed": "100",
+  "fan_min_speed": "20",
+  "filament_adaptive_volumetric_speed": "0",
+  "filament_adhesiveness_category": "0",
+  "filament_change_length": "10",
+  "filament_colour_type": "1",
+  "filament_cooling_before_tower": "10",
+  "filament_cost": "0",
+  "filament_density": "0",
+  "filament_diameter": "1.75",
+  "filament_end_gcode": " ",
+  "filament_extruder_variant": "Direct Drive Standard",
+  "filament_flow_ratio": "0.98",
+  "filament_flush_temp": "0",
+  "filament_flush_volumetric_speed": "0",
+  "filament_ids": "OGFL99",
+  "filament_is_support": "0",
+  "filament_long_retractions_when_cut": "1",
+  "filament_max_volumetric_speed": "21",
+  "filament_minimal_purge_on_wipe_tower": "15",
+  "filament_pre_cooling_temperature": "0",
+  "filament_pre_cooling_temperature_nc": "0",
+  "filament_prime_volume": "45",
+  "filament_prime_volume_nc": "60",
+  "filament_printable": "3",
+  "filament_ramming_travel_time": "0",
+  "filament_ramming_travel_time_nc": "0",
+  "filament_ramming_volumetric_speed": "-1",
+  "filament_ramming_volumetric_speed_nc": "-1",
+  "filament_retract_length_nc": "10",
+  "filament_retraction_distances_when_cut": "18",
+  "filament_retraction_length": "nil",
+  "filament_scarf_gap": "0",
+  "filament_scarf_height": "10%",
+  "filament_scarf_length": "10",
+  "filament_scarf_seam_type": "none",
+  "filament_settings_id": "Generic PLA @System",
+  "filament_shrink": "100%",
+  "filament_soluble": "0",
+  "filament_start_gcode": "; filament start gcode\n{if  (bed_temperature[current_extruder] >55)||(bed_temperature_initial_layer[current_extruder] >55)}M106 P3 S200\n{elsif(bed_temperature[current_extruder] >50)||(bed_temperature_initial_layer[current_extruder] >50)}M106 P3 S150\n{elsif(bed_temperature[current_extruder] >45)||(bed_temperature_initial_layer[current_extruder] >45)}M106 P3 S50\n{endif}\nM142 P1 R35 S40\n{if activate_air_filtration[current_extruder] && support_air_filtration}\nM106 P3 S{during_print_exhaust_fan_speed_num[current_extruder]} \n{endif}",
+  "filament_type": "PLA",
+  "filament_velocity_adaptation_factor": "1",
+  "filament_vendor": "Generic",
+  "filament_z_hop": "nil",
+  "full_fan_speed_layer": "0",
+  "hole_coef_1": "0",
+  "hole_coef_2": "-0.025",
+  "hole_coef_3": "0.28",
+  "hole_limit_max": "0.25",
+  "hole_limit_min": "0.08",
+  "hot_plate_temp": "45",
+  "hot_plate_temp_initial_layer": "45",
+  "impact_strength_z": "0",
+  "long_retractions_when_ec": "0",
+  "no_slow_down_for_cooling_on_outwalls": "0",
+  "nozzle_temperature": "220",
+  "nozzle_temperature_initial_layer": "220",
+  "nozzle_temperature_range_high": "240",
+  "nozzle_temperature_range_low": "190",
+  "overhang_fan_speed": "100",
+  "overhang_fan_threshold": "95%",
+  "reduce_fan_stop_start_freq": "0",
+  "required_nozzle_HRC": "0",
+  "retraction_distances_when_ec": "0",
+  "slow_down_for_layer_cooling": "1",
+  "slow_down_layer_time": "5",
+  "slow_down_min_speed": "10",
+  "supertack_plate_temp": "35",
+  "supertack_plate_temp_initial_layer": "35",
+  "temperature_vitrification": "100",
+  "textured_plate_temp": "45",
+  "textured_plate_temp_initial_layer": "45",
+  "volumetric_speed_coefficients": ""
+};
+
+// Mit den Projekteinstellungen der Quelldatei (vorlage) als Grundlage:
+// Drucker, Druckprofil und alles andere bleiben, wie sie waren. Geaendert
+// werden nur die Filamente - jedes Feld je Filament wird auf die neue Zahl
+// gebracht, und ein neues Filament uebernimmt die Werte dessen, das es
+// ersetzt (herkunft: je Eintrag der Tafel die Nummer des Filaments in der
+// Quelle). Ein umgefaerbtes PETG-Teil bleibt also PETG, nur in neuer Farbe.
+//
+// Neuere Bambu-Projekte fuehren Filamentwerte in mehreren Formen:
+//   - einfach je Filament (Laenge = Zahl der Filamente),
+//   - je Filament und Duesenvariante, gruppiert nach filament_self_index
+//     ("1","1","2","2",...),
+//   - in festen Bloecken je Filament (z. B. AMS-Trocknung, 4 je Filament),
+//   - als Matrix n x n (Spuelmengen), auch mehrere hintereinander,
+//   - mit zwei Eintraegen fuer Druck- und Druckerprofil drumherum
+//     (different_settings_to_system, inherits_group: Druck, Filamente, Drucker).
+// Jede Form waechst passend mit. Was keiner Form zuzuordnen ist, bleibt
+// unberuehrt. Damit Druckerfelder nicht versehentlich mitwachsen, gelten
+// einfache Laengen nur fuer Filamentfelder (Name "filament_..." oder in der
+// neutralen Vorlage oben); Varianten- und Blockfelder sind an ihrer Laenge
+// eindeutig genug.
+function projektAusVorlage(vorlage, farbtafel, herkunft) {
+  const alt = vorlage.filament_colour.length;
+  const n = farbtafel.length;
+  const quelle = (j) => (herkunft[j] || 1) - 1;            // 0-basiert
+  const raus = JSON.parse(JSON.stringify(vorlage));
+  const filamentFeld = (k) => k.startsWith('filament_') || k in PROJEKT_JE_FILAMENT;
+
+  // Gruppen der Duesenvarianten: je Quellfilament die Stellen in den Feldern
+  const selbst = Array.isArray(vorlage.filament_self_index) ? vorlage.filament_self_index.map(Number) : null;
+  const stellenVon = selbst && selbst.length > alt
+    ? Array.from({ length: alt }, (_, f) => selbst.flatMap((s, i) => (s === f + 1 ? [i] : [])))
+    : null;
+  if (stellenVon && stellenVon.some((st) => !st.length)) throw new Error('filament_self_index unvollstaendig');
+
+  for (const [k, wert] of Object.entries(vorlage)) {
+    if (!Array.isArray(wert) || !wert.length) continue;
+    const L = wert.length;
+    if (k === 'filament_colour' || k === 'filament_multi_colour' || k === 'flush_volumes_matrix'
+        || k === 'flush_volumes_vector') continue;
+    if (k === 'filament_self_index' && stellenVon) {
+      raus[k] = herkunft.flatMap((_, j) => stellenVon[quelle(j)].map(() => String(j + 1)));
+    } else if ((k === 'different_settings_to_system' || k === 'inherits_group') && L === alt + 2) {
+      raus[k] = [wert[0], ...herkunft.map((_, j) => wert[1 + quelle(j)]), wert[L - 1]];
+    } else if (stellenVon && L === selbst.length) {
+      raus[k] = herkunft.flatMap((_, j) => stellenVon[quelle(j)].map((i) => wert[i]));
+    } else if (L === alt && filamentFeld(k)) {
+      raus[k] = herkunft.map((_, j) => wert[quelle(j)]);
+    } else if (L > alt && L % alt === 0 && filamentFeld(k)) {
+      const block = L / alt;
+      raus[k] = herkunft.flatMap((_, j) => wert.slice(quelle(j) * block, (quelle(j) + 1) * block));
+    }
+  }
+
+  // Farben: in der Schreibweise der Quelle (#RRGGBB oder #RRGGBBAA)
+  const mitAlpha = String(vorlage.filament_colour[0] || '').length > 7;
+  const farben = farbtafel.map((h) => (h || '#808080').slice(0, 7).toUpperCase() + (mitAlpha ? 'FF' : ''));
+  raus.filament_colour = farben;
+  if (Array.isArray(vorlage.filament_multi_colour)) raus.filament_multi_colour = farben;
+  // Spuelmengen: eine oder mehrere n x n-Matrizen aus den Werten der
+  // jeweiligen Quellfilamente, Diagonale 0.
+  const matrix = vorlage.flush_volumes_matrix;
+  if (Array.isArray(matrix) && matrix.length && matrix.length % (alt * alt) === 0) {
+    raus.flush_volumes_matrix = [];
+    for (let m = 0; m < matrix.length / (alt * alt); m++) {
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          raus.flush_volumes_matrix.push(i === j ? '0'
+            : matrix[m * alt * alt + quelle(i) * alt + quelle(j)] ?? '280');
+        }
+      }
+    }
+  }
+  const vektor = vorlage.flush_volumes_vector;
+  if (Array.isArray(vektor) && vektor.length && vektor.length % alt === 0) {
+    const block = vektor.length / alt;
+    raus.flush_volumes_vector = herkunft.flatMap((_, j) => vektor.slice(quelle(j) * block, (quelle(j) + 1) * block));
+  }
+  return JSON.stringify(raus, null, 4);
+}
+
+function projektEinstellungen(farbtafel, vorlage = null, herkunft = null) {
+  if (vorlage && Array.isArray(vorlage.filament_colour) && vorlage.filament_colour.length) {
+    try {
+      return projektAusVorlage(vorlage, farbtafel, herkunft || farbtafel.map((_, i) => i + 1));
+    } catch { /* dann die neutrale Vorlage */ }
+  }
+  const n = farbtafel.length;
+  const raus = {};
+  for (const [schluessel, wert] of Object.entries(PROJEKT_JE_FILAMENT)) raus[schluessel] = Array(n).fill(wert);
+  const farben = farbtafel.map((h) => (h || '#808080').slice(0, 7).toUpperCase() + 'FF');
+  raus.filament_colour = farben;
+  raus.filament_multi_colour = farben;
+  // Spuelmengen beim Farbwechsel: n x n, auf der Diagonale 0.
+  raus.flush_volumes_matrix = Array.from({ length: n * n }, (_, i) => (i % (n + 1) === 0 ? '0' : '280'));
+  raus.flush_volumes_vector = Array(2 * n).fill('140');
+  raus.version = '02.04.00.70';
+  raus.from = 'project';
+  raus.name = 'project_settings';
+  return JSON.stringify(raus, null, 4);
 }
 
 // --- Begleitdateien ----------------------------------------------------------
@@ -314,7 +523,9 @@ async function zipBlob(dateien) {
 
 // --- Zusammen ---------------------------------------------------------------------
 
-async function schreibe3mf(netze, farbtafel = [], teile = []) {
+// projekt: Projekteinstellungen der Quelldatei (oder null), herkunft: je
+// Eintrag der Tafel die Nummer des Quellfilaments (siehe teileUmfaerben).
+async function schreibe3mf(netze, farbtafel = [], teile = [], { projekt = null, herkunft = null } = {}) {
   // Farben nur, wenn die Datei wirklich welche hat - ein einfarbiges Modell
   // bekommt keine Palette, der Slicer nimmt dann sein eigenes Filament.
   const bunt = farbtafel.length > 0;
@@ -328,6 +539,7 @@ async function schreibe3mf(netze, farbtafel = [], teile = []) {
   if (bunt) {
     dateien.push(
       { name: 'Metadata/model_settings.config', stuecke: [bambuObjekte(objekte)] },
+      { name: 'Metadata/project_settings.config', stuecke: [projektEinstellungen(farbtafel, projekt, herkunft)] },
       { name: 'Metadata/Slic3r_PE_model.config', stuecke: [prusaObjekte(objekte)] },
       { name: 'Metadata/Slic3r_PE.config',
         stuecke: [`; extruder_colour = ${farbtafel.map((h) => h.toUpperCase()).join(';')}\n`
@@ -337,6 +549,84 @@ async function schreibe3mf(netze, farbtafel = [], teile = []) {
   return zipBlob(dateien);
 }
 
+// --- Teile umfaerben ------------------------------------------------------------
+//
+// Hat man im Feld "Filamente" ein Filament nur in einem Teil umgefaerbt,
+// ist das fuer den Slicer ein eigenes Filament: Es kommt hinten an die
+// Tafel (oder ein vorhandenes gleicher Farbe wird mitbenutzt), und in
+// diesem Teil wird das alte durch das neue ersetzt - Grundfarbe, Farbe je
+// Dreieck und die Malcodes fein bemalter Dreiecke.
+//
+// teilFarben: Map Teil -> Map Filament -> "#rrggbb".
+// Ergebnis: { netze, tafel } - Kopien, die Eingaben bleiben unberuehrt.
+const kodierer = new TextEncoder();
+
+function hexWertSchreiben(b) {
+  return b <= 57 ? b - 48 : b <= 70 ? b - 55 : b - 87;
+}
+
+// Einen Malcode (Hex-Ziffern, von hinten gelesen) mit neuen Filament-
+// nummern neu schreiben. Der Baum bleibt, wie er ist; nur die Nummern an
+// den Blaettern aendern sich (siehe malfarbe/verfeinere in model_3mf.js).
+function codeUmfaerben(bytes, karte) {
+  let pos = bytes.length - 1;
+  const raus = [];   // Ziffern in Lesereihenfolge (vom Ende her)
+  const lies = () => (pos >= 0 ? hexWertSchreiben(bytes[pos--]) : 0);
+  const knoten = () => {
+    const z = lies();
+    const geteilt = z & 3;
+    if (geteilt) {
+      raus.push(z);
+      for (let i = 0; i <= geteilt; i++) knoten();
+      return;
+    }
+    let zustand = z >> 2;
+    if (zustand === 3) {
+      let mehr = lies();
+      zustand += mehr;
+      while (mehr === 15 && pos >= 0) { mehr = lies(); zustand += mehr; }
+    }
+    const neu = karte.get(zustand) ?? zustand;
+    if (neu < 3) { raus.push(neu << 2); return; }
+    raus.push(12);
+    let rest = neu - 3;
+    while (rest >= 15) { raus.push(15); rest -= 15; }
+    raus.push(rest);
+  };
+  knoten();
+  return kodierer.encode(raus.reverse().map((n) => HEX[n]).join(''));
+}
+
+function teileUmfaerben(netze, tafel, teilFarben) {
+  // Herkunft je Eintrag der Tafel: welches Filament der Quelle er ersetzt.
+  const herkunft = tafel.map((_, i) => i + 1);
+  if (!teilFarben?.size) return { netze, tafel, herkunft };
+  const neueTafel = [...tafel];
+  const karten = new Map();   // Teil -> Map altes Filament -> neues
+  for (const [teil, je] of teilFarben) {
+    const karte = new Map();
+    for (const [filament, hex] of je) {
+      if ((neueTafel[filament - 1] || '').toUpperCase() === hex.toUpperCase()) continue;
+      let ziel = neueTafel.findIndex((h) => (h || '').toUpperCase() === hex.toUpperCase());
+      if (ziel < 0) { neueTafel.push(hex.toUpperCase()); herkunft.push(filament); ziel = neueTafel.length - 1; }
+      karte.set(filament, ziel + 1);
+    }
+    if (karte.size) karten.set(teil, karte);
+  }
+  if (!karten.size) return { netze, tafel, herkunft };
+  const neu = netze.map((n) => {
+    const karte = karten.get(n.teil ?? 0);
+    if (!karte) return n;
+    const kopie = { ...n };
+    kopie.extruder = karte.get(n.extruder || 1) ?? n.extruder;
+    if (n.dreieckFarbe) kopie.dreieckFarbe = n.dreieckFarbe.map((f) => (f ? karte.get(f) ?? f : 0));
+    if (n.teilungCode) kopie.teilungCode = n.teilungCode.map((c) => codeUmfaerben(c, karte));
+    return kopie;
+  });
+  return { netze: neu, tafel: neueTafel, herkunft };
+}
+
 globalThis.schreibe3mf = schreibe3mf;
+globalThis.teileUmfaerben = teileUmfaerben;
 
 })();

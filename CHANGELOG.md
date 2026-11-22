@@ -4,6 +4,80 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [1.3.0] – 2026-11-22
+
+### Hinzugefügt
+
+- **Filamente ansehen und umfärben.** Ein neues Feld „Filamente“ rechts
+  unter „Darstellung“ zeigt die Filamente, die ein Modell wirklich benutzt,
+  mit ihrem Anteil. Ein Klick aufs Farbfeld färbt sie um – sofort in der
+  Ansicht, und beim Speichern als 3MF kommen die neuen Farben in die Datei.
+  Die Originaldatei bleibt unverändert, gemerkt wird nichts.
+- **Einzelne Teile umfärben.** In der Teileansicht gilt das Feld
+  „Filamente“ nur für das gewählte Teil – etwa wenn alle Teile dasselbe
+  Weiß nutzen, aber eines schwarz werden soll. Beim Export wird daraus ein
+  eigenes Filament; auch fein bemalte Teile werden dabei richtig umgefärbt.
+  Der Knopf heißt jetzt „Einzelteile exportieren oder färben“.
+- **Hervorheben beim Darüberfahren:** Fährt man über ein Filament, hebt es
+  sich im Modell ab – wählbar als Pulsieren (Standard), Grau, Glas, Dunkel
+  oder gar nicht.
+- **Umgefärbte 3MF als Ganzes speichern:** Sind Farben geändert, erscheint
+  oben zusätzlich „Als 3MF speichern“ – auch in der Teileansicht.
+- **Einzelne Dateien löschen.** Ein kleines × an jeder Datei der Liste
+  verschiebt sie in den Papierkorb. Mit Strg/Shift lassen sich mehrere
+  markieren und mit Entf gemeinsam löschen. In der Übersicht stehen
+  gelöschte Dateien im Papierkorb unter „Gelöschte Dateien“ – jede mit
+  ihrem Bild, einzeln wiederherstellbar (zurück in ihr Modell) oder
+  endgültig zu löschen.
+- **Eigene Regler für die gerenderte Ansicht:** Belichtung,
+  Umgebungslicht, Haupt-, Füll- und Kantenlicht, Rauheit, Bodenschatten
+  und Knickwinkel. Unter „Darstellung“ stehen je nach Ansicht nur die
+  Regler, die dort etwas bewirken.
+- **Dateien aus der Liste ziehen** – auf den Desktop oder in einen
+  Explorer-Ordner.
+- **Vorschaubilder werden zwischengespeichert** (bis 500 MB, im
+  Chrome-Profil). Bekannte Bilder erscheinen beim Öffnen eines Ordners
+  sofort, neue entstehen danach der Reihe nach.
+- **Kurze Umfrage beim Entfernen:** Wer die Erweiterung entfernt, sieht ein
+  freiwilliges, anonymes Formular mit der Frage nach dem Grund. Siehe
+  Datenschutzerklärung.
+
+### Geändert
+
+- **„Rendern“ ist ab Werk an** und wird gemerkt. Die Aufbereitung ist
+  rund zehnmal schneller (eigene Berechnung der weichen Normalen, Bit für
+  Bit gleich wie bei three.js), große Modelle brauchen gut eine Sekunde
+  statt rund fünfzehn. Weniger Grafikspeicher durch gemeinsame Ecken.
+  Knickwinkel jetzt 15° – keine hellen Flecken mehr auf ebenen Flächen von
+  CAD-Exporten. Ein drehender Kreis im Knopf zeigt, dass noch gerechnet
+  wird.
+- **3MF und STL werden im Hintergrund gelesen** – die Seite bleibt auch bei
+  sehr großen Dateien bedienbar. Während eine Datei lädt, steht ein Hinweis
+  statt des vorigen Modells da.
+- **3MF-Export für Bambu Studio und OrcaSlicer:** Die Datei enthält jetzt
+  Projekteinstellungen mit allen Filamenten und Farben – stammt das Modell
+  aus einem Bambu-/Orca-Projekt, bleiben dessen Drucker, Druckprofil und
+  Filamenttypen erhalten. Jedes Dreieck trägt seine Filamentnummer als
+  Bemalung. Bisher legte Orca fehlende Filamente in eigenen Farben an.
+- **Einfarbige 3MF** zeigen ihre hinterlegte Filamentfarbe.
+- Flache und gerenderte Ansicht nutzen dieselbe Perspektive (35°).
+- Obere Leiste: bei 3MF „Als STL speichern“, bei STL „Als 3MF speichern“;
+  in der Teileansicht wird dort nicht doppelt gespeichert. Ein Klick ins
+  Modell öffnet die Teileansicht nicht mehr – nur der Knopf.
+- Standardfarbe der Ansicht ist ein gedecktes Blau (#41618B).
+- Im Papierkorb führt „Papierkorb“ in der Kopfzeile zurück zur Übersicht.
+- Einrichtung „Im Explorer öffnen“: roter Hinweis, die Schritte genau zu
+  lesen, und eine Anleitung für Windows-Rechner, die die Dateien
+  blockieren („Zulassen“ in den Eigenschaften).
+
+### Behoben
+
+- Der 3MF/STL-Umschalter oben ließ sich nicht anklicken.
+- Lange Dateinamen machten Rückfragen breiter als das Fenster.
+- Der Ladekreis am Knopf „Rendern“ verschob die Knöpfe daneben.
+- Wechselte man während der Aufbereitung Datei oder Winkel, konnte eine
+  veraltete Antwort im falschen Lauf landen.
+
 ## [1.2.0] – 2026-11-20
 
 ### Hinzugefügt
@@ -512,6 +586,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ZIP-Dateien von MakerWorld, Printables und Thingiverse in nach Modellname und
   Plattform benannte Unterordner. ZIP-Archive werden im Arbeitsspeicher entpackt.
 
+[1.3.0]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.3.0
 [1.2.0]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.2.0
 [1.1.1]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.1.1
 [1.1.0]: https://github.com/RicardoHipp/3D-Model-Auto-Downloader/releases/tag/v1.1.0

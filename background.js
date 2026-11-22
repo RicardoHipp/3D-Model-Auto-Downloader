@@ -16,6 +16,15 @@ self.addEventListener('unhandledrejection', (e) => {
 let DEBUG = false;
 let isPaused = false;
 
+// Wird die Erweiterung entfernt, oeffnet Chrome ein kurzes, freiwilliges und
+// anonymes Google-Formular: Warum? Mitgeschickt wird nur die Versionsnummer
+// (vorausgefuelltes Feld), sonst nichts. Steht so auch in privacy.html.
+const ABSCHIED_FORMULAR = 'https://docs.google.com/forms/d/e/1FAIpQLScizwBgKHEsnTlYsPQhrd9dpB7gEGQk5R0o8wIq5Xf3_NC37w/viewform?usp=pp_url&entry.398827603=';
+try {
+  chrome.runtime.setUninstallURL(ABSCHIED_FORMULAR + encodeURIComponent(chrome.runtime.getManifest().version))
+    .catch(() => {});
+} catch { /* nicht schlimm */ }
+
 const supportedHosts = ['makerworld.com', 'printables.com', 'thingiverse.com', 'cults3d.com'];
 
 function isSupportedUrl(url) {

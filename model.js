@@ -1130,7 +1130,7 @@ function setzeTeileModus(an) {
   // In der Teileansicht speichert das Teile-Fach links, mit eigenem
   // Umschalter. Der Knopf oben (ganzes Modell) wuerde dort nur verwirren -
   // er kommt beim Verlassen wieder.
-  speichernOben.hidden = teileModus || obenFormat === undefined;
+  zeigeFilamente();     // stellt auch die Knoepfe oben ein (zeigeAls3mf)
   if (!teileModus) {
     // Zurueck in der Dateiansicht ist wieder das ganze Modell zu sehen.
     if (betrachter) betrachter.ausgeblendet.clear();
@@ -1322,6 +1322,7 @@ function zerlegeJetzt() {
 // ohne Umweg zurück zur Gesamtansicht.
 function waehleTeil(nr) {
   gewaehltesTeil = (nr === null || nr === gewaehltesTeil) ? null : nr;
+  zeigeFilamente();
   // Wer ein ausgeblendetes Teil auswaehlt, will es sehen.
   if (gewaehltesTeil !== null && betrachter?.ausgeblendet.delete(gewaehltesTeil)) aktualisiereSicht();
 
@@ -1368,6 +1369,7 @@ function zeigeFormat() {
   obenWahl.hidden = !!obenFormat;
   stlHinweisOben.hidden = !!obenFormat || oben !== 'stl';
   if (!stlKnopf.disabled) stlKnopf.textContent = t(oben === 'stl' ? 'modelSaveAsStl' : 'modelSaveAs3mf');
+  zeigeAls3mf();
 }
 
 for (const g of document.querySelectorAll('.formatWahl')) g.title = t('modelFormat');
@@ -1383,8 +1385,12 @@ for (const k of document.querySelectorAll('.formatWahl .format')) {
 // den einzelnen Netzen eines Teils.
 function dateiInhalt(netze, teile, format = exportFormat) {
   if (format === 'stl') return schreibeStl(netze);
-  // Umgefaerbte Filamente kommen so in die neue Datei.
-  return schreibe3mf(netze, aktuelleTafel(), teile);
+  // Umgefaerbte Filamente kommen so in die neue Datei - auch die nur in
+  // einzelnen Teilen (als eigene Filamente, siehe teileUmfaerben).
+  const umgefaerbt = teileUmfaerben(netze, aktuelleTafel(), betrachter?.teilFarben);
+  // Projekteinstellungen der Quelle (Bambu/Orca) als Grundlage, wenn vorhanden.
+  return schreibe3mf(umgefaerbt.netze, umgefaerbt.tafel, teile,
+    { projekt: aktuelleNetze.projekt || null, herkunft: umgefaerbt.herkunft });
 }
 
 async function schreibeDatei(ordner, name, puffer) {
@@ -1447,15 +1453,17 @@ async function freierDateiname(ordner, basis, endung) {
 
 stlKnopf.title = t('modelSaveAsStlHint');
 zeigeFormat();
-stlKnopf.addEventListener('click', async () => {
+// Ganzes Modell speichern, neben das Original. knopf: der gedrueckte Knopf
+// (zeigt "Speichern ..." und danach kurz das Ergebnis).
+async function speichereGanz(knopf, format) {
   const datei = aktuelleDatei;
   if (!datei || !aktuelleNetze.length) return;
-  stlKnopf.disabled = true;
-  stlKnopf.textContent = t('modelSaving');
+  knopf.disabled = true;
+  const vorher = knopf.textContent;
+  knopf.textContent = t('modelSaving');
   let meldung;
   try {
     const ordner = datei.ordner || modellHandle;
-    const format = obenFormat || exportFormat;
     const name = await freierDateiname(ordner, datei.name.replace(/\.[^.]+$/, ''), '.' + format);
     await schreibeDatei(ordner, name, await dateiInhalt(aktuelleNetze, aktuelleTeile, format));
     meldung = '✓ ' + t('modelSavedOne', [name]);
@@ -1465,12 +1473,32 @@ stlKnopf.addEventListener('click', async () => {
   } catch (err) {
     meldung = t('libError', [err.message]);
   }
-  stlKnopf.textContent = meldung;
+  knopf.textContent = meldung;
   setTimeout(() => {
-    stlKnopf.disabled = false;
+    knopf.disabled = false;
+    knopf.textContent = vorher;
     zeigeFormat();
   }, 3000);
-});
+}
+
+stlKnopf.addEventListener('click', () => speichereGanz(stlKnopf, obenFormat || exportFormat));
+
+// Bei einer 3MF steht oben nur "Als STL speichern" - STL hat aber keine
+// Farben. Sind Filamente umgefaerbt (ganz oder in einzelnen Teilen), kommt
+// "Als 3MF speichern" dazu, damit die Aenderungen nicht verloren gehen.
+const als3mfKnopf = document.getElementById('als3mfFarben');
+als3mfKnopf.addEventListener('click', () => speichereGanz(als3mfKnopf, '3mf'));
+
+// Auch in der Teileansicht: Dort ist nur dieser Knopf oben zu sehen - das
+// ganze Modell mit allen Farben. Einzelteile speichert das Teile-Fach links.
+function zeigeAls3mf() {
+  const knopf = document.getElementById('als3mfFarben');
+  const umgefaerbt = !!(betrachter?.filamentTafel || betrachter?.teilFarben);
+  knopf.hidden = !(obenFormat === 'stl' && umgefaerbt);
+  stlKnopf.hidden = teileModus;
+  if (teileModus) { obenWahl.hidden = true; stlHinweisOben.hidden = true; }
+  speichernOben.hidden = obenFormat === undefined || (teileModus && knopf.hidden);
+}
 
 modusKnopf.addEventListener('click', async () => {
   // Beim ersten Mal muss ein STL erst zerlegt werden; danach liegt die
@@ -1953,7 +1981,9 @@ async function waehle(d) {
     // Umgefaerbte Filamente gelten nur fuer die Datei, in der man sie
     // geaendert hat.
     betrachter.filamentTafel = null;
+    betrachter.teilFarben = null;
     betrachter.hervorFilament = null;
+    betrachter.hervorTeil = null;
     betrachter.setzeNetze(netze);
     // Ein Klick ins Bild waehlt ein Teil nur, wenn die Teileansicht schon
     // offen ist - eingeschaltet wird sie ausschliesslich ueber den Knopf oben.
@@ -2051,28 +2081,45 @@ function zeigeFarbSchalter() {
 const filamentFach = document.getElementById('filamentFach');
 const filamentListe = document.getElementById('filamentListe');
 const filamentZurueck = document.getElementById('filamentZurueck');
+const filamentFuer = document.getElementById('filamentFuer');
 
 // Die Farbtafel, die gerade gilt - umgefaerbt oder die der Datei.
 function aktuelleTafel() {
   return betrachter?.filamentTafel || aktuelleNetze.farbtafel || [];
 }
 
+// In der Teileansicht mit gewaehltem Teil gilt das Feld nur fuer dieses Teil.
+function filamentTeil() {
+  return teileModus && gewaehltesTeil !== null ? gewaehltesTeil : null;
+}
+
 function zeigeFilamente() {
   const original = aktuelleNetze.farbtafel || [];
-  const anteile = betrachter?.filamentAnteile() || new Map();
+  const teil = filamentTeil();
+  if (betrachter) betrachter.hervorTeil = teil;
+  const anteile = betrachter?.filamentAnteile(teil) || new Map();
   const genutzt = [...anteile.keys()].filter((f) => original[f - 1]).sort((a, b) => a - b);
-  filamentFach.hidden = !genutzt.length;
+  filamentFach.hidden = !betrachter?.filamentAnteile().size;
   filamentListe.textContent = '';
-  if (!genutzt.length) return;
+  filamentFuer.hidden = teil === null;
+  if (teil !== null) {
+    const eintrag = aktuelleTeile.find((x) => x.nummer === teil);
+    filamentFuer.textContent = t('modelFilamentsForPart', [eintrag ? teilBezeichnung(eintrag) : String(teil + 1)]);
+  }
+  if (!genutzt.length) { filamentZurueck.hidden = true; zeigeAls3mf(); return; }
   const tafel = aktuelleTafel();
+  // Farbe, die gerade gilt: im Teil dessen eigene, sonst die der Tafel.
+  const jetzt = (f) => (teil !== null ? betrachter.farbeVon(teil, f) : tafel[f - 1]);
+  // Womit verglichen wird, ob "geaendert": im Teil mit der Tafel, sonst mit der Datei.
+  const vorher = (f) => (teil !== null ? tafel[f - 1] : original[f - 1]);
   const gesamt = [...anteile.values()].reduce((s, v) => s + v, 0) || 1;
   for (const f of genutzt) {
     const zeile = document.createElement('label');
     zeile.className = 'filament';
-    zeile.classList.toggle('geaendert', tafel[f - 1].toLowerCase() !== original[f - 1].toLowerCase());
+    zeile.classList.toggle('geaendert', jetzt(f).toLowerCase() !== vorher(f).toLowerCase());
     const waehler = document.createElement('input');
     waehler.type = 'color';
-    waehler.value = tafel[f - 1].slice(0, 7).toLowerCase();
+    waehler.value = jetzt(f).slice(0, 7).toLowerCase();
     const name = document.createElement('span');
     name.className = 'fname';
     name.textContent = t('modelFilamentN', [String(f)]);
@@ -2082,22 +2129,31 @@ function zeigeFilamente() {
     anteil.textContent = (prozent < 1 ? '<1' : Math.round(prozent)) + ' %';
     const wert = document.createElement('span');
     wert.className = 'fwert';
-    wert.textContent = tafel[f - 1].slice(0, 7).toUpperCase();
+    wert.textContent = jetzt(f).slice(0, 7).toUpperCase();
     zeile.append(waehler, name, anteil, wert);
     waehler.addEventListener('input', () => {
-      const neu = [...aktuelleTafel()];
-      neu[f - 1] = waehler.value.toUpperCase();
-      betrachter.setzeFilamentFarben(neu);
-      wert.textContent = neu[f - 1];
-      zeile.classList.toggle('geaendert', neu[f - 1].toLowerCase() !== original[f - 1].toLowerCase());
+      const hex = waehler.value.toUpperCase();
+      if (teil !== null) {
+        betrachter.setzeTeilFarbe(teil, f, hex.toLowerCase() === tafel[f - 1].toLowerCase() ? null : hex);
+      } else {
+        const neu = [...aktuelleTafel()];
+        neu[f - 1] = hex;
+        betrachter.setzeFilamentFarben(neu);
+      }
+      wert.textContent = hex;
+      zeile.classList.toggle('geaendert', hex.toLowerCase() !== vorher(f).toLowerCase());
       filamentZurueck.hidden = false;
+      zeigeAls3mf();
     });
     // Darueberfahren: dieses Filament im Modell hervorheben.
     zeile.addEventListener('mouseenter', () => betrachter.setzeHervorFilament(f));
     zeile.addEventListener('mouseleave', () => betrachter.setzeHervorFilament(null));
     filamentListe.appendChild(zeile);
   }
-  filamentZurueck.hidden = !betrachter?.filamentTafel;
+  filamentZurueck.hidden = teil !== null
+    ? !betrachter?.teilFarben?.has(teil)
+    : !betrachter?.filamentTafel && !betrachter?.teilFarben;
+  zeigeAls3mf();
 }
 
 // Art des Hervorhebens - eine Vorliebe, wird mit der Darstellung gemerkt.
@@ -2112,8 +2168,18 @@ hervorArtWahl.addEventListener('change', () => {
 });
 
 filamentZurueck.addEventListener('click', () => {
-  betrachter.setzeFilamentFarben([...(aktuelleNetze.farbtafel || [])]);
-  betrachter.filamentTafel = null;
+  const teil = filamentTeil();
+  if (teil !== null) {
+    // Nur dieses Teil wieder wie das ganze Modell.
+    betrachter.teilFarben?.delete(teil);
+    if (!betrachter.teilFarben?.size) betrachter.teilFarben = null;
+    betrachter.faerbeNetze();
+    betrachter.zeichne();
+  } else {
+    betrachter.teilFarben = null;
+    betrachter.setzeFilamentFarben([...(aktuelleNetze.farbtafel || [])]);
+    betrachter.filamentTafel = null;
+  }
   zeigeFilamente();
 });
 

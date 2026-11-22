@@ -847,6 +847,15 @@ async function lies3mf(zip, melde) {
   // Bambu Studio/Orca oder PrusaSlicer. Die gehen vor: Nach ihnen druckt
   // der Slicer, und die Bemalung zaehlt in ihren Nummern.
   const slicerFarben = await filamentFarben(zip);
+  // Projekteinstellungen von Bambu Studio/Orca, wie sie in der Datei stehen:
+  // Beim Export als 3MF dienen sie als Grundlage, damit Drucker, Druckprofil
+  // und Filamenttypen erhalten bleiben (model_3mf_schreiben.js).
+  try {
+    if (zip.hat('Metadata/project_settings.config')) {
+      const projekt = JSON.parse(await zip.text('Metadata/project_settings.config'));
+      if (Array.isArray(projekt?.filament_colour)) netze.projekt = projekt;
+    }
+  } catch { /* unlesbar - dann beim Export die neutrale Vorlage */ }
   if (slicerFarben.some(Boolean)) {
     netze.farbtafel = slicerFarben;
   } else if (normTafel.farben.length) {

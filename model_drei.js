@@ -164,6 +164,7 @@ class DreiBuehne {
   // { belichtung, umgebung, haupt, fuell, kante, rauheit, schatten }
   zeichne({ breite, hoehe, auge, ziel, oben, nah, fern, hintergrund, farbe, blass,
             hervor, ausgeblendet, dateiFarben, hervorFilament = null, hervorArt = 'grau', puls = 0,
+            hervorTeil = null,
             licht: werte }) {
     const r = this.renderer;
     r.setPixelRatio(1);
@@ -203,7 +204,8 @@ class DreiBuehne {
       // grau, durchscheinend oder dunkel - oder das gewaehlte pulsiert.
       for (const m of n.farben) {
         m.color.set(m.userData.hex);
-        const andere = hervorFilament !== null && m.userData.filament !== hervorFilament;
+        const andere = hervorFilament !== null && (m.userData.filament !== hervorFilament
+          || (hervorTeil !== null && n.teil !== hervorTeil));
         const glas = andere && hervorArt === 'glas';
         if (andere && hervorArt === 'dunkel') m.color.multiplyScalar(0.2);
         if (andere && hervorArt === 'grau') m.color.set('#d2d2d2');

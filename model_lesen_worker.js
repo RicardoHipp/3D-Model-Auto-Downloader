@@ -57,7 +57,7 @@ onmessage = async ({ data }) => {
       netze = ecken.length ? [{ ecken, indizes: null }] : [];
     }
     const zusatz = { farbtafel: netze.farbtafel, teile: netze.teile, eigenerExport: netze.eigenerExport,
-                     aus3mf: netze.aus3mf };
+                     aus3mf: netze.aus3mf, projekt: netze.projekt };
     packeCodes(netze);
     postMessage({ nummer: data.nummer, netze: [...netze], zusatz }, puffer(netze));
   } catch (fehler) {

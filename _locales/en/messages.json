@@ -978,6 +978,16 @@
     "message": "Off",
     "description": "Model page, filaments panel: no highlight on hover."
   },
+  "modelFilamentsForPart": {
+    "message": "Only for: “$NAME$”",
+    "description": "Model page, filaments panel: the panel applies to one selected part only.",
+    "placeholders": {
+      "name": {
+        "content": "$1",
+        "example": "Deckel"
+      }
+    }
+  },
   "modelGamma": {
     "message": "Gamma",
     "description": "Model page."
@@ -1177,7 +1187,7 @@
     }
   },
   "modelSplit": {
-    "message": "Export individual parts",
+    "message": "Export or colour parts",
     "description": "Model page."
   },
   "modelSplitOff": {
