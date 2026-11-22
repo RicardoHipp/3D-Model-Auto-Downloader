@@ -35,6 +35,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - Rechts oben ist immer nur ein Feld aufgeklappt. Reicht es über die
   Ansicht hinaus, rollt nur das Feld, nicht die ganze Seite.
 - Der Knopf „Rendern“ leuchtet grün, wenn er an ist.
+- In „Meine Modelle“ steht rechts oben die Versionsnummer.
 - Knickwinkel ab Werk 20° statt 15°, Gamma der flachen Ansicht ab Werk
   1,4 statt 1,5.
 - **Mit jeder neuen Version startet die Ansicht mit den

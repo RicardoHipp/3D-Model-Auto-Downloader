@@ -24,6 +24,10 @@
     display: inline-flex; align-items: center; gap: .35rem;
   }
   .sync[hidden] { display: none; }
+  /* Versionsnummer ganz rechts in der Titelzeile. Laeuft der Abgleich,
+     schiebt der sie schon nach rechts und steht davor. */
+  .version { margin-left: auto; font-size: 11px; color: #6c7086; }
+  .sync:not([hidden]) + .version { margin-left: 0; }
   .sync::before {
     content: ''; width: 9px; height: 9px; border-radius: 50%;
     border: 1.5px solid #6c7086; border-top-color: transparent;
@@ -325,6 +329,7 @@
     <h1 id="libTitel" data-i18n="libHeading">Meine Modelle</h1>
     <span class="zaehler" id="zaehler"></span>
     <span class="sync" id="sync" hidden data-i18n="libSyncing">Wird aktualisiert …</span>
+    <span class="version" id="version"></span>
   </div>
   <div class="werkzeuge">
     <label class="suchfeld">

@@ -1,5 +1,9 @@
 const t = (key, subs) => chrome.i18n.getMessage(key, subs);
 
+// Versionsnummer rechts oben in der Titelzeile.
+document.getElementById('version').textContent =
+  t('welcomeVersion', [chrome.runtime.getManifest().version]);
+
 for (const el of document.querySelectorAll('[data-i18n]')) {
   const msg = t(el.dataset.i18n);
   if (msg) el.textContent = msg;
