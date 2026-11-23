@@ -142,6 +142,14 @@ document.getElementById('revoke').addEventListener('click', () => {
 
 // --- Explorer -------------------------------------------------------------
 const expPath     = document.getElementById('expPath');
+// "Schon einmal eingerichtet?": klappt den Abschnitt zum Eintragen auf und
+// setzt den Cursor ins Feld - Skript und Registrierung sind ja noch da.
+document.getElementById('expSchonEingerichtet').addEventListener('click', () => {
+  const fach = document.getElementById('expHandFach');
+  fach.open = true;
+  fach.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  expPath.focus({ preventScroll: true });
+});
 const expState    = document.getElementById('expState');
 const expInfo     = document.getElementById('expZuordnenInfo');
 const expZuKnopf  = document.getElementById('expZuordnen');
@@ -196,9 +204,9 @@ expZuKnopf.addEventListener('click', async () => {
 
   // Ohne Schreibrecht koennen wir die Kennung nicht ablegen - dann hat das
   // Skript nichts, woran es den richtigen Ordner erkennt.
-  if (await ziel.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+  if (await ordnerRecht(ziel, 'readwrite') !== 'granted') {
     try { await ziel.requestPermission({ mode: 'readwrite' }); } catch { /* abgelehnt */ }
-    if (await ziel.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+    if (await ordnerRecht(ziel, 'readwrite') !== 'granted') {
       return zeigeZeile(expInfo, t('expNeedsPermission'), 'prompt');
     }
   }
@@ -360,9 +368,9 @@ holKnopf.addEventListener('click', async () => {
 
   // Schreibrecht wird gebraucht: Die Kennung muss in den Zielordner, damit
   // das Skript spaeter beweisen kann, dass es den richtigen vor sich hat.
-  if (await ziel.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+  if (await ordnerRecht(ziel, 'readwrite') !== 'granted') {
     try { await ziel.requestPermission({ mode: 'readwrite' }); } catch { /* abgelehnt */ }
-    if (await ziel.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+    if (await ordnerRecht(ziel, 'readwrite') !== 'granted') {
       return zeigeZeile(expInfo, t('expNeedsPermission'), 'prompt');
     }
   }

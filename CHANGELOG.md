@@ -42,12 +42,21 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   Werkseinstellungen** und „Rendern“ an – so sieht jeder die Neuerungen
   erst einmal wie gedacht. Was man danach verstellt, bleibt bis zur
   nächsten Version.
+- Einrichtung „Im Explorer öffnen“: Ein Hinweis oben zeigt, dass man nach
+  einer Neuinstallation mit gleichem Zielordner nichts neu herunterladen
+  muss, sondern nur den Pfad einträgt.
 
 ### Behoben
 
 - Beim Blick von unten auf ein Modell konnten Schatten je nach Winkel
   verschwinden und wieder auftauchen.
 - „Zurücksetzen“ unter „Darstellung“ erfasst jetzt alle Regler.
+- **Unbrauchbarer Zielordner hängte die Erweiterung auf.** War ein früher
+  gewählter Ordner nicht mehr erreichbar, wartete jeder Zugriff darauf
+  endlos: Downloads landeten still im normalen Download-Ordner, die
+  Einstellungsseite blieb bei „…“ stehen. Jetzt gilt das nach kurzer Zeit
+  als „kein Ordner gewählt“ – der Download stoppt mit Hinweis, und die
+  Einstellungsseite bietet „Ordner wählen“ an.
 
 ## [1.3.0] – 2026-11-22
 

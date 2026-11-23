@@ -145,6 +145,13 @@
     background: rgba(249, 226, 175, .07); border: 1px solid rgba(249, 226, 175, .25);
   }
   .zulassen strong { color: #f9e2af; }
+  /* Schon eingerichtet: der kurze Weg ohne neue Dateien. */
+  .schonEingerichtet {
+    margin: .8rem 0 1rem; padding: .6rem .8rem; border-radius: 8px;
+    background: rgba(10, 132, 255, .08); border: 1px solid rgba(10, 132, 255, .3);
+  }
+  .schonEingerichtet strong { color: #89b4fa; }
+  .schonEingerichtet p { margin: .35rem 0 .6rem; }
   .zulassen p { margin: .35rem 0 0; }
   .zulassen .note { margin-top: .5rem; }
   .schalter { display: flex; align-items: center; gap: .6rem; cursor: pointer; margin: .3rem 0 .2rem; }
@@ -280,6 +287,12 @@
         <p class="wichtig" data-i18n="expImportant">Wichtig: Bitte lies die Schritte unten vollständig und genau durch, bevor du loslegst – besonders den Hinweis zu „Zulassen“ in Schritt 2.</p>
         <p class="note" data-i18n="expOwnIntro">Zwei kleine Dateien, die wir hier erzeugen. Beide stehen unten im Klartext – du siehst also genau, was auf deinem Rechner landet. Das ist der Unterschied zu einem fertigen Programm, bei dem du dem Hersteller vertrauen musst.</p>
 
+        <div class="schonEingerichtet">
+          <strong data-i18n="expAlreadyTitle">Schon einmal eingerichtet?</strong>
+          <p data-i18n="expAlreadyText">Hast du die beiden Dateien früher schon ausgeführt – etwa vor einer Neuinstallation der Erweiterung – und liegt dein Zielordner noch am selben Ort, musst du nichts neu herunterladen. Trag einfach den Pfad des Zielordners von Hand ein.</p>
+          <button class="tat" id="expSchonEingerichtet" data-i18n="expAlreadyButton">Pfad von Hand eintragen</button>
+        </div>
+
         <ol class="anleitung">
 
           <li>
@@ -305,7 +318,7 @@
             <p class="state" id="expZuordnenInfo" hidden></p>
             <p class="state" id="expState"></p>
 
-            <details class="ausklapp">
+            <details class="ausklapp" id="expHandFach">
               <summary data-i18n="expManualSummary">Pfad stattdessen von Hand eintragen</summary>
               <p class="feldlabel" data-i18n="expPathLabel">Vollständiger Pfad zu genau diesem Zielordner</p>
               <input type="text" id="expPath" spellcheck="false" placeholder="D:\0000">

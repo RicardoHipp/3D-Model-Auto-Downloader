@@ -16,7 +16,10 @@
   // Nach dieser Frist ohne Rückmeldung der Erweiterung wird der ursprüngliche
   // Klick doch ausgeführt. Ohne diese Absicherung wäre ein Download verloren
   // statt nur umgeleitet – etwa wenn die Erweiterung gerade neu geladen wurde.
-  const ACK_TIMEOUT_MS = 1500;
+  // Grosszuegig: Vor der Antwort prueft die Erweiterung den Zielordner, und
+  // das darf bis zu 0,8 s dauern (ORDNER_FRIST_MS in target_dir.js), dazu
+  // kommt das Aufwachen des Service Workers.
+  const ACK_TIMEOUT_MS = 3000;
   const LOG = '[3D Model Downloader & Organizer]';
 
   const origClick = HTMLAnchorElement.prototype.click;

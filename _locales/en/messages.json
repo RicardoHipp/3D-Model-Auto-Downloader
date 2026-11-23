@@ -489,6 +489,18 @@
       }
     }
   },
+  "expAlreadyTitle": {
+    "message": "Already set up before?",
+    "description": "Explorer integration: heading of the shortcut box for people who already ran the script before."
+  },
+  "expAlreadyText": {
+    "message": "If you have run the two files before – for example before reinstalling the extension – and your target folder is still in the same place, you don’t need to download anything again. Just enter the path of the target folder by hand.",
+    "description": "Explorer integration: explains that a reinstall with the same folder needs no new download."
+  },
+  "expAlreadyButton": {
+    "message": "Enter path by hand",
+    "description": "Explorer integration: button that opens the manual path section."
+  },
   "expManualSummary": {
     "message": "Enter the path by hand instead"
   },

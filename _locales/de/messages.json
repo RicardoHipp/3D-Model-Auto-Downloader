@@ -489,6 +489,18 @@
       }
     }
   },
+  "expAlreadyTitle": {
+    "message": "Schon einmal eingerichtet?",
+    "description": "Explorer integration: heading of the shortcut box for people who already ran the script before."
+  },
+  "expAlreadyText": {
+    "message": "Hast du die beiden Dateien früher schon ausgeführt – etwa vor einer Neuinstallation der Erweiterung – und liegt dein Zielordner noch am selben Ort, musst du nichts neu herunterladen. Trag einfach den Pfad des Zielordners von Hand ein.",
+    "description": "Explorer integration: explains that a reinstall with the same folder needs no new download."
+  },
+  "expAlreadyButton": {
+    "message": "Pfad von Hand eintragen",
+    "description": "Explorer integration: button that opens the manual path section."
+  },
   "expManualSummary": {
     "message": "Pfad stattdessen von Hand eintragen"
   },

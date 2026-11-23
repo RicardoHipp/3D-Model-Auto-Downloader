@@ -63,11 +63,33 @@ async function clearTargetDir() {
 async function targetDirStatus() {
   const handle = await getTargetDir();
   if (!handle) return { state: 'none', name: null };
+  const perm = await ordnerRecht(handle, 'readwrite');
+  // Haengt die Abfrage, ist der gespeicherte Ordner nicht mehr zu
+  // gebrauchen - fuer den Nutzer dasselbe wie "kein Ordner gewaehlt": Er
+  // soll ihn neu waehlen, und Downloads werden gestoppt statt still im
+  // normalen Download-Ordner zu landen.
+  if (perm === 'haengt') return { state: 'none', name: null };
+  return { state: perm === 'granted' ? 'granted' : 'prompt', name: handle.name };
+}
+
+// Berechtigung fuer den gespeicherten Ordner, mit Zeitgrenze.
+//
+// Beobachtet am 23.11.2026: Der gespeicherte Ordner war noch da, aber jeder
+// Zugriff darauf - queryPermission, Lesen, Schreiben - kam nie zurueck,
+// weder im Service Worker noch auf der Einstellungsseite. Ohne Zeitgrenze
+// wartete die Erweiterung endlos, die Seite gab nach ihrer Frist auf und lud
+// selbst herunter, und die Einstellungsseite blieb bei "..." stehen.
+// Rueckgabe: 'granted', 'prompt', 'denied' oder 'haengt'.
+const ORDNER_FRIST_MS = 800;
+async function ordnerRecht(handle, mode) {
+  let uhr;
+  const frist = new Promise((fertig) => { uhr = setTimeout(() => fertig('haengt'), ORDNER_FRIST_MS); });
   try {
-    const perm = await handle.queryPermission({ mode: 'readwrite' });
-    return { state: perm === 'granted' ? 'granted' : 'prompt', name: handle.name };
+    return await Promise.race([handle.queryPermission({ mode }), frist]);
   } catch {
-    return { state: 'prompt', name: handle.name };
+    return 'prompt';
+  } finally {
+    clearTimeout(uhr);
   }
 }
 
@@ -82,7 +104,7 @@ async function writeToTargetDir(relativePath, data) {
 
   // Ohne Nutzergeste lässt sich nichts nachfordern. Ist die Berechtigung weg,
   // sauber aussteigen statt einen unbeantwortbaren Prompt zu erzwingen.
-  if (await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') return false;
+  if (await ordnerRecht(handle, 'readwrite') !== 'granted') return false;
 
   const parts = relativePath.split('/').filter(Boolean);
   const fileName = parts.pop();
@@ -105,7 +127,7 @@ async function targetFileExists(relativePath) {
   try {
     const handle = await getTargetDir();
     if (!handle) return false;
-    if (await handle.queryPermission({ mode: 'read' }) !== 'granted') return false;
+    if (await ordnerRecht(handle, 'read') !== 'granted') return false;
 
     const parts = relativePath.split('/').filter(Boolean);
     const fileName = parts.pop();
@@ -126,7 +148,7 @@ async function readTargetFile(relativePath) {
   try {
     const handle = await getTargetDir();
     if (!handle) return null;
-    if (await handle.queryPermission({ mode: 'read' }) !== 'granted') return null;
+    if (await ordnerRecht(handle, 'read') !== 'granted') return null;
 
     const parts = relativePath.split('/').filter(Boolean);
     const fileName = parts.pop();
