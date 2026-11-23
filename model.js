@@ -2430,7 +2430,8 @@ loeschEl.addEventListener('click', async () => {
     const wurzel = await getTargetDir();
     const korb = await wurzel.getDirectoryHandle(PAPIERKORB, { create: true });
     const ziel = await freierName(korb, `${ORDNER}_deleted-${heute()}`);
-    await verschiebe(wurzel, ORDNER, korb, ziel);
+    await verschiebe(wurzel, ORDNER, korb, ziel,
+      (fertig, gesamt) => { loeschEl.textContent = t('libMovingCount', [String(fertig), String(gesamt)]); });
     zurueckZurUebersicht();
   });
 });
@@ -2438,7 +2439,8 @@ loeschEl.addEventListener('click', async () => {
 wiederEl.addEventListener('click', async () => {
   await mitAnzeige(wiederEl, 'libRestoring', async () => {
     const wurzel = await getTargetDir();
-    await modellAusPapierkorb(wurzel, ORDNER, GELOESCHT);
+    await modellAusPapierkorb(wurzel, ORDNER, GELOESCHT,
+      (fertig, gesamt) => { wiederEl.textContent = t('libRestoringCount', [String(fertig), String(gesamt)]); });
     zurueckZurUebersicht();
   });
 });

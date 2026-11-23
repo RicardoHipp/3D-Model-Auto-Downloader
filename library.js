@@ -964,9 +964,10 @@ async function loescheMarkierte() {
   try {
     const wurzel = await getTargetDir();
     const korb = await wurzel.getDirectoryHandle(PAPIERKORB, { create: true });
-    for (const m of ziele) {
+    for (const [i, m] of ziele.entries()) {
       const ziel = await freierName(korb, `${m.name}_deleted-${heute()}`);
-      await verschiebe(wurzel, m.name, korb, ziel);
+      await verschiebe(wurzel, m.name, korb, ziel,
+        (fertig, gesamt) => { korbEl.textContent = fortschrittText('libMovingCount', fertig, gesamt, i, ziele.length); });
       erledigt.push(m.name);
     }
   } catch (err) {
@@ -987,6 +988,13 @@ async function loescheMarkierte() {
   }
 }
 
+// Text fuer den Knopf beim Verschieben: Dateien des laufenden Modells, und
+// bei mehreren Modellen davor, das wievielte es ist.
+function fortschrittText(schluessel, fertig, gesamt, nr, anzahl) {
+  const dateien = t(schluessel, [String(fertig), String(gesamt)]);
+  return anzahl > 1 ? t('libModelOfModels', [String(nr + 1), String(anzahl)]) + ' · ' + dateien : dateien;
+}
+
 // Markierte Modelle aus dem Papierkorb zurueckholen - unter ihrem alten
 // Namen, ohne die Loeschmarke. Ist der vergeben, haengt freierName eine
 // Nummer an.
@@ -999,8 +1007,9 @@ document.getElementById('markiertWieder').addEventListener('click', async (e) =>
   const erledigt = [];
   try {
     const wurzel = await getTargetDir();
-    for (const m of ziele) {
-      await modellAusPapierkorb(wurzel, m.name, GELOESCHT);
+    for (const [i, m] of ziele.entries()) {
+      await modellAusPapierkorb(wurzel, m.name, GELOESCHT,
+        (fertig, gesamt) => { knopf.textContent = fortschrittText('libRestoringCount', fertig, gesamt, i, ziele.length); });
       erledigt.push(m.name);
     }
   } catch (err) {

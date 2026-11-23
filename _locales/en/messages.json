@@ -684,6 +684,30 @@
   "expS6Dialog": {
     "message": "The first time, Chrome asks one more thing first: “Open Microsoft ® Windows Based Script Host?” – that is the script being started, not the folder picker yet. Tick “Always allow …” there and confirm. With that box ticked the question stays away – without it, it comes back on every “Open in Explorer”."
   },
+  "libMovingCount": {
+    "message": "Moving … $DONE$ / $TOTAL$",
+    "description": "Button while moving a model to the trash: files done / total.",
+    "placeholders": {
+      "done": { "content": "$1", "example": "12" },
+      "total": { "content": "$2", "example": "37" }
+    }
+  },
+  "libRestoringCount": {
+    "message": "Restoring … $DONE$ / $TOTAL$",
+    "description": "Button while restoring a model from the trash: files done / total.",
+    "placeholders": {
+      "done": { "content": "$1", "example": "12" },
+      "total": { "content": "$2", "example": "37" }
+    }
+  },
+  "libModelOfModels": {
+    "message": "Model $NR$ / $COUNT$",
+    "description": "Prefix when several models are moved at once: which model of how many.",
+    "placeholders": {
+      "nr": { "content": "$1", "example": "2" },
+      "count": { "content": "$2", "example": "5" }
+    }
+  },
   "libMoving": {
     "message": "Moving …",
     "description": "Library page."

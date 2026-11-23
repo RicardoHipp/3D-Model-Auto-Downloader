@@ -4,6 +4,29 @@ Alle nennenswerten Änderungen an dieser Erweiterung.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
+## [Unveröffentlicht]
+
+### Geändert
+
+- **Papierkorb deutlich schneller.** Beim Verschieben und Wiederherstellen
+  ganzer Modelle werden bis zu 12 Dateien gleichzeitig umgehängt – gemessen
+  rund achtmal so schnell wie nacheinander. Scheitert das Umhängen einer
+  Datei, wird nur diese kopiert, nicht mehr der ganze Rest.
+- Der Knopf zeigt beim Verschieben, wie weit es ist („Wird verschoben …
+  12 / 37“), bei mehreren Modellen auch, das wievielte gerade dran ist.
+- **Entpacken schneller.** Zielordner und Berechtigung werden einmal je
+  Download geholt statt für jede Datei, angelegte Unterordner gemerkt, und
+  mehrere Dateien gleichzeitig geschrieben – viele kleine Dateien bis zu 12
+  auf einmal, große nach Speicherbedarf (zusammen höchstens 512 MB) nur zu
+  zweit oder einzeln.
+
+### Behoben
+
+- Beim Verschieben ganzer Modelle wurden Dateien aus einem Ordner genommen,
+  während er noch durchlaufen wurde. Dabei konnten Dateien übersprungen
+  werden und mit dem alten Ordner verloren gehen. Jetzt wird erst
+  vollständig aufgelistet, dann verschoben.
+
 ## [1.4.0] – 2026-11-23
 
 ### Hinzugefügt

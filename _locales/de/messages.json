@@ -684,6 +684,30 @@
   "expS6Dialog": {
     "message": "Beim ersten Mal fragt Chrome vorher noch: „Microsoft ® Windows Based Script Host öffnen?“ – das ist der Aufruf des Skripts, noch nicht die Ordnerauswahl. Setz dort den Haken „Immer zulassen …“ und bestätige. Mit dem Haken bleibt die Frage künftig aus – sonst kommt sie bei jedem „Im Explorer öffnen“ wieder."
   },
+  "libMovingCount": {
+    "message": "Wird verschoben … $DONE$ / $TOTAL$",
+    "description": "Button while moving a model to the trash: files done / total.",
+    "placeholders": {
+      "done": { "content": "$1", "example": "12" },
+      "total": { "content": "$2", "example": "37" }
+    }
+  },
+  "libRestoringCount": {
+    "message": "Wird wiederhergestellt … $DONE$ / $TOTAL$",
+    "description": "Button while restoring a model from the trash: files done / total.",
+    "placeholders": {
+      "done": { "content": "$1", "example": "12" },
+      "total": { "content": "$2", "example": "37" }
+    }
+  },
+  "libModelOfModels": {
+    "message": "Modell $NR$ / $COUNT$",
+    "description": "Prefix when several models are moved at once: which model of how many.",
+    "placeholders": {
+      "nr": { "content": "$1", "example": "2" },
+      "count": { "content": "$2", "example": "5" }
+    }
+  },
   "libMoving": {
     "message": "Wird verschoben …",
     "description": "Library page."

@@ -20,6 +20,11 @@ const DATEIEN_ORDNER = '_Dateien_';
 const EINTRAG = 'eintrag.json';
 const VORSCHAU = 'vorschau.png';
 const DATEI_FACH = 'datei';
+// So viele Dateien werden beim Verschieben eines Modells gleichzeitig
+// umgehaengt. Gemessen 23.11.2026, 64 Dateien: 1 = 6,7 s, 4 = 1,8 s,
+// 8 = 1,0 s, 16 = 0,68 s, 32 = 0,92 s (staut sich bei Chrome). 12 liegt
+// knapp unter dem Bestwert - Abstand fuer langsamere Rechner und Netzlaufwerke.
+const GLEICHZEITIG = 12;
 
 function heute() {
   const d = new Date();
@@ -64,30 +69,56 @@ async function verschiebeDatei(handle, vonOrdner, name, nachOrdner, neuerName) {
   await vonOrdner.removeEntry(name);
 }
 
-// Ordner lassen sich nicht verschieben, einzelne Dateien schon: Jede Datei
-// wird in den neuen Ordner umgehaengt (move), und wo das nicht geht, kopiert.
-// Danach ist der alte Ordner leer und wird entfernt.
-async function verschiebe(vonEltern, name, nachEltern, neuerName) {
+// Ordner lassen sich nicht verschieben (gemessen 23.11.2026: move() auf einem
+// Ordner wirft TypeError), einzelne Dateien schon - und das ist ein echtes
+// Umhaengen, 100 MB in gut 60 ms. Jede Datei wird in den neuen Ordner
+// umgehaengt, und wo das nicht geht, kopiert. Danach ist der alte Ordner
+// leer und wird entfernt.
+//
+// Erst wird alles aufgelistet, dann verschoben: Dateien aus einem Ordner zu
+// nehmen, waehrend man ihn noch durchlaeuft, kann Eintraege ueberspringen -
+// und die verschwaenden dann mit dem alten Ordner. Die Liste liefert
+// nebenbei die Gesamtzahl fuer die Anzeige; nur auflisten, nichts lesen,
+// kostet kaum Zeit.
+//
+// melde(erledigt, gesamt): optional, nach jeder Datei.
+async function verschiebe(vonEltern, name, nachEltern, neuerName, melde = null) {
   const quelle = await vonEltern.getDirectoryHandle(name);
   const ziel = await nachEltern.getDirectoryHandle(neuerName, { create: true });
-  let umhaengen = typeof FileSystemFileHandle.prototype.move === 'function';
-
-  const gehe = async (von, nach) => {
+  const liste = [];
+  const sammle = async (von, nach) => {
     for await (const [kind, eintrag] of von.entries()) {
       if (eintrag.kind === 'directory') {
-        await gehe(eintrag, await nach.getDirectoryHandle(kind, { create: true }));
-        continue;
+        await sammle(eintrag, await nach.getDirectoryHandle(kind, { create: true }));
+      } else {
+        liste.push([kind, eintrag, nach]);
       }
-      if (umhaengen) {
-        try { await eintrag.move(nach, kind); continue; }
-        catch { umhaengen = false; }
-      }
-      const strom = await (await nach.getFileHandle(kind, { create: true })).createWritable();
-      await (await eintrag.getFile()).stream().pipeTo(strom);
     }
   };
+  await sammle(quelle, ziel);
 
-  await gehe(quelle, ziel);
+  // Mehrere Dateien gleichzeitig: Ein einzelnes Umhaengen wartet vor allem
+  // auf Chrome selbst (Messwerte bei GLEICHZEITIG). Scheitert das Umhaengen
+  // einer Datei, wird nur diese kopiert - die naechste versucht es wieder
+  // mit Umhaengen.
+  const kannUmhaengen = typeof FileSystemFileHandle.prototype.move === 'function';
+  let naechste = 0, erledigt = 0;
+  melde?.(0, liste.length);
+  const arbeiter = async () => {
+    while (naechste < liste.length) {
+      const [kind, eintrag, nach] = liste[naechste++];
+      let fertig = false;
+      if (kannUmhaengen) {
+        try { await eintrag.move(nach, kind); fertig = true; } catch { /* dann kopieren */ }
+      }
+      if (!fertig) {
+        const strom = await (await nach.getFileHandle(kind, { create: true })).createWritable();
+        await (await eintrag.getFile()).stream().pipeTo(strom);
+      }
+      melde?.(++erledigt, liste.length);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(GLEICHZEITIG, liste.length) }, arbeiter));
   await vonEltern.removeEntry(name, { recursive: true });
 }
 
@@ -100,10 +131,10 @@ async function modellInPapierkorb(wurzel, name) {
 
 // Unter dem alten Namen zurueck, ohne Loeschmarke (geloescht: deren Muster).
 // Ist der Name vergeben, haengt freierName eine Nummer an.
-async function modellAusPapierkorb(wurzel, name, geloescht) {
+async function modellAusPapierkorb(wurzel, name, geloescht, melde = null) {
   const korb = await wurzel.getDirectoryHandle(PAPIERKORB_ORDNER);
   const ziel = await freierName(wurzel, name.replace(geloescht, ''));
-  await verschiebe(korb, name, wurzel, ziel);
+  await verschiebe(korb, name, wurzel, ziel, melde);
   return ziel;
 }
 

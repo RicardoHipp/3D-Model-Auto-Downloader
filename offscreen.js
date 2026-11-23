@@ -97,15 +97,35 @@ async function handleUnzipAndDownload(url, folderName, source, tabId) {
       return tiefe ? ordner[0].slice(0, tiefe).join('/') + '/' : '';
     })();
 
-    // Gehe durch alle Dateien im ZIP-Archiv
+    // Zielordner und Berechtigung einmal fuer alle Dateien (siehe
+    // zielordnerSchreiber). Null heisst: kein Ordner nutzbar, dann geht jede
+    // Datei wie frueher ueber chrome.downloads.
+    let schreibe = null;
+    try { schreibe = await zielordnerSchreiber(); } catch (e) {
+      console.error('Zielordner nicht nutzbar, nutze Downloads:', e);
+    }
+
+    // Mehrere Dateien gleichzeitig: Jedes Schreiben wartet vor allem auf
+    // Chrome (beim Umhaengen gemessen: 16 gleichzeitig gut zehnmal so schnell
+    // wie nacheinander). Begrenzt nach Anzahl UND nach Groesse: Jede Datei
+    // liegt waehrenddessen ganz entpackt im Speicher, und eine STL kann
+    // einzeln mehrere hundert MB gross sein - zu viel auf einmal, und Chrome
+    // beendet diese Seite. Viele kleine Dateien laufen so voll parallel,
+    // grosse nur zu zweit oder allein. Eine Datei ueber der Grenze laeuft,
+    // sobald sonst nichts mehr laeuft.
+    const GRENZE_ANZAHL = 12;
+    const GRENZE_BYTES = 512 * 1024 * 1024;
+    // Entpackte Groesse steht im Verzeichnis der Zip; fehlt sie, vorsichtig
+    // schaetzen.
+    const groesseVon = (eintrag) => eintrag._data?.uncompressedSize || 50 * 1024 * 1024;
     let fertig = 0;
-    for (const [relativePath, fileEntry] of files) {
+    const eineDatei = async (relativePath, fileEntry) => {
       try {
         melde(tabId, {
           file: relativePath.split('/').pop(),
           state: 'entpacken',
           percent: (fertig / files.length) * 100,
-          text: `${fertig + 1} / ${files.length}`
+          text: `${Math.min(fertig + 1, files.length)} / ${files.length}`
         });
         // Ordnerstruktur erhalten, nicht-ASCII-Zeichen bereinigen
         const cleanPath = relativePath.slice(gemeinsam.length)
@@ -125,12 +145,14 @@ async function handleUnzipAndDownload(url, folderName, source, tabId) {
         // bei JEDER Datei des Archivs erscheinen. Das "STL_Downloads/"-Praefix
         // entfaellt dabei, der Nutzer hat seinen Ordner ja schon gewaehlt.
         let written = false;
-        try {
-          written = await writeToTargetDir(`${folderName}/${cleanPath}`, fileData);
-        } catch (targetError) {
-          console.error('Zielordner-Schreiben fehlgeschlagen, nutze Downloads:', targetError);
+        if (schreibe) {
+          try {
+            written = await schreibe(`${folderName}/${cleanPath}`, fileData);
+          } catch (targetError) {
+            console.error('Zielordner-Schreiben fehlgeschlagen, nutze Downloads:', targetError);
+          }
         }
-        if (written) { fertig++; continue; }
+        if (written) { fertig++; return; }
 
         // Normaler Weg: MIME-Type erzwingen, damit Chrome nicht in .txt umbenennt
         const blob = new Blob([fileData], { type: mimeType });
@@ -147,7 +169,29 @@ async function handleUnzipAndDownload(url, folderName, source, tabId) {
       } catch (fileError) {
         console.error(`Datei übersprungen (${relativePath}):`, fileError);
       }
-    }
+    };
+    // Der Reihe nach starten, solange Anzahl und Groesse es zulassen.
+    // eineDatei faengt ihre Fehler selbst ab und scheitert nie.
+    await new Promise((alleFertig) => {
+      let naechste = 0, laufend = 0, belegt = 0;
+      const starte = () => {
+        while (naechste < files.length && laufend < GRENZE_ANZAHL) {
+          const [relativePath, fileEntry] = files[naechste];
+          const groesse = groesseVon(fileEntry);
+          if (laufend > 0 && belegt + groesse > GRENZE_BYTES) break;
+          naechste++;
+          laufend++;
+          belegt += groesse;
+          eineDatei(relativePath, fileEntry).finally(() => {
+            laufend--;
+            belegt -= groesse;
+            if (naechste >= files.length && laufend === 0) alleFertig();
+            else starte();
+          });
+        }
+      };
+      starte();
+    });
 
     // Erfolg an Service Worker melden – der übersetzt und zeigt die Meldung
     melde(tabId, { file: folderName, state: 'fertig', text: `${files.length} Dateien` });

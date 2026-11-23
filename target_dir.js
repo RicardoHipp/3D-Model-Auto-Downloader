@@ -121,6 +121,37 @@ async function writeToTargetDir(relativePath, data) {
   return true;
 }
 
+// Fuer viele Dateien auf einmal (Entpacken): Zielordner und Berechtigung
+// werden einmal geholt statt fuer jede Datei, und schon angelegte
+// Unterordner gemerkt. Gemerkt wird das Versprechen, nicht das Ergebnis -
+// so legen zwei gleichzeitige Schreiber denselben Unterordner nicht doppelt
+// an. Gibt null zurueck, wenn kein Ordner nutzbar ist; sonst eine Funktion
+// schreibe(relativerPfad, daten).
+async function zielordnerSchreiber() {
+  const wurzel = await getTargetDir();
+  if (!wurzel || await ordnerRecht(wurzel, 'readwrite') !== 'granted') return null;
+  const ordner = new Map([['', Promise.resolve(wurzel)]]);
+  const ordnerFuer = (pfad) => {
+    if (!ordner.has(pfad)) {
+      const schnitt = pfad.lastIndexOf('/');
+      const eltern = schnitt < 0 ? '' : pfad.slice(0, schnitt);
+      const name = pfad.slice(schnitt + 1);
+      ordner.set(pfad, ordnerFuer(eltern).then((e) => e.getDirectoryHandle(name, { create: true })));
+    }
+    return ordner.get(pfad);
+  };
+  return async (relativePath, data) => {
+    const parts = relativePath.split('/').filter(Boolean);
+    const fileName = parts.pop();
+    if (!fileName) return false;
+    const dir = await ordnerFuer(parts.join('/'));
+    const writable = await (await dir.getFileHandle(fileName, { create: true })).createWritable();
+    await writable.write(data);
+    await writable.close();
+    return true;
+  };
+}
+
 // Gibt es die Datei im Zielordner schon? Wird gebraucht, um nichts zu
 // ueberschreiben, was spaeter einmal von Hand ergaenzt wurde.
 async function targetFileExists(relativePath) {
